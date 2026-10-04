@@ -131,6 +131,13 @@ The `e2e` job is enabled in CI: it brings the stack up with compose, runs Playwr
 - **Accessibility.** axe runs on the queue, on Ana's case as it opens, and on a checked case (scenario 13) with every evidence section open. Lighthouse, run by hand with the installed Chrome on 2026-10-04: accessibility 100 on Ana's case and on scenario 13's (SPEC-ui AC10).
 - **CI.** The `e2e` job copies `.env.example` (no keys, so replay), runs `docker compose up -d --build`, waits for `/api/health` through nginx, runs the specs, and uploads `frontend/test-results/` (the traces) when one fails. Locally on 2026-10-04: 5 of 5 in 19 s.
 
+**As built (T43).**
+- **SDK.** `mcp` 2.x, where FastMCP is now `MCPServer` (`mcp.server.mcpserver`); same model: typed tools, stdio. Every tool is annotated read-only.
+- **Configuration.** The server reads only `AGENT_DATABASE_URL` (and refuses any role but `agent_reader`); it needs neither the app's URL nor the keys. `.mcp.json.example` holds the snippet, with the URL on 127.0.0.1 for a server outside compose; the real `.mcp.json` is git-ignored, because it holds the reader's password.
+- **Masking.** Message text, subjects and transaction descriptions go through the same masking as a model's input; then the first name and each account's last four digits ("••4210") are put back, and everything else stays a placeholder (`[LAST_NAME]`, `[EMAIL]`, …). The conversation names the member by first name.
+- **Validation.** Ids are positive 32-bit integers, `end` can't be before `start`, a query is 2 to 200 characters and at most 10 clauses come back. A missing conversation says "No conversation 5999." rather than a database error. `search_clauses` uses web-search syntax, so every word must match unless the query says "or".
+- **Checked (2026-10-04).** The in-process test lists the five tools and gets Ana's three Sep 14 rows in posting order with no full account number. Over stdio, an MCP client launched the server with the snippet's command, as Claude Code does, and got the same rows and the accounts as "••4210" and "••4211".
+
 ## Acceptance criteria (phase A)
 
 1. A reviewer with only Docker installed can follow the README from a clean clone to Ana's approved refund without reading any other file.

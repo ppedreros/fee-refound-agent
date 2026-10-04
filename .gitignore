@@ -29,3 +29,6 @@ playwright-report/
 
 # The test brief belongs to the company; it is not ours to publish
 docs/AI-Developer-Technical-Test.pdf
+
+# Claude Code's MCP config: it holds the reader's password (copy .mcp.json.example)
+.mcp.json

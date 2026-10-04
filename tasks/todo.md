@@ -545,14 +545,14 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `frontend/e2e/happy-path.spec.ts`, `fallback.spec.ts`, `a11y.spec.ts`, `global-setup.ts`, `frontend/playwright.config.ts`, `frontend/package.json` (`e2e`; `@playwright/test`, `@axe-core/playwright`), `frontend/vite.config.ts`, `frontend/tsconfig.json`, `.github/workflows/ci.yml`
 **Scope:** M
 
-### - [ ] T43: MCP server
+### - [x] T43: MCP server
 **Description:** FastMCP over stdio, exposing the read-only tools on `agent_reader`, with masked outputs (`••4210`, first name only) and validated ids. Add a `.mcp.json` snippet.
 **Acceptance criteria:**
-- [ ] The in-process test lists the tools. `list_transactions(301, …)` returns three rows in order, with no full account number.
-- [ ] Claude Code connects through the README snippet.
+- [x] The in-process test lists the tools. `list_transactions(301, …)` returns three rows in order, with no full account number.
+- [x] Claude Code connects through the README snippet. (The snippet is `.mcp.json.example`, which T46 puts in the README; an MCP client over stdio connected with it, as Claude Code does.)
 **Verification:** `uv run python -m pytest tests/integration/tools/test_mcp_server.py`; manual connection
 **Dependencies:** Checkpoint 6
-**Files:** `backend/tools/mcp_server.py`, `tests/integration/tools/test_mcp_server.py`, `.mcp.json.example`
+**Files:** `backend/tools/mcp_server.py`, `tests/integration/tools/test_mcp_server.py`, `.mcp.json.example`, `.gitignore`, `pyproject.toml` + `uv.lock` (`mcp`)
 **Scope:** S
 
 ### - [ ] T44: Diagrams: system (AWS target) and agent flow

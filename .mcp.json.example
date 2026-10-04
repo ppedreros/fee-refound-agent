@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "fee-refunds": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "backend.tools.mcp_server"],
+      "env": {
+        "AGENT_DATABASE_URL": "postgresql+psycopg://agent_reader:change-me@127.0.0.1:5432/fees"
+      }
+    }
+  }
+}
