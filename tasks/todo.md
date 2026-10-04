@@ -535,14 +535,14 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 
 ## Phase 7: Delivery A
 
-### - [ ] T42: Playwright end-to-end tests in CI
+### - [x] T42: Playwright end-to-end tests in CI
 **Description:** `happy-path.spec.ts`, `fallback.spec.ts` (scenario 18) and `a11y.spec.ts` (`@axe-core/playwright`). They run against the compose stack in replay. `globalSetup` resets with `bootstrap --reset`. Add the CI `e2e` job, which uploads traces on failure.
 **Acceptance criteria:**
-- [ ] All three specs pass locally and in CI (SPEC-delivery AC3).
-- [ ] Lighthouse accessibility is 95 or more on the case page (SPEC-ui AC10).
+- [ ] All three specs pass locally and in CI (SPEC-delivery AC3). (Locally 5 of 5 on 2026-10-04; CI runs on the next push.)
+- [x] Lighthouse accessibility is 95 or more on the case page (SPEC-ui AC10). (100 on two case pages.)
 **Verification:** `npm --prefix frontend run e2e`; the CI `e2e` job
 **Dependencies:** Checkpoint 6
-**Files:** `tests/e2e/happy-path.spec.ts`, `fallback.spec.ts`, `a11y.spec.ts`, `frontend/playwright.config.ts`, `.github/workflows/ci.yml`
+**Files:** `frontend/e2e/happy-path.spec.ts`, `fallback.spec.ts`, `a11y.spec.ts`, `global-setup.ts`, `frontend/playwright.config.ts`, `frontend/package.json` (`e2e`; `@playwright/test`, `@axe-core/playwright`), `frontend/vite.config.ts`, `frontend/tsconfig.json`, `.github/workflows/ci.yml`
 **Scope:** M
 
 ### - [ ] T43: MCP server

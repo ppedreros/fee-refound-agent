@@ -123,6 +123,14 @@ The `e2e` job is enabled in CI: it brings the stack up with compose, runs Playwr
 
 **Acceptance.** The public URL serves the app behind basic auth. `https://<host>/api/health` returns 200 with `provider_mode.jev` and `provider_mode.openai` equal to `replay`. Ana's happy path works on the public URL.
 
+**As built (T42).**
+- **Where the specs live.** `frontend/e2e/`, next to `frontend/playwright.config.ts`, not `tests/e2e/`: a spec resolves `@playwright/test` from the `node_modules` above it, and only the frontend has one. `npm --prefix frontend run e2e` runs them; Vitest only collects `src/**/*.test.*`.
+- **Replay only.** `globalSetup` resets the demo through the migrate job, then reads `/api/health` and stops the run unless both providers are in replay, so the tests never spend tokens. Locally: `PROVIDER_MODE=replay docker compose up -d --build`. One worker, because the specs check and decide cases on one database.
+- **Browser.** Locally, the installed Chrome (`channel: "chrome"`), so nothing is downloaded; in CI, the Chromium that `npx playwright install --with-deps chromium` brings.
+- **Happy path.** In replay a check takes about a second, faster than the page can be watched, so the step order is read from "How this was prepared", which the same step records fill: the eight labels, in order.
+- **Accessibility.** axe runs on the queue, on Ana's case as it opens, and on a checked case (scenario 13) with every evidence section open. Lighthouse, run by hand with the installed Chrome on 2026-10-04: accessibility 100 on Ana's case and on scenario 13's (SPEC-ui AC10).
+- **CI.** The `e2e` job copies `.env.example` (no keys, so replay), runs `docker compose up -d --build`, waits for `/api/health` through nginx, runs the specs, and uploads `frontend/test-results/` (the traces) when one fails. Locally on 2026-10-04: 5 of 5 in 19 s.
+
 ## Acceptance criteria (phase A)
 
 1. A reviewer with only Docker installed can follow the README from a clean clone to Ana's approved refund without reading any other file.
