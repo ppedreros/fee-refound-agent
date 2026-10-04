@@ -20,9 +20,17 @@ class ChoiceQuestion(BaseModel, frozen=True):
     options: list[Option] = Field(min_length=2, max_length=MAX_CHOICE_OPTIONS)
 
 
+class NoulCriteria(BaseModel, frozen=True):
+    """What a "yes" and a "no" mean. Jev reads instructions literally, so stating both helps."""
+
+    yes: str
+    no: str
+
+
 class NoulQuestion(BaseModel, frozen=True):
     key: str
     statement: str
+    criteria: NoulCriteria | None = None
 
 
 type Question = ChoiceQuestion | NoulQuestion

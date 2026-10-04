@@ -32,7 +32,9 @@ from backend.tools.models import (
 )
 
 CONFIG_FILE = Path(__file__).resolve().parents[1] / "core" / "config" / "tools.yaml"
-TOOL_TIMEOUT_S = float(yaml.safe_load(CONFIG_FILE.read_text(encoding="utf-8"))["timeout_s"])
+_CONFIG = yaml.safe_load(CONFIG_FILE.read_text(encoding="utf-8"))
+TOOL_TIMEOUT_S = float(_CONFIG["timeout_s"])
+TOOL_RETRIES = int(_CONFIG["retries"])  # applied by the graph's node wrapper
 
 type Language = Literal["en", "es", "other"]
 LANGUAGES: tuple[Language, ...] = ("en", "es", "other")
@@ -112,6 +114,17 @@ async def get_member_profile(session: AsyncSession, member_id: int) -> MemberPro
     if profile is None:
         raise ToolError("not_found")
     return MemberProfile.model_validate(profile._asdict())
+
+
+@read_tool
+async def list_account_numbers(session: AsyncSession, member_id: int) -> list[str]:
+    """Only the numbers, for the masking dictionary: no balances (D1, data minimisation)."""
+    numbers = await session.scalars(
+        select(db.Account.account_number)
+        .where(db.Account.member_id == member_id)
+        .order_by(db.Account.id)
+    )
+    return list(numbers)
 
 
 @read_tool

@@ -1,0 +1,1 @@
+Hola {{first_name}}, gracias por escribirnos. Revisamos la cuenta: $deposit llegó el $fee_date, el mismo día del cargo de $amount ($fee_type), así que hemos reembolsado el cargo en la cuenta $sub_account_name. Lo verá allí en breve. Si necesita algo más, responda a este mensaje.

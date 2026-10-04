@@ -1,0 +1,1 @@
+Hi {{first_name}}, thanks for reaching out. We checked your account: $deposit arrived on $fee_date, the same day as the $amount $fee_type fee, so we've refunded the fee to your $sub_account_name account. You'll see it there shortly. If there's anything else, just reply to this message.

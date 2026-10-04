@@ -255,12 +255,12 @@ def render_summary(
         if isinstance(amount, Decimal) and isinstance(limit, Decimal):
             if lang == "es":
                 return (
-                    f"La política permite este reembolso de {_money(amount)}, pero supera tu "
-                    f"límite de {_money(limit)}."
+                    f"La política permite este reembolso de {format_money(amount)}, pero supera tu "
+                    f"límite de {format_money(limit)}."
                 )
             return (
-                f"The policy allows this {_money(amount)} refund, but it is above your "
-                f"{_money(limit)} limit."
+                f"The policy allows this {format_money(amount)} refund, but it is above your "
+                f"{format_money(limit)} limit."
             )
     return None
 
@@ -275,17 +275,18 @@ def render_counterfactual(facts: Facts, lang: Language) -> str | None:
         if balance >= 0:
             return (
                 f"Si {deposit} se hubiera registrado primero, el saldo se habría quedado "
-                f"en {_money(balance)}."
+                f"en {format_money(balance)}."
             )
         return (
             f"Aunque {deposit} se hubiera registrado primero, el saldo habría seguido por "
-            f"debajo de cero ({_money(balance)})."
+            f"debajo de cero ({format_money(balance)})."
         )
     if balance >= 0:
-        return f"If {deposit} had posted first, the balance would have stayed at {_money(balance)}."
+        stayed = format_money(balance)
+        return f"If {deposit} had posted first, the balance would have stayed at {stayed}."
     return (
         f"Even if {deposit} had posted first, the balance would still have been below zero "
-        f"({_money(balance)})."
+        f"({format_money(balance)})."
     )
 
 
@@ -312,8 +313,8 @@ def _deposit_not_same_day(facts: Facts, lang: Language) -> str:
         deposit = _deposit_word(facts.get("next_deposit_kind"), lang, capital=True)
         gap = _days(next_date - fee_date, lang)
         if lang == "es":
-            return f"{deposit} llegó el {_date(next_date, lang)}, {gap} después del cargo."
-        return f"{deposit} arrived on {_date(next_date, lang)}, {gap} after the fee."
+            return f"{deposit} llegó el {format_date(next_date, lang)}, {gap} después del cargo."
+        return f"{deposit} arrived on {format_date(next_date, lang)}, {gap} after the fee."
     if "deposit_date" in facts:
         deposit = _deposit_word(facts.get("deposit_kind"), lang, capital=True)
         if lang == "es":
@@ -375,7 +376,8 @@ _NUMBER_WORDS: dict[Language, list[str]] = {
 }
 
 
-def _date(value: dt.date, lang: Language) -> str:
+def format_date(value: dt.date, lang: Language) -> str:
+    """Sep 14 (English) or 14 de septiembre (Spanish)."""
     month = _MONTHS[lang][value.month - 1]
     return f"{value.day} de {month}" if lang == "es" else f"{month} {value.day}"
 
@@ -389,7 +391,8 @@ def _days(delta: dt.timedelta, lang: Language) -> str:
     return f"{number} day" if count == 1 else f"{number} days"
 
 
-def _money(amount: Decimal) -> str:
+def format_money(amount: Decimal) -> str:
+    """$1,360 for whole dollars, $35.50 otherwise."""
     sign = "-" if amount < 0 else ""
     amount = abs(amount)
     text = f"{amount:,.0f}" if amount == amount.to_integral_value() else f"{amount:,.2f}"
@@ -400,9 +403,9 @@ def _show(value: Fact, lang: Language) -> str:
     if isinstance(value, bool):
         return str(value)
     if isinstance(value, dt.date):
-        return _date(value, lang)
+        return format_date(value, lang)
     if isinstance(value, Decimal):
-        return _money(value)
+        return format_money(value)
     if isinstance(value, list):
         return ", ".join(value)
     return str(value)

@@ -207,7 +207,7 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/agents/triage_rules.py`, `backend/agents/decide.py`, `backend/core/config/thresholds.yaml`, `tests/unit/agents/test_triage_rules.py`, `tests/unit/agents/test_decide.py`
 **Scope:** M
 
-### - [ ] T17: Graph and nodes: Ana, with a template reply
+### - [x] T17: Graph and nodes: Ana, with a template reply
 **Description:** `GraphState` and the LangGraph `StateGraph` with every node from SPEC-agent. Check LangGraph's fan-in and stream APIs against the official docs first. At this stage two nodes are simpler than their final form:
 - `find_policy` uses `rule_fallback` only (search comes in T30)
 - `draft` uses the template only (Sol comes in T28)
@@ -218,8 +218,8 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 
 **From the T6 spike:** the outline's manipulation wording gave Ana P(yes) 0.92, so `triage-v1` must reword it (and add Noul `criteria`) so that an ordinary refund request is a clear "no". Check it live on Ana and scenario 12 before the prompts freeze (`docs/notes/jev.md`, finding 1).
 **Acceptance criteria:**
-- [ ] Ana (scenario 1) reaches `ready_to_refund` with $35 on 88002, `clear = true` and clause `fee-refund-policy#4`. The draft contains `{{first_name}}` and "$35".
-- [ ] No masked step input contains a seeded name or account number.
+- [x] Ana (scenario 1) reaches `ready_to_refund` with $35 on 88002, `clear = true` and clause `fee-refund-policy#4`. The draft contains `{{first_name}}` and "$35".
+- [x] No masked step input contains a seeded name or account number.
 **Verification:** `uv run python -m pytest tests/integration/agents/test_graph_scenarios.py -k ana`
 **Dependencies:** T12–T16
 **Files:** `backend/agents/state.py`, `backend/agents/graph.py`, `backend/agents/nodes.py`, `backend/agents/prompts/` (`triage-v1.yaml`, `templates/`), `tests/integration/agents/test_graph_scenarios.py`

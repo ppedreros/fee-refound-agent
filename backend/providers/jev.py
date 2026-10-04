@@ -111,7 +111,12 @@ def _to_jev(question: Question) -> Choice | Noul:
             instructions=question.prompt,
             criteria={option.key: option.description for option in question.options},
         )
-    return Noul(instructions=question.statement)
+    if question.criteria is None:
+        return Noul(instructions=question.statement)
+    return Noul(
+        instructions=question.statement,
+        criteria={"true": question.criteria.yes, "false": question.criteria.no},
+    )
 
 
 def _answer(question: Question, response: SystemOneResponse) -> ChoiceAnswer | NoulAnswer:

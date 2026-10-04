@@ -136,6 +136,14 @@ The only note is `classified_with_backup`. It never changes the status, but it k
 
 **`AUTO_APPROVE_ENABLED`.** This module never acts on it. The runner only stores `would_auto_approve`. The flag-on behaviour (only for tests, never in the shipped config) lives in `SPEC-api.md`, which owns the only path that moves money.
 
+## How the graph is built (T17)
+
+- `backend/agents/graph.py` wires the nodes in `nodes.py`. Each node returns its state update plus a `StepReport` (kind, masked input, output, `CallMeta`, prompt version, error code). A wrapper in `steps.py`, outside the node code, times it and emits the `started` and `finished`/`failed` stream events; the last one carries the `StepRecord` the runner stores (T18).
+- The same wrapper module gives read tools their one retry (`tools.yaml`) on a fresh `agent_reader` session, never starting after the run deadline. Each node opens its own session, because the reads run in parallel.
+- The member's messages since the last staff reply are joined, sanitised and masked; so is the subject. Jev's state is `{subject, message}` (D-providers-1).
+- `result` also carries what Luis's page needs to show the evidence as the agent saw it: `candidates`, `facts` (all rule facts plus `fee_date`), `checks`, `decisive_rule`, `tone`, `classifier_used`, and `evidence` (`fee_day` rows of the fee's sub-account, core `refunds`, `sub_accounts` with balances). It never holds a name or an account number.
+- At this stage `find_policy` always uses `rule_fallback` and `draft` the reply templates (`backend/agents/prompts/templates/refunded.{en,es}.txt`); decline templates come in T31. More than one fee candidate gives `fee_ambiguous` until the Jev fee choice lands in T32.
+
 ## Case status values (contract used by `data` and `api`)
 
 `not_checked` · `checking` · `ready_to_refund` · `recommend_no_refund` · `needs_supervisor` · `needs_your_call` · `not_about_fee` · `done`

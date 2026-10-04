@@ -31,7 +31,7 @@ class Drafter(Protocol):
 | Type | Shape |
 |---|---|
 | `ChoiceQuestion` | `key`, `prompt`, `options: list[Option(key, description)]` (up to 255) |
-| `NoulQuestion` | `key`, `statement` |
+| `NoulQuestion` | `key`, `statement`, `criteria: NoulCriteria(yes, no) \| None` (what a yes and a no mean; Jev reads instructions literally, so `triage-v1` states both) |
 | `ChoiceAnswer` | `choice`, `probabilities: dict[str, float] \| None`, `confidence: float \| None` |
 | `NoulAnswer` | `p_yes: float \| None`, `label: bool` |
 | `Classification` | `answers: dict[str, ChoiceAnswer \| NoulAnswer]`, `meta: CallMeta` |

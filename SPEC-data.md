@@ -108,6 +108,7 @@ Every tool:
 |---|---|
 | `get_conversation(conversation_id)` | Subject, status, member id, and messages in order (author kind: member or staff) |
 | `get_member_profile(member_id)` | First and last name. Used only to build the masking dictionary and for Luis's page. |
+| `list_account_numbers(member_id)` | Only the account numbers, for the masking dictionary: `load_conversation` loads no balances (D1). Added in T17. |
 | `list_member_accounts(member_id)` | Accounts, each with its sub-accounts (type, display name, balance, available) |
 | `list_transactions(member_id, start, end)` | The member's transactions across all sub-accounts in that date range, ordered by `posting_ref`. Each one has a `kind` (see below). |
 | `list_fee_refunds(member_id, since)` | Transactions of kind `fee_refund` since that date |
