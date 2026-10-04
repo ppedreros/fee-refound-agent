@@ -89,6 +89,8 @@ One case, with its evidence. 404 means "We couldn't find that conversation."
 | `can_run` | `true` when `POST /run` would be accepted: the conversation is runnable, no run is active, and the case is not `done` |
 | `can_pick_fee` | `true` when the latest run ended with `fee_ambiguous` and `candidates` is not empty |
 
+**As built (T20).** `backend/api/view_model.py` builds the response from the conversation, the member's accounts and the latest completed run's stored `result`; `latest_run_id` only moves when a run completes, so during a check the page keeps the previous result and `can_run` is false. Every sentence is rendered here in English (Luis's language; the reply keeps the member's): `reasons` and `notes` through `render_reason` (the routing code `not_fee_request` is left out, because the topic label says it), `summary` through `render_summary` with the decisive check's reason, and `evidence.fee_day.summary` through `render_counterfactual`. The run stores facts as JSON, so ISO dates and money strings are parsed back before rendering. Each check also stores its own facts, which the response carries next to a plain label ("A same-day deposit would have covered the payment", "This fee hasn't been refunded yet", "Fewer than 3 refunds in the last 12 months", "No unpaid balances", "Within your $50 approval limit"). Candidates are labelled "Sep 14 · −$35.00 · Courtesy Pay fee". The refunds window is the `window_days` ending on the fee date, as in `check_yearly_limit`. `over_limit` for `actions` compares the fee amount with `staff_limit_usd`.
+
 ### `GET /cases/{id}/accounts/{account_id}/number`
 
 Returns the full account number. It writes an `account_number_revealed` audit event. It returns 404 if the account doesn't belong to the case's member.

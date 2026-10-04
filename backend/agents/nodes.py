@@ -415,7 +415,13 @@ def _result(state: GraphState, status: str, codes: list[ReasonCode]) -> dict[str
         "candidates": [_txn_json(c) for c in state.candidates],
         "facts": _FACTS.dump_python(_merged_facts(state), mode="json"),
         "checks": [
-            {"rule": c.rule, "passed": c.passed, "reason": c.reason, "clause_id": c.clause_id}
+            {
+                "rule": c.rule,
+                "passed": c.passed,
+                "reason": c.reason,
+                "clause_id": c.clause_id,
+                "facts": _FACTS.dump_python(c.facts, mode="json"),
+            }
             for c in state.checks
         ],
         "decisive_rule": decision.decisive_rule if decision else None,

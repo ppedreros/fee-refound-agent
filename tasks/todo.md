@@ -246,14 +246,14 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/api/routes_cases.py`, `backend/api/schemas.py`, `backend/api/queue.py`, `backend/api/resources.py` (in place of `deps.py`), `backend/api/errors.py`, `backend/api/main.py`, `backend/agents/runner.py`, `tests/api/test_runs.py` + `conftest.py`, `tests/unit/api/test_resources.py`; DB fixtures moved to `tests/conftest.py`
 **Scope:** M
 
-### - [ ] T20: API: case view model
+### - [x] T20: API: case view model
 **Description:** `GET /cases/{id}`, with conversation, member, status, `summary`, rendered `reasons` and `notes`, recommendation, fee and candidates, all evidence sections (`fee_day` with its summary), clause, the draft with the first name filled in, the run with its steps, the decision, `actions`, `can_run` and `can_pick_fee`. Placeholders are filled in and masks are removed only here.
 **Acceptance criteria:**
-- [ ] Ana's case returns everything that SPEC-ui's case pane reads. `actions` is `[approve, edit, reject]`, and `can_run` is true.
-- [ ] No field contains a reason code, `{{first_name}}` or `[ACCOUNT_…]` (SPEC-api AC9). An unknown id gives a friendly 404.
+- [x] Ana's case returns everything that SPEC-ui's case pane reads. `actions` is `[approve, edit, reject]`, and `can_run` is true.
+- [x] No field contains a reason code, `{{first_name}}` or `[ACCOUNT_…]` (SPEC-api AC9). An unknown id gives a friendly 404.
 **Verification:** `uv run python -m pytest tests/api/test_case_view.py`
 **Dependencies:** T19
-**Files:** `backend/api/routes_cases.py`, `backend/api/view_model.py`, `backend/api/schemas.py`, `tests/api/test_case_view.py`
+**Files:** `backend/api/routes_cases.py`, `backend/api/view_model.py`, `backend/api/actions.py`, `backend/api/schemas.py`, `backend/agents/nodes.py` (each check stores its facts), `tests/api/test_case_view.py`, `tests/unit/api/test_actions.py`
 **Scope:** M
 
 ### - [ ] T21: Core-banking adapter

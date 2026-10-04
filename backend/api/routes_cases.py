@@ -1,4 +1,5 @@
-"""The queue and checking a case (SPEC-api, `GET /cases` and `POST /cases/{id}/run`)."""
+"""The queue, one case and checking a case (SPEC-api: `GET /cases`, `GET /cases/{id}` and
+`POST /cases/{id}/run`)."""
 
 import asyncio
 from typing import Annotated, Any
@@ -13,7 +14,8 @@ from backend.agents.runner import RunInProgress, RunnerDeps, run_case, start_run
 from backend.api.errors import NOT_FOUND, ApiError
 from backend.api.queue import View, list_queue
 from backend.api.resources import AppResources
-from backend.api.schemas import QueuePage, RunRequest, RunStarted
+from backend.api.schemas import CaseView, QueuePage, RunRequest, RunStarted
+from backend.api.view_model import load_case_view
 from backend.db.models import AgentRun, Case, Conversation
 
 router = APIRouter()
@@ -34,6 +36,12 @@ async def list_cases(
 ) -> QueuePage:
     async with _resources(request).writer() as session:
         return await list_queue(session, view, limit, cursor)
+
+
+@router.get("/cases/{case_id}")
+async def get_case(request: Request, case_id: Annotated[int, Path(ge=1)]) -> CaseView:
+    async with _resources(request).writer() as session:
+        return await load_case_view(session, case_id)
 
 
 @router.post("/cases/{case_id}/run", status_code=status.HTTP_202_ACCEPTED)
