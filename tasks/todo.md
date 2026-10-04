@@ -371,9 +371,11 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Scope:** S–M
 
 ### Checkpoint 4: Real models and replay
-- [ ] Compose with no keys starts in replay mode; with keys it runs live. `/health` agrees.
-- [ ] Every fallback in SPEC-agent AC4 is proven by tests
-- [ ] Recording is still deferred; the prompts may still change in Phase 5
+- [x] Compose with no keys starts in replay mode; with keys it runs live. `/health` agrees.
+- [x] Every fallback in SPEC-agent AC4 is proven by tests
+- [x] Recording is still deferred; the prompts may still change in Phase 5
+
+**Checked 2026-10-04.** With both keys, `/health` reports `live`/`live`; with the keys blanked (`JEV_API_KEY= OPENAI_API_KEY= docker compose up -d backend`) it reports `replay`/`replay`, the header shows "Replay mode", and Ana's check ends in "Needs your call" (`classifier_down`, `drafter_down`) with the evidence, the $35 recommendation and the template reply, because nothing is recorded yet. `tests/integration/agents/test_fallbacks.py` proves each fallback of SPEC-agent AC4: Jev down → Luna with the note, both down, Sol down and a failing post-check (template + `drafter_down`), a tool timeout (`data_timeout`) and the run timeout (the stalled step's reason; the template during `draft` comes in T35). `backend/providers/recordings/` holds no answers yet.
 
 ---
 

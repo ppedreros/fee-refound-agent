@@ -1,14 +1,19 @@
 """Every fallback in SPEC-agent AC4, on the seed, with in-process fakes (D10: tests never use
 replay files or live models). Falling back is never a guess: the case says what happened."""
 
+import asyncio
+import datetime as dt
+from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from typing import Any
 from uuid import uuid4
 
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.agents.deps import AgentDeps
 from backend.agents.graph import build_graph
+from backend.agents.runner import RunnerDeps, run_case
 from backend.agents.state import GraphState
 from backend.agents.steps import StepRecord
 from backend.providers.chain import ClassifierChain
@@ -18,7 +23,10 @@ from backend.providers.types import (
     Classification,
     Classifier,
     NoulAnswer,
+    Question,
 )
+from backend.tools import queries
+from backend.tools.models import Transaction
 from tests.integration.agents.fakes import FakeClassifier, FakeDrafter, jev_answers
 
 MEMBER_TEXT = ("paycheck came the same day", "Can you refund this", "Overdraft fee")
@@ -205,3 +213,60 @@ async def test_sol_sees_facts_only_never_the_members_message(
     for record in llm_steps:
         assert not any(text in str(record.input_masked) for text in MEMBER_TEXT)
     assert final["result"]["draft"]["source"] == "model"
+
+
+# --- Data and the run itself ---
+
+
+async def test_a_tool_timeout_is_data_timeout_and_luis_decides(
+    reader: async_sessionmaker[AsyncSession], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    @queries.read_tool
+    async def stuck(
+        session: AsyncSession, member_id: int, start: dt.date, end: dt.date
+    ) -> list[Transaction]:
+        await asyncio.sleep(1)
+        return []
+
+    monkeypatch.setattr(queries, "TOOL_TIMEOUT_S", 0.05)  # the real timeout path, just shorter
+    monkeypatch.setattr(queries, "list_transactions", stuck)
+
+    final, records = await run(5012, FakeClassifier(jev_answers()), reader)
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["data_timeout"]
+    assert result["recommendation"]["action"] == "none"  # no usable data, no guess
+    load = next(record for record in records if record.node == "load_transactions")
+    assert (load.status, load.error_code) == ("failed", "timeout")
+
+
+class HangingClassifier:
+    """A classifier that never answers, so only the run timeout can end the wait."""
+
+    async def classify(
+        self,
+        state: Mapping[str, str],
+        questions: Sequence[Question],
+        *,
+        prompt_version: str | None = None,
+        deadline: float | None = None,
+    ) -> Classification:
+        await asyncio.sleep(60)
+        raise AssertionError("the run timeout should have fired")
+
+
+async def test_the_run_timeout_gives_the_reason_of_the_step_that_stalled(
+    reader: async_sessionmaker[AsyncSession], writer: async_sessionmaker[AsyncSession]
+) -> None:
+    deps = RunnerDeps(
+        writer=writer,
+        agent=AgentDeps(reader=reader, classifier=HangingClassifier(), drafter=FakeDrafter()),
+        provider_modes={"jev": "live", "openai": "live"},
+        timeout_s=0.5,  # 45 s in the shipped config
+    )
+
+    result = await run_case(5012, deps)
+
+    assert result.status == "needs_your_call"
+    assert result.result["reasons"] == ["classifier_down"]  # triage was running
