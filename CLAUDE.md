@@ -5,7 +5,7 @@ employee (Luis) can approve, edit or reject them in seconds from one page.
 
 ## Stack
 - Frontend: Vite + React + TypeScript, Tailwind CSS, TanStack Query
-- Backend: Python 3.12, FastAPI, LangGraph; Jev (TypeSafe) for typed classification, OpenAI GPT-6.1 Sol for drafting replies, GPT-6 Luna as classifier fallback
+- Backend: Python 3.14, FastAPI, LangGraph; Jev (TypeSafe) for typed classification, OpenAI GPT-6.1 Sol for drafting replies, GPT-6 Luna as classifier fallback
 - Database: PostgreSQL, SQLAlchemy 2.x, Alembic
 - Tests: pytest, Vitest, Playwright
 
@@ -22,9 +22,9 @@ employee (Luis) can approve, edit or reject them in seconds from one page.
 ## Commands
 <!-- Fill in as they exist. Keep them exact and copy-pasteable. -->
 - Run everything: `docker compose up`
-- Backend tests: `...`
+- Backend tests: `uv run python -m pytest`
 - Frontend tests: `...`
-- Lint/format/typecheck: `uv run pre-commit run --all-files`
+- Lint/format/typecheck: `uv run python -m pre_commit run --all-files`
 - Evals: `...`
 
 ## Boundaries (never break these)

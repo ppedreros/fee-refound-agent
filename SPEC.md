@@ -41,13 +41,13 @@ Today Luis needs a shared inbox, a transactions screen, the core banking system,
 3. Every fallback in the design (Jev down, all classifiers down, Sol down, database timeout, ambiguous fee, manipulation) ends in a status with a plain-language reason. None of them shows a stack trace or an internal id.
 4. No path lets customer text change the amount or the decision. This is proven by eval cases.
 5. Replay evals run in CI and pass at 100%. A live pass rate is reported separately in the README, with its date and model versions.
-6. `uv run pre-commit run --all-files` and CI are green.
+6. `uv run python -m pre_commit run --all-files` and CI are green.
 
 ## Tech stack
 
 Exact versions are pinned when the project is scaffolded, in `uv.lock` and `frontend/package-lock.json`. Major versions:
 
-- **Backend:** Python 3.12, FastAPI, Pydantic 2, pydantic-settings, SQLAlchemy 2 (async, psycopg 3), Alembic, LangGraph 1.x, `openai` (Responses API), `typesafe-sdk` (Jev), tenacity (retries), structlog (logs), slowapi (rate limit), sse-starlette (SSE).
+- **Backend:** Python 3.14, FastAPI, Pydantic 2, pydantic-settings, SQLAlchemy 2 (async, psycopg 3), Alembic, LangGraph 1.x, `openai` (Responses API), `typesafe-sdk` (Jev), tenacity (retries), structlog (logs), slowapi (rate limit), sse-starlette (SSE).
 - **Frontend:** Node 24 LTS, npm, Vite, React 19, TypeScript 5 (strict), Tailwind CSS 4, TanStack Query 5, `openapi-typescript` to generate API types from the backend's OpenAPI schema, and `@fontsource-variable` Inter and Source Serif 4 (self-hosted fonts).
 - **Database:** PostgreSQL 16.
 - **Tests:** pytest, pytest-asyncio, Vitest, Testing Library, Playwright, `@axe-core/playwright`.
@@ -60,7 +60,7 @@ Adding any dependency that is not on this list is an "ask first" change.
 
 ## Commands
 
-All commands run from the repo root.
+All commands run from the repo root. Python tools always run as `uv run python -m <tool>`: the dev machine's Smart App Control blocks the per-venv `.exe` launchers that `uv run <tool>` would use, and the `python -m` form works the same on Linux and in CI.
 
 | What | Command |
 |---|---|
@@ -69,16 +69,16 @@ All commands run from the repo root.
 | Install frontend | `npm --prefix frontend install` |
 | Bootstrap (migrations, roles, seed, policy clauses) | `uv run python -m backend.bootstrap` |
 | Reset the demo state (owner role) | `docker compose run --rm migrate python -m backend.bootstrap --reset` |
-| Migrations only | `uv run alembic -c backend/db/alembic.ini upgrade head` |
-| Backend dev server | `uv run uvicorn backend.api.main:app --reload --port 8000` |
+| Migrations only | `uv run python -m alembic -c backend/db/alembic.ini upgrade head` |
+| Backend dev server | `uv run python -m uvicorn backend.api.main:create_app --factory --reload --port 8000` |
 | Frontend dev server | `npm --prefix frontend run dev` |
 | Regenerate API types | `npm --prefix frontend run gen:api` |
-| Unit tests (no database) | `uv run pytest tests/unit` |
-| Integration and API tests (need Postgres) | `uv run pytest tests/integration tests/api` |
-| All backend tests | `uv run pytest` |
+| Unit tests (no database) | `uv run python -m pytest tests/unit` |
+| Integration and API tests (need Postgres) | `uv run python -m pytest tests/integration tests/api` |
+| All backend tests | `uv run python -m pytest` |
 | Frontend tests | `npm --prefix frontend test` |
 | End-to-end tests | `npm --prefix frontend run e2e` |
-| Lint, format, types | `uv run pre-commit run --all-files` |
+| Lint, format, types | `uv run python -m pre_commit run --all-files` |
 | Evals, replay (CI) | `uv run python -m evals.run --mode replay` |
 | Evals, live (manual, spends tokens) | `uv run python -m evals.run --mode live` |
 | Record new replays (manual, spends tokens) | `uv run python -m evals.run --mode live --record` |
@@ -209,7 +209,7 @@ export function StatusBanner({ status, reasons }: StatusBannerProps) {
 **Always**
 
 - Follow [docs/agent-design.md](docs/agent-design.md). If a decision needs to change, update that document and this spec first.
-- Run `uv run pre-commit run --all-files` and the relevant tests before every commit. Commit one small slice at a time.
+- Run `uv run python -m pre_commit run --all-files` and the relevant tests before every commit. Commit one small slice at a time.
 - Validate every input with Pydantic at the API edge.
 - Put a timeout on every model and tool call, and retry model calls with backoff.
 - Mask personal data before any model call or log line.

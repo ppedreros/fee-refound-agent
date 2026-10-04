@@ -27,7 +27,7 @@ Give every other module a working skeleton: one command to run everything, confi
 |---|---|---|---|
 | `db` | `postgres:16` | Database. Named volume `pgdata`, so data survives restarts. | `pg_isready` passes |
 | `migrate` | backend image | One-shot job: `python -m backend.bootstrap` (migrations, roles, seed, policy clauses). It is safe to run on every start. | Exits 0 |
-| `backend` | backend image | `uvicorn backend.api.main:app` on port 8000 | `GET /health` returns 200 |
+| `backend` | backend image | `python -m backend.api` (checks the configuration, then serves on `$PORT`) | `GET /health` returns 200 |
 | `frontend` | multi-stage: build with Node, serve with nginx | Serves the built UI on port 8080. Proxies `/api/*` to `backend:8000/*` with the prefix stripped. | nginx is up |
 
 Start order: `db` (healthy) → `migrate` (completed successfully) → `backend` (healthy) → `frontend`.
@@ -88,7 +88,7 @@ Thresholds, timeouts and prices live in versioned config files under `backend/co
 | Job | What it does |
 |---|---|
 | `lint` | pre-commit on all files |
-| `backend` | `uv run pytest` with a Postgres 16 service container, plus a coverage report |
+| `backend` | `uv run python -m pytest` with a Postgres 16 service container, plus a coverage report |
 | `frontend` | Vitest and `tsc` |
 | `evals` | Replay evals; fail below 100% |
 | `docker` | `docker compose build` |
@@ -103,7 +103,7 @@ Thresholds, timeouts and prices live in versioned config files under `backend/co
 3. `PROVIDER_MODE=banana` stops the backend at startup with one line naming `PROVIDER_MODE`.
 4. Every backend log line is valid JSON with a `request_id`. A request sent with `X-Request-ID: <uuid>` gets the same id back and in its logs.
 5. A unit test proves the deny-list processor removes `message` and hashes `member_id`.
-6. `uv run pre-commit run --all-files` passes on the skeleton, and the CI workflow is green on the first push.
+6. `uv run python -m pre_commit run --all-files` passes on the skeleton, and the CI workflow is green on the first push.
 7. `docker compose down && docker compose up` keeps the data (named volume), and `migrate` succeeds again without duplicating seed rows.
 
 ## Tests

@@ -196,8 +196,8 @@ These are estimates of working days with the user available for reviews. The big
 - **Full scope.** Every task runs, including the cut-line items. The cut line stays above only as a fallback.
 - **Tooling that needs no installs on the dev machine:**
   - npm instead of pnpm
-  - pre-commit as a dev dependency, run with `uv run pre-commit`
-  - Python 3.12 managed by uv (the machine has 3.14)
+  - pre-commit as a dev dependency, run with `uv run python -m pre_commit`
+  - Python 3.14 (the installed, signed interpreter). The machine's application-control policy blocks venvs built on the uv-downloaded 3.12, and every planned dependency has 3.14 wheels for Windows and Linux.
   - Node 24 LTS
 - **Docker Desktop must be running** from T3 onwards.
 
@@ -210,7 +210,7 @@ None.
 A task is checked off only when **all** of these hold:
 
 - its acceptance criteria pass
-- `uv run pre-commit run --all-files` and the relevant tests pass, with the output shown
+- `uv run python -m pre_commit run --all-files` and the relevant tests pass, with the output shown
 - the behaviour has been verified at runtime, not just type-checked
 - it is committed as one small slice
 

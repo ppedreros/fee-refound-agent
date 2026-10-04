@@ -4,7 +4,7 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 
 **Definition of done (every task):**
 - the acceptance criteria pass
-- `uv run pre-commit run --all-files` and the relevant tests pass, with the output shown
+- `uv run python -m pre_commit run --all-files` and the relevant tests pass, with the output shown
 - the behaviour has been verified at runtime
 - one commit per task
 
@@ -16,13 +16,13 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 
 ## Phase 1: Foundation (`platform`)
 
-### - [ ] T1: Backend skeleton and quality gates
+### - [x] T1: Backend skeleton and quality gates
 **Description:** The repo already exists, on `main` with remote `origin` (github.com/ppedreros/fee-refound-agent). Add the root `pyproject.toml` (uv, ruff, mypy strict, pytest), pre-commit with the Python hooks and gitleaks, `.gitignore` and `.gitattributes` (LF), and settings with provider-mode resolution. Also a FastAPI app with a stub `/health`.
 **Acceptance criteria:**
-- [ ] `uv sync` works. Settings resolve `auto` to live or replay depending on whether a key is present.
-- [ ] `PROVIDER_MODE=banana` fails at startup with one line naming the variable (SPEC-platform AC3).
-- [ ] `uv run pre-commit run --all-files` passes.
-**Verification:** `uv run pytest tests/unit/core` · `uv run pre-commit run --all-files`
+- [x] `uv sync` works. Settings resolve `auto` to live or replay depending on whether a key is present.
+- [x] `PROVIDER_MODE=banana` fails at startup with one line naming the variable (SPEC-platform AC3).
+- [x] `uv run python -m pre_commit run --all-files` passes.
+**Verification:** `uv run python -m pytest tests/unit/core` · `uv run python -m pre_commit run --all-files`
 **Dependencies:** None
 **Files:** `pyproject.toml`, `.pre-commit-config.yaml`, `.gitignore` + `.gitattributes`, `backend/core/settings.py`, `backend/api/main.py`, `tests/unit/core/test_settings.py`
 **Scope:** M. Config-heavy, so slightly over 5 files; all of them are scaffolding.
@@ -33,7 +33,7 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 - [ ] `npm --prefix frontend run build` and `npm --prefix frontend test` pass.
 - [ ] Tokens `navy`, `clay`, `terracotta`, `white`, the greys, `success` and `error` exist. Terracotta is not used for text anywhere.
 - [ ] Every string in the shell comes from `copy/en.ts`.
-**Verification:** `npm --prefix frontend run build && npm --prefix frontend test` · `uv run pre-commit run --all-files`
+**Verification:** `npm --prefix frontend run build && npm --prefix frontend test` · `uv run python -m pre_commit run --all-files`
 **Dependencies:** T1
 **Files:** `frontend/package.json`, `frontend/vite.config.ts`, `frontend/src/index.css`, `frontend/src/App.tsx` + `App.test.tsx`, `frontend/src/copy/en.ts` (plus generated config)
 **Scope:** M (scaffold)
@@ -44,7 +44,7 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 - [ ] `cp .env.example .env && docker compose up --build` serves the shell at `:8080`, and `/api/health` returns 200 with `"database": "ok"` (SPEC-platform AC1, apart from the provider fields).
 - [ ] With `db` stopped, `/health` returns 503 with `"database": "unavailable"` and no trace (AC2).
 - [ ] `down` then `up` keeps the volume (AC7).
-**Verification:** `docker compose up --build`; `curl localhost:8080/api/health`; `docker compose stop db` and curl again · `uv run pytest tests/api/test_health.py`
+**Verification:** `docker compose up --build`; `curl localhost:8080/api/health`; `docker compose stop db` and curl again · `uv run python -m pytest tests/api/test_health.py`
 **Dependencies:** T1, T2
 **Files:** `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile` + `frontend/nginx.conf.template`, `.env.example`, `tests/api/test_health.py`
 **Scope:** M
@@ -54,7 +54,7 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 **Acceptance criteria:**
 - [ ] Every log line is JSON and has a `request_id`. A valid `X-Request-ID` is echoed back (SPEC-platform AC4).
 - [ ] The deny-list drops `message` and hashes `member_id` (AC5).
-**Verification:** `uv run pytest tests/unit/core/test_logging.py`; `docker compose logs backend` shows JSON lines
+**Verification:** `uv run python -m pytest tests/unit/core/test_logging.py`; `docker compose logs backend` shows JSON lines
 **Dependencies:** T1
 **Files:** `backend/core/logging.py`, `backend/api/middleware.py`, `backend/core/clock.py`, `tests/unit/core/test_logging.py`
 **Scope:** S
@@ -74,14 +74,14 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 - [ ] One live call succeeds with `JEV_API_KEY`. The response maps to `ChoiceAnswer` and `NoulAnswer` with no guessing.
 - [ ] `docs/notes/jev.md` documents the request, the response, the `confidence` semantics as observed, and the errors (401, 422, timeout).
 - [ ] The MockTransport test passes offline.
-**Verification:** `uv run pytest tests/unit/providers/test_jev.py` · the live call output, shown once
+**Verification:** `uv run python -m pytest tests/unit/providers/test_jev.py` · the live call output, shown once
 **Dependencies:** T1
 **Files:** `backend/providers/types.py`, `backend/providers/jev.py`, `tests/unit/providers/test_jev.py`, `docs/notes/jev.md`
 **Scope:** S. High risk, so it runs early.
 
 ### Checkpoint 1: Foundation
 - [ ] `docker compose up` serves the shell, and `/api/health` returns 200
-- [ ] `uv run pre-commit run --all-files` is green, and CI is green (if the remote exists)
+- [ ] `uv run python -m pre_commit run --all-files` is green, and CI is green (if the remote exists)
 - [ ] The Jev request and response shape is confirmed, and any difference from SPEC-providers has been noted in the spec
 
 ---
@@ -100,7 +100,7 @@ A test fixture creates the `fees_test` database.
 - [ ] `alembic upgrade head` and `downgrade base` both work on an empty database (SPEC-data AC1).
 - [ ] The brief's tables match its column lists exactly, checked through `information_schema` (AC2).
 - [ ] `UPDATE` and `DELETE` on `audit_events` are rejected (AC7).
-**Verification:** `uv run pytest tests/integration/db/test_schema.py`
+**Verification:** `uv run python -m pytest tests/integration/db/test_schema.py`
 **Dependencies:** T3
 **Files:** `backend/db/models.py`, `backend/db/alembic/env.py` + `alembic.ini`, `backend/db/alembic/versions/0001_initial.py`, `tests/integration/conftest.py`, `tests/integration/db/test_schema.py`
 **Scope:** M
@@ -110,7 +110,7 @@ A test fixture creates the `fees_test` database.
 **Acceptance criteria:**
 - [ ] Running bootstrap twice succeeds.
 - [ ] As `agent_reader`, `SELECT` works and `INSERT`, `UPDATE` and `DELETE` on every table fail (SPEC-data AC4).
-**Verification:** `uv run pytest tests/integration/db/test_roles.py`; `docker compose up` shows `migrate` exiting 0
+**Verification:** `uv run python -m pytest tests/integration/db/test_roles.py`; `docker compose up` shows `migrate` exiting 0
 **Dependencies:** T7
 **Files:** `backend/db/roles.py`, `backend/bootstrap.py`, `docker-compose.yml`, `tests/integration/db/test_roles.py`
 **Scope:** S
@@ -120,7 +120,7 @@ A test fixture creates the `fees_test` database.
 **Acceptance criteria:**
 - [ ] Seeding twice leaves the same counts. `--reset` restores the demo state (SPEC-data AC3; the refund part is re-checked in T21).
 - [ ] The brief's rows are byte-identical to the PDF tables.
-**Verification:** `uv run pytest tests/integration/db/test_seed.py`
+**Verification:** `uv run python -m pytest tests/integration/db/test_seed.py`
 **Dependencies:** T8
 **Files:** `backend/db/seed/__init__.py` + `__main__.py`, `backend/db/seed/scenarios.py`, `backend/bootstrap.py`, `tests/integration/db/test_seed.py`
 **Scope:** M
@@ -130,7 +130,7 @@ A test fixture creates the `fees_test` database.
 **Acceptance criteria:**
 - [ ] `list_transactions(301, 2026-09-14, 2026-09-14)` returns 88001, 88002 and 88003, with kinds `card_payment`, `fee` and `payroll_deposit` (SPEC-data AC5).
 - [ ] A slow query raises `ToolTimeout` (AC8). Every seeded description is classified correctly (AC9).
-**Verification:** `uv run pytest tests/unit/tools tests/integration/tools`
+**Verification:** `uv run python -m pytest tests/unit/tools tests/integration/tools`
 **Dependencies:** T9
 **Files:** `backend/tools/queries.py`, `backend/tools/descriptions.py` + `backend/core/config/descriptions.yaml`, `backend/tools/errors.py`, `tests/unit/tools/test_classify_description.py`, `tests/integration/tools/test_queries.py`
 **Scope:** M
@@ -148,7 +148,7 @@ A test fixture creates the `fees_test` database.
 **Acceptance criteria:**
 - [ ] All documents load. A malformed front-matter fails the loader, naming the file and field (SPEC-policy AC1).
 - [ ] The params-vs-text test passes, and fails if `max_refunds_in_window` changes without the text (AC6).
-**Verification:** `uv run pytest tests/unit/policy/test_docs.py`
+**Verification:** `uv run python -m pytest tests/unit/policy/test_docs.py`
 **Dependencies:** T10
 **Files:** `backend/policy/docs/*.md` (6 content files), `backend/policy/loader.py`, `backend/bootstrap.py`, `tests/unit/policy/test_docs.py`
 **Scope:** M (mostly content)
@@ -159,7 +159,7 @@ A test fixture creates the `fees_test` database.
 - [ ] Ana's worked example passes on the seeded transactions (SPEC-policy AC2).
 - [ ] The boundary tests pass: 3 refunds, 364 vs 365 days, deposit before the fee, deposit that doesn't cover, chain off by $0.01 (AC3).
 - [ ] 90% or more coverage on `backend/policy`.
-**Verification:** `uv run pytest tests/unit/policy/test_rules.py --cov=backend/policy`
+**Verification:** `uv run python -m pytest tests/unit/policy/test_rules.py --cov=backend/policy`
 **Dependencies:** T10, T11
 **Files:** `backend/policy/rules.py`, `backend/policy/models.py`, `tests/unit/policy/test_rules.py`
 **Scope:** M
@@ -169,7 +169,7 @@ A test fixture creates the `fees_test` database.
 **Acceptance criteria:**
 - [ ] Every code renders in EN and ES with sample facts. The forbidden-words and gendered-pronoun tests pass (SPEC-policy AC5).
 - [ ] `render_summary` for Ana gives "The paycheck arrived the same day and the bill posted before it." and "…would have stayed at $1,360."
-**Verification:** `uv run pytest tests/unit/policy/test_reasons.py`
+**Verification:** `uv run python -m pytest tests/unit/policy/test_reasons.py`
 **Dependencies:** T12
 **Files:** `backend/policy/reasons.py`, `tests/unit/policy/test_reasons.py`
 **Scope:** S
@@ -179,7 +179,7 @@ A test fixture creates the `fees_test` database.
 **Acceptance criteria:**
 - [ ] The example mask from SPEC-providers AC6 produces the exact expected output. "$500", "Sep 14" and "CITY POWER & LIGHT" are untouched (AC7).
 - [ ] U+202E and U+200B are stripped, and the cap sets `truncated` (AC8). The mapping never prints its values.
-**Verification:** `uv run pytest tests/unit/privacy`
+**Verification:** `uv run python -m pytest tests/unit/privacy`
 **Dependencies:** T1 (can run in parallel with T11–T13)
 **Files:** `backend/privacy/sanitize.py`, `backend/privacy/mask.py`, `tests/unit/privacy/test_sanitize.py`, `tests/unit/privacy/test_mask.py`
 **Scope:** S
@@ -190,7 +190,7 @@ A test fixture creates the `fees_test` database.
 - [ ] With MockTransport: a timeout is retried twice, a 400 is not retried, and a 429 with `Retry-After: 1` is honoured within the cap (SPEC-providers AC1 for Jev, AC2).
 - [ ] With a fake clock, no attempt starts after the deadline (AC3).
 - [ ] `compute_cost` matches the price table; an unknown model gives `None` (AC10).
-**Verification:** `uv run pytest tests/unit/providers`
+**Verification:** `uv run python -m pytest tests/unit/providers`
 **Dependencies:** T6
 **Files:** `backend/providers/retry.py`, `backend/providers/cost.py`, `backend/core/config/providers.yaml` + `pricing.yaml`, `backend/providers/jev.py`, `tests/unit/providers/test_retry.py` + `test_cost.py`
 **Scope:** M
@@ -201,7 +201,7 @@ A test fixture creates the `fees_test` database.
 - [ ] Precedence is tested for every pair of competing codes. `drafter_down` and `classifier_down` lead to `needs_your_call`; `classified_with_backup` doesn't change the status.
 - [ ] The Noul bands follow D3 (`p_yes` ≤ 0.15 is a clear "no"). Luna `None` confidence is never treated as a number.
 - [ ] 90% or more coverage on `decide.py`.
-**Verification:** `uv run pytest tests/unit/agents --cov=backend/agents/decide.py`
+**Verification:** `uv run python -m pytest tests/unit/agents --cov=backend/agents/decide.py`
 **Dependencies:** T13
 **Files:** `backend/agents/triage_rules.py`, `backend/agents/decide.py`, `backend/core/config/thresholds.yaml`, `tests/unit/agents/test_triage_rules.py`, `tests/unit/agents/test_decide.py`
 **Scope:** M
@@ -215,7 +215,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Acceptance criteria:**
 - [ ] Ana (scenario 1) reaches `ready_to_refund` with $35 on 88002, `clear = true` and clause `fee-refund-policy#4`. The draft contains `{{first_name}}` and "$35".
 - [ ] No masked step input contains a seeded name or account number.
-**Verification:** `uv run pytest tests/integration/agents/test_graph_scenarios.py -k ana`
+**Verification:** `uv run python -m pytest tests/integration/agents/test_graph_scenarios.py -k ana`
 **Dependencies:** T12–T16
 **Files:** `backend/agents/state.py`, `backend/agents/graph.py`, `backend/agents/nodes.py`, `backend/agents/prompts/` (`triage-v1.yaml`, `templates/`), `tests/integration/agents/test_graph_scenarios.py`
 **Scope:** M
@@ -226,7 +226,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 - [ ] One `agent_runs` row and one step row per executed node, with latency. Totals add up (SPEC-agent AC7).
 - [ ] A node attempting an `INSERT` fails with a permission error, and the recorder still writes (AC6).
 - [ ] A run left `running` becomes `interrupted` at startup, and its case goes back to `not_checked`.
-**Verification:** `uv run pytest tests/integration/agents/test_runner.py`
+**Verification:** `uv run python -m pytest tests/integration/agents/test_runner.py`
 **Dependencies:** T17
 **Files:** `backend/agents/runner.py`, `backend/agents/recorder.py`, `backend/agents/deps.py`, `tests/integration/agents/test_runner.py`
 **Scope:** M
@@ -236,7 +236,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Acceptance criteria:**
 - [ ] `GET /cases` lists 5012 as `not_checked`. After a run it shows `ready_to_refund`, the topic and $35.
 - [ ] `POST /run` on 5009 (closed) gives 409. A second `POST /run` during a run gives 409 with the active `run_id` (SPEC-api AC4).
-**Verification:** `uv run pytest tests/api/test_runs.py`
+**Verification:** `uv run python -m pytest tests/api/test_runs.py`
 **Dependencies:** T18
 **Files:** `backend/api/routes_cases.py`, `backend/api/schemas.py`, `backend/api/deps.py`, `backend/api/main.py`, `tests/api/test_runs.py`
 **Scope:** M
@@ -246,7 +246,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Acceptance criteria:**
 - [ ] Ana's case returns everything that SPEC-ui's case pane reads. `actions` is `[approve, edit, reject]`, and `can_run` is true.
 - [ ] No field contains a reason code, `{{first_name}}` or `[ACCOUNT_…]` (SPEC-api AC9). An unknown id gives a friendly 404.
-**Verification:** `uv run pytest tests/api/test_case_view.py`
+**Verification:** `uv run python -m pytest tests/api/test_case_view.py`
 **Dependencies:** T19
 **Files:** `backend/api/routes_cases.py`, `backend/api/view_model.py`, `backend/api/schemas.py`, `tests/api/test_case_view.py`
 **Scope:** M
@@ -256,7 +256,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Acceptance criteria:**
 - [ ] Two calls on 88002, sequential or concurrent, produce one refund transaction and add $35 once. The second call reports `already_done` (SPEC-data AC6).
 - [ ] After a refund, a restart keeps it, and `bootstrap --reset` restores the original state (AC3).
-**Verification:** `uv run pytest tests/integration/db/test_core_banking.py`
+**Verification:** `uv run python -m pytest tests/integration/db/test_core_banking.py`
 **Dependencies:** T9 (can run in parallel with T11–T20)
 **Files:** `backend/db/core_banking.py`, `tests/integration/db/test_core_banking.py`
 **Scope:** S
@@ -266,7 +266,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Acceptance criteria:**
 - [ ] **The required API test:** run 5012 → `GET` → approve → the same request again gives the same 200 → exactly one refund transaction, balance +$35 (SPEC-api AC1).
 - [ ] A new key on the decided case gives 409. The same key with a different body gives 422. A stale run gives 409. A disallowed action gives 422 (AC2, AC3).
-**Verification:** `uv run pytest tests/api/test_happy_path.py tests/api/test_decision_rules.py`
+**Verification:** `uv run python -m pytest tests/api/test_happy_path.py tests/api/test_decision_rules.py`
 **Dependencies:** T20, T21
 **Files:** `backend/api/routes_decision.py`, `backend/api/decision_service.py`, `backend/api/schemas.py`, `tests/api/test_happy_path.py`, `tests/api/test_decision_rules.py`
 **Scope:** M
@@ -307,7 +307,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Acceptance criteria:**
 - [ ] In the browser: open Ana → "Check this case" → "Ready to refund" with the evidence → one click → "Done". Her transactions show the $35 refund, and the conversation is closed.
 - [ ] The run's steps show the real Jev latency and cost. The logs hold no message text.
-**Verification:** a manual walkthrough with screenshots; `uv run pytest`; `npm --prefix frontend test`
+**Verification:** a manual walkthrough with screenshots; `uv run python -m pytest`; `npm --prefix frontend test`
 **Dependencies:** T25
 **Files:** fixes only (expected ≤ 5)
 **Scope:** S–M
@@ -326,7 +326,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Acceptance criteria:**
 - [ ] Jev timeout → Luna answers, `meta.provider` is `openai` (model `gpt-6-luna`), `clear = false`, and the status is not changed by the note (SPEC-providers AC1 and AC5; SPEC-agent AC4).
 - [ ] Both fail → `classifier_down` → `needs_your_call`, with the evidence and the recommendation present.
-**Verification:** `uv run pytest tests/unit/providers/test_openai_classifier.py tests/unit/providers/test_chain.py tests/integration/agents/test_fallbacks.py`
+**Verification:** `uv run python -m pytest tests/unit/providers/test_openai_classifier.py tests/unit/providers/test_chain.py tests/integration/agents/test_fallbacks.py`
 **Dependencies:** T26
 **Files:** `backend/providers/openai_classifier.py`, `backend/providers/chain.py`, `backend/agents/nodes.py`, `tests/unit/providers/test_openai_classifier.py` + `test_chain.py`, `tests/integration/agents/test_fallbacks.py`
 **Scope:** M
@@ -337,7 +337,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 - [ ] Ana gets a Sol draft in English that passes the post-check. Cached tokens are recorded on the second run.
 - [ ] Sol down, or two post-check failures → template + `drafter_down` → `needs_your_call`, with the recommendation kept (SPEC-agent AC4).
 - [ ] A test proves that no message text reaches any `llm` step input.
-**Verification:** `uv run pytest tests/unit/providers/test_openai_drafter.py tests/unit/agents/test_draft_postcheck.py tests/integration/agents/test_fallbacks.py`; one live Ana run (needs `OPENAI_API_KEY`, open question 1)
+**Verification:** `uv run python -m pytest tests/unit/providers/test_openai_drafter.py tests/unit/agents/test_draft_postcheck.py tests/integration/agents/test_fallbacks.py`; one live Ana run (needs `OPENAI_API_KEY`, open question 1)
 **Dependencies:** T26 (can run in parallel with T27)
 **Files:** `backend/providers/openai_drafter.py`, `backend/agents/prompts/draft-v1.md`, `backend/agents/draft_postcheck.py`, `tests/unit/providers/test_openai_drafter.py`, `tests/unit/agents/test_draft_postcheck.py`
 **Scope:** M
@@ -348,7 +348,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 - [ ] With no keys, a recorded request returns the recorded answer with `mode = replay`. An unrecorded one raises `replay_miss`, and the fallback follows (SPEC-providers AC4).
 - [ ] The recordings scan finds no personal data (AC9).
 - [ ] `/health` shows both modes and the version. The header shows "Replay mode" (SPEC-ui AC8).
-**Verification:** `uv run pytest tests/unit/providers/test_replay.py tests/unit/providers/test_recordings_have_no_pii.py`; `npm --prefix frontend test -- Header`
+**Verification:** `uv run python -m pytest tests/unit/providers/test_replay.py tests/unit/providers/test_recordings_have_no_pii.py`; `npm --prefix frontend test -- Header`
 **Dependencies:** T27, T28
 **Files:** `backend/providers/replay.py`, `backend/providers/factory.py`, `backend/api/main.py`, `frontend/src/components/Header.tsx` (+ test), `tests/unit/providers/test_replay.py`
 **Scope:** M
@@ -358,7 +358,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Acceptance criteria:**
 - [ ] For Ana, the top 5 include `fee-refund-policy#2` and `#4` (SPEC-policy AC4), and `found_by = search_confirmed`.
 - [ ] A forced mismatch or low confidence leads to `rule_fallback`, the rule's clause, and a logged mismatch.
-**Verification:** `uv run pytest tests/integration/policy/test_search.py tests/integration/agents/test_graph_scenarios.py -k ana`
+**Verification:** `uv run python -m pytest tests/integration/policy/test_search.py tests/integration/agents/test_graph_scenarios.py -k ana`
 **Dependencies:** T29
 **Files:** `backend/policy/search.py`, `backend/agents/nodes.py`, `backend/agents/prompts/clause-choice-v1.yaml`, `tests/integration/policy/test_search.py`
 **Scope:** S–M
@@ -380,7 +380,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 - [ ] Each scenario reaches its expected status and reason from SPEC-data.
 - [ ] Scenario 17: approve gives 403 with the supervisor message, and the offered actions exclude refunds (SPEC-api AC3).
 - [ ] The UI renders "We recommend not refunding" with the quote, "Refund anyway" with a reason, and "Needs supervisor approval".
-**Verification:** `uv run pytest tests/integration/agents/test_graph_scenarios.py tests/api/test_decision_rules.py`; `npm --prefix frontend test`
+**Verification:** `uv run python -m pytest tests/integration/agents/test_graph_scenarios.py tests/api/test_decision_rules.py`; `npm --prefix frontend test`
 **Dependencies:** T30
 **Files:** `backend/db/seed/scenarios.py`, `backend/agents/prompts/templates/`, `tests/integration/agents/test_graph_scenarios.py`, `tests/api/test_decision_rules.py`, `frontend/src/features/case/fixtures.ts`
 **Scope:** M
@@ -391,7 +391,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 - [ ] Scenario 9 gives `fee_ambiguous` with candidates. Scenario 10 picks the right fee with Jev (`fee_source = jev`). Scenario 15 gives `fee_not_found`.
 - [ ] Re-running 9 with a candidate gives `fee_source = staff`. A non-candidate gives 422 `invalid_fee` (SPEC-agent AC5).
 - [ ] The UI shows the radio rows and "Check again with this fee" only when `can_pick_fee` is true.
-**Verification:** `uv run pytest tests/integration/agents -k "fee" tests/api/test_runs.py`; `npm --prefix frontend test -- FeePicker`
+**Verification:** `uv run python -m pytest tests/integration/agents -k "fee" tests/api/test_runs.py`; `npm --prefix frontend test -- FeePicker`
 **Dependencies:** T30
 **Files:** `backend/db/seed/scenarios.py`, `backend/agents/prompts/fee-choice-v1.yaml`, `backend/agents/nodes.py`, `backend/api/routes_cases.py`, `frontend/src/features/case/FeePicker.tsx`
 **Scope:** M
@@ -401,7 +401,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Acceptance criteria:**
 - [ ] Scenarios 2, 3 and 4 give `not_about_fee` through the graph, with no balances loaded (no `load_accounts` step).
 - [ ] Scenario 5 gives `needs_your_call` with `fee_question`, the `fee-schedule#4` clause and no draft. The actions are `reply_only` and `reject`.
-**Verification:** `uv run pytest tests/integration/agents -k "routing or fee_question" tests/api`
+**Verification:** `uv run python -m pytest tests/integration/agents -k "routing or fee_question" tests/api`
 **Dependencies:** T30
 **Files:** `backend/db/seed/scenarios.py`, `backend/agents/nodes.py`, `backend/api/view_model.py`, `tests/integration/agents/test_graph_scenarios.py`
 **Scope:** S–M
@@ -411,7 +411,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Acceptance criteria:**
 - [ ] Scenario 12 gives `needs_your_call` with `manipulation`, a recommendation of exactly $35, and no "$500" anywhere in the result or the draft (SPEC-agent AC3).
 - [ ] Scenario 13 gives `ready_to_refund` with a Spanish draft. Scenario 14 gives `multiple_requests`.
-**Verification:** `uv run pytest tests/integration/agents -k "injection or spanish or multiple"`
+**Verification:** `uv run python -m pytest tests/integration/agents -k "injection or spanish or multiple"`
 **Dependencies:** T30
 **Files:** `backend/db/seed/scenarios.py`, `backend/agents/nodes.py`, `backend/agents/prompts/templates/`, `tests/integration/agents/test_graph_scenarios.py`, `frontend/src/features/case/ReplyEditor.tsx`
 **Scope:** M
@@ -421,7 +421,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Acceptance criteria:**
 - [ ] Scenario 16 gives `data_mismatch`. Scenario 18 in replay gives `classifier_down`, with the evidence present.
 - [ ] A hanging Sol (fake) falls back to the template before 45 s. A hanging tool gives `data_timeout`. The run timeout maps to the reason of the stalled node.
-**Verification:** `uv run pytest tests/integration/agents/test_fallbacks.py tests/integration/agents/test_runner.py`
+**Verification:** `uv run python -m pytest tests/integration/agents/test_fallbacks.py tests/integration/agents/test_runner.py`
 **Dependencies:** T30
 **Files:** `backend/db/seed/scenarios.py`, `backend/agents/runner.py`, `tests/integration/agents/test_fallbacks.py`, `tests/integration/agents/test_runner.py`
 **Scope:** S–M
@@ -431,7 +431,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Acceptance criteria:**
 - [ ] Ana's stream has `started` and `finished` for each node, in order, then `done`. A late subscriber gets the full history (SPEC-agent AC8; SPEC-api AC8).
 - [ ] It works **through nginx** in compose, with no buffering. The UI steps appear one by one (SPEC-ui AC5).
-**Verification:** `uv run pytest tests/api/test_runs.py -k events`; `npm --prefix frontend test -- LiveSteps`; manual check through `:8080`
+**Verification:** `uv run python -m pytest tests/api/test_runs.py -k events`; `npm --prefix frontend test -- LiveSteps`; manual check through `:8080`
 **Dependencies:** T31–T35 (or any time after T30, if run in parallel)
 **Files:** `backend/api/routes_events.py`, `backend/agents/runner.py`, `frontend/src/features/case/LiveSteps.tsx` (+ test), `frontend/src/features/case/useRunEvents.ts`
 **Scope:** M
@@ -456,7 +456,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 - [ ] 404, 422 and 429 (with `Retry-After`) return friendly bodies, and no response contains a traceback (SPEC-api AC5, AC6).
 - [ ] The reveal returns the full number and writes an audit event. Another member's account gives 404 (AC7).
 - [ ] With the flag on, in a test only, a clear case is approved by `SYSTEM` through the decision service. With the flag off, nothing happens.
-**Verification:** `uv run pytest tests/api`
+**Verification:** `uv run python -m pytest tests/api`
 **Dependencies:** Checkpoint 5
 **Files:** `backend/api/errors.py`, `backend/api/ratelimit.py`, `backend/api/routes_cases.py`, `tests/api/test_errors.py`, `tests/api/test_reveal.py`
 **Scope:** M
@@ -467,7 +467,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 - [ ] `--mode replay` with no keys runs the suite, prints the "MODE: REPLAY" table, writes JSON and Markdown, and exits 0 at 100% (SPEC-evals AC2).
 - [ ] Changing the limit to 3 → 2 in a test copy makes a case fail, with exit 1 (AC3). Every injection case passes (AC4).
 - [ ] The CI `evals` job is green.
-**Verification:** `uv run python -m evals.run --mode replay`; `uv run pytest tests/unit/evals`
+**Verification:** `uv run python -m evals.run --mode replay`; `uv run python -m pytest tests/unit/evals`
 **Dependencies:** T37 (and the Checkpoint 5 recordings)
 **Files:** `evals/run.py`, `evals/scoring.py`, `evals/cases/` (YAML), `tests/unit/evals/test_case_schema.py` + `test_scoring.py`, `.github/workflows/ci.yml`
 **Scope:** M
@@ -491,7 +491,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Acceptance criteria:**
 - [ ] An `edit` decision made through the API becomes a pending YAML case, and a second run exports nothing new (SPEC-evals AC6).
 - [ ] The shadow report prints the agreement rate over the decided clear cases.
-**Verification:** `uv run pytest tests/integration/evals/test_import_feedback.py`; `uv run python -m evals.shadow_report`
+**Verification:** `uv run python -m pytest tests/integration/evals/test_import_feedback.py`; `uv run python -m evals.shadow_report`
 **Dependencies:** T38
 **Files:** `evals/import_feedback.py`, `evals/shadow_report.py`, `tests/integration/evals/test_import_feedback.py`
 **Scope:** S
@@ -537,7 +537,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Acceptance criteria:**
 - [ ] The in-process test lists the tools. `list_transactions(301, …)` returns three rows in order, with no full account number.
 - [ ] Claude Code connects through the README snippet.
-**Verification:** `uv run pytest tests/integration/tools/test_mcp_server.py`; manual connection
+**Verification:** `uv run python -m pytest tests/integration/tools/test_mcp_server.py`; manual connection
 **Dependencies:** Checkpoint 6
 **Files:** `backend/tools/mcp_server.py`, `tests/integration/tools/test_mcp_server.py`, `.mcp.json.example`
 **Scope:** S
