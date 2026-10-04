@@ -31,10 +31,14 @@ class Settings(BaseSettings):
     app_database_url: SecretStr
     agent_database_url: SecretStr
     owner_database_url: SecretStr | None = None  # bootstrap only; compose gives it to migrate
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    masking_salt: SecretStr  # HMAC key for member ids in logs
     host: str = "127.0.0.1"
     port: int = 8000
 
-    @field_validator("jev_api_key", "openai_api_key", "owner_database_url", mode="before")
+    @field_validator(
+        "jev_api_key", "openai_api_key", "owner_database_url", "masking_salt", mode="before"
+    )
     @classmethod
     def _blank_is_missing(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():

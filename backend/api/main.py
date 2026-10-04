@@ -5,7 +5,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from backend.api.middleware import RequestIdMiddleware
 from backend.api.routes_health import router as health_router
+from backend.core.logging import configure_logging
 from backend.core.settings import Settings, load_settings
 from backend.db.engine import make_engine
 
@@ -18,7 +20,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or load_settings()
+    configure_logging(settings.log_level, settings.masking_salt)
     app = FastAPI(title="Fee Refund Agent", lifespan=lifespan)
-    app.state.settings = settings or load_settings()
+    app.state.settings = settings
+    app.add_middleware(RequestIdMiddleware)
     app.include_router(health_router)
     return app

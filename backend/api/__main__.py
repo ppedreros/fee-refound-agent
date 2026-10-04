@@ -13,7 +13,14 @@ def main() -> None:
         settings = load_settings()
     except ConfigError as error:
         sys.exit(f"Invalid configuration: {error}")
-    uvicorn.run(create_app(settings), host=settings.host, port=settings.port)
+    # create_app sets up JSON logging; uvicorn must not replace it with its own config.
+    uvicorn.run(
+        create_app(settings),
+        host=settings.host,
+        port=settings.port,
+        log_config=None,
+        access_log=False,
+    )
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ def database_urls(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(
         "AGENT_DATABASE_URL", "postgresql+psycopg://agent_reader:reader%40pass@db:5432/fees"
     )
+    monkeypatch.setenv("MASKING_SALT", "test-salt")
 
 
 def test_each_role_takes_its_password_from_its_own_url() -> None:

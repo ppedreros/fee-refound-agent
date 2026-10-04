@@ -32,6 +32,8 @@ services:
       OWNER_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       APP_DATABASE_URL: ${APP_DATABASE_URL:?set APP_DATABASE_URL in .env}
       AGENT_DATABASE_URL: ${AGENT_DATABASE_URL:?set AGENT_DATABASE_URL in .env}
+      MASKING_SALT: ${MASKING_SALT:?set MASKING_SALT in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     depends_on:
       db:
         condition: service_healthy
@@ -44,17 +46,22 @@ services:
       PROVIDER_MODE: ${PROVIDER_MODE:-auto}
       JEV_API_KEY: ${JEV_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MASKING_SALT: ${MASKING_SALT:?set MASKING_SALT in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "8000:8000"
+    # Every probe writes an access log line: probe every 2 s while starting, then every 30 s.
     healthcheck:
       test:
         - CMD
         - python
         - -c
         - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)
-      interval: 5s
+      start_period: 60s
+      start_interval: 2s
+      interval: 30s
       timeout: 5s
-      retries: 12
+      retries: 3
     depends_on:
       migrate:
         condition: service_completed_successfully

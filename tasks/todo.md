@@ -50,14 +50,14 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 **Files:** `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile` + `frontend/nginx.conf.template`, `.dockerignore` files, `.env.example`, `backend/core/settings.py`, `backend/api/routes_health.py`, `backend/db/engine.py`, `backend/db/roles.py`, `backend/bootstrap.py`, `tests/api/test_health.py`, `tests/unit/db/test_login_roles.py`
 **Scope:** M (L in files, but most are small config)
 
-### - [ ] T4: Logging, request ids, clock
+### - [x] T4: Logging, request ids, clock
 **Description:** structlog JSON logging with a deny-list processor and HMAC-hashed member ids, request-id middleware, and the `Clock` protocol with a fixed clock for tests.
 **Acceptance criteria:**
-- [ ] Every log line is JSON and has a `request_id`. A valid `X-Request-ID` is echoed back (SPEC-platform AC4).
-- [ ] The deny-list drops `message` and hashes `member_id` (AC5).
-**Verification:** `uv run python -m pytest tests/unit/core/test_logging.py`; `docker compose logs backend` shows JSON lines
+- [x] Every log line is JSON and has a `request_id`. A valid `X-Request-ID` is echoed back (SPEC-platform AC4).
+- [x] The deny-list drops `message` and hashes `member_id` (AC5).
+**Verification:** `uv run python -m pytest tests/unit/core`; `docker compose logs backend` shows JSON lines
 **Dependencies:** T1
-**Files:** `backend/core/logging.py`, `backend/api/middleware.py`, `backend/core/clock.py`, `tests/unit/core/test_logging.py`
+**Files:** `backend/core/logging.py`, `backend/api/middleware.py`, `backend/core/clock.py`, `backend/core/settings.py` (`LOG_LEVEL`, `MASKING_SALT`), `backend/api/main.py` + `__main__.py`, `docker-compose.yml`, `tests/unit/core/test_logging.py` + `test_clock.py`
 **Scope:** S
 
 ### - [ ] T5: CI workflow

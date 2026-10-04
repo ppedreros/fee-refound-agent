@@ -69,9 +69,10 @@ Thresholds, timeouts and prices live in versioned config files under `backend/co
 
 ## Logging and request ids
 
-- Logs are structlog JSON lines with: `ts`, `level`, `event`, `request_id`, and `run_id` and `case_id` when known.
+- Logs are structlog JSON lines on stdout with: `ts`, `level`, `event`, `logger`, `request_id` (`null` outside a request), and `run_id` and `case_id` when known. Lines from libraries (uvicorn, SQLAlchemy) go through the same processors.
 - **Request id:** the middleware accepts an `X-Request-ID` header if it is a valid UUID and generates one otherwise. It is returned in the response header and bound to every log line of that request.
-- **Deny-list processor:** drops keys such as `body`, `message`, `text`, `name`, `first_name`, `last_name`, `account_number` and `email`. It replaces a raw `member_id` with an HMAC hash. This is a safety net; the code must not log these in the first place.
+- **Access line:** the same middleware writes one line per request (`event: "request"`, `method`, `path`, `status`, `duration_ms`). It replaces uvicorn's plain-text access log, which is turned off.
+- **Deny-list processor:** drops keys such as `body`, `message`, `text`, `name`, `first_name`, `last_name`, `account_number` and `email`, at any depth. It replaces a raw `member_id` with an HMAC-SHA256 hash keyed by `MASKING_SALT` (first 16 hex characters). This is a safety net; the code must not log these in the first place.
 - **Clock:** `backend/core/clock.py` exposes a `Clock` protocol with `now()`. The system clock is used in production and a fixed clock in tests.
 
 ## Quality gates

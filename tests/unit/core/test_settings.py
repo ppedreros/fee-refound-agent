@@ -20,6 +20,8 @@ def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(
         "AGENT_DATABASE_URL", "postgresql+psycopg://agent_reader:reader-secret@db:5432/fees"
     )
+    monkeypatch.setenv("MASKING_SALT", "salt-secret")
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
 
 
 def test_auto_mode_is_live_for_providers_with_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -158,6 +160,34 @@ def test_role_database_url_needs_a_password(monkeypatch: pytest.MonkeyPatch) -> 
         load_settings(env_file=None)
 
     assert "APP_DATABASE_URL" in str(error.value)
+
+
+def test_masking_salt_is_required_and_blank_counts_as_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MASKING_SALT", "  ")
+
+    with pytest.raises(ConfigError) as error:
+        load_settings(env_file=None)
+
+    assert "MASKING_SALT" in str(error.value)
+
+
+def test_masking_salt_never_appears_in_the_settings_repr() -> None:
+    assert "salt-secret" not in repr(load_settings(env_file=None))
+
+
+def test_log_level_defaults_to_info() -> None:
+    assert load_settings(env_file=None).log_level == "INFO"
+
+
+def test_unknown_log_level_names_the_variable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LOG_LEVEL", "LOUD")
+
+    with pytest.raises(ConfigError) as error:
+        load_settings(env_file=None)
+
+    assert "LOG_LEVEL" in str(error.value)
 
 
 def test_owner_database_url_is_optional_and_blank_counts_as_missing(
