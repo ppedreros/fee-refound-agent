@@ -256,7 +256,7 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/api/routes_cases.py`, `backend/api/view_model.py`, `backend/api/actions.py`, `backend/api/schemas.py`, `backend/agents/nodes.py` (each check stores its facts), `tests/api/test_case_view.py`, `tests/unit/api/test_actions.py`
 **Scope:** M
 
-### - [ ] T21: Core-banking adapter
+### - [x] T21: Core-banking adapter
 **Description:** `CoreBanking.post_fee_refund`, as one transaction: insert into `refunds` with `ON CONFLICT`, lock the sub-account, insert the refund transaction with the next `posting_ref`, and update the balance.
 **Acceptance criteria:**
 - [ ] Two calls on 88002, sequential or concurrent, produce one refund transaction and add $35 once. The second call reports `already_done` (SPEC-data AC6).

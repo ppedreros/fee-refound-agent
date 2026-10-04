@@ -145,6 +145,8 @@ The Postgres implementation does everything in one database transaction as `app_
 
 Only the `api` decision handler calls this. The interface is what a real core integration would replace.
 
+**How it is built (T21).** `PostgresCoreBanking(session)` works inside the caller's transaction and never commits, so the decision handler's effects (decision, refund, reply, statuses, audit) commit or roll back together. The fee is checked first: a transaction that isn't a fee (by `classify_description`, with a negative amount) raises `CoreBankingError("not_a_fee")` and moves nothing. A concurrent second call waits on the `refunds.fee_txn_id` unique index until the first commits, then reports `already_done=True` with the first call's refund. The refund transaction's description follows the brief's own refunds, `Deposit Fee Refund Courtesy Pay Fee` (so the refund history and the yearly limit see it like any core refund). The day's sequence starts at `0000`, as in the brief, and continues from the highest one that day.
+
 ## Seed (`backend/db/seed/`)
 
 - **Idempotent.** Rows are inserted with `ON CONFLICT DO NOTHING`. A restart never overwrites state that Luis changed (refunds, balances, statuses).
