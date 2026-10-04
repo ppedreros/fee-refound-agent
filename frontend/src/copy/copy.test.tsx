@@ -19,7 +19,7 @@ function visibleText(container: HTMLElement): string {
 describe.each<[string, CaseView]>(ALL_STATUSES)("The case page: %s", (_name, view) => {
   it("shows no internal codes, placeholders or broken values", () => {
     const { container } = render(
-      <CaseContent view={view} running={false} onRun={vi.fn()} onDecide={vi.fn()} />,
+      <CaseContent view={view} running={false} onRun={vi.fn()} onSubmit={vi.fn()} />,
     );
     const text = visibleText(container);
 

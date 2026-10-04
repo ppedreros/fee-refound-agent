@@ -34,7 +34,7 @@ afterEach(() => {
 });
 
 function renderPane() {
-  renderWithClient(<CasePane caseId={5012} onBack={vi.fn()} />);
+  renderWithClient(<CasePane caseId={5012} onBack={vi.fn()} onNext={vi.fn()} />);
 }
 
 describe("Case pane", () => {

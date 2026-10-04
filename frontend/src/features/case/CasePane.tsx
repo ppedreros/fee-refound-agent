@@ -1,19 +1,38 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { ApiError, messageOf, type Action, type CaseView } from "../../api/client";
-import { queryKeys, useCase, useRunCase } from "../../api/hooks";
+import {
+  ApiError,
+  messageOf,
+  type Action,
+  type CaseView,
+  type DecisionRequest,
+} from "../../api/client";
+import { queryKeys, useCase, useCases, useRunCase } from "../../api/hooks";
 import { ErrorBanner } from "../../components/ErrorBanner";
 import { copy } from "../../copy/en";
 import { formatShortDate } from "../../lib/format";
+import { cardButtons } from "./cardButtons";
+import { ConfirmDecision } from "./DecisionActions";
 import { DecisionCard } from "./DecisionCard";
 import { Evidence } from "./Evidence";
-import { Reply } from "./Reply";
+import { reasonIsValid, replyIsValid } from "./limits";
+import { ReplyEditor } from "./ReplyEditor";
+import { useDecision } from "./useDecision";
 
-/** One case: loads it, starts checks and follows them until they finish. */
-export function CasePane({ caseId, onBack }: { caseId: number; onBack: () => void }) {
+interface CasePaneProps {
+  caseId: number;
+  onBack: () => void;
+  onNext: (id: number) => void;
+}
+
+/** One case: loads it, starts checks and follows them, and sends Luis's decision. */
+export function CasePane({ caseId, onBack, onNext }: CasePaneProps) {
   const query = useCase(caseId);
   const run = useRunCase(caseId);
+  const decision = useDecision(caseId);
+  const open = useCases("open");
+  const [decided, setDecided] = useState(false);
   useQueueRefreshAfterCheck(query.data);
 
   if (query.isPending) return <CaseSkeleton />;
@@ -24,17 +43,36 @@ export function CasePane({ caseId, onBack }: { caseId: number; onBack: () => voi
       </div>
     );
   }
+  const view = query.data;
   // A check that is already running is simply followed; any other failure is shown.
   const following = run.error instanceof ApiError && run.error.code === "run_in_progress";
+  const nextId = open.data?.items.find((item) => item.id !== caseId)?.id;
   return (
     <CaseContent
-      view={query.data}
+      key={view.run?.run_id ?? "unchecked"} // a new check starts a new decision
+      view={view}
       running={run.isPending}
       runError={run.error && !following ? messageOf(run.error) : null}
       onRun={(feeTxnId) => {
         run.mutate(feeTxnId);
       }}
-      onDecide={() => undefined}
+      deciding={decision.isPending}
+      decideError={decision.error ? messageOf(decision.error) : null}
+      onSubmit={(body) => {
+        decision.mutate(body, {
+          onSuccess: () => {
+            setDecided(true);
+          },
+        });
+      }}
+      focusTitle={decided}
+      onNext={
+        view.status === "done" && nextId !== undefined
+          ? () => {
+              onNext(nextId);
+            }
+          : null
+      }
       onBack={onBack}
     />
   );
@@ -45,21 +83,91 @@ export interface CaseContentProps {
   running: boolean;
   runError?: string | null;
   onRun: (feeTxnId?: number) => void;
-  onDecide: (action: Action) => void;
+  deciding?: boolean;
+  decideError?: string | null;
+  onSubmit?: (decision: DecisionRequest) => void;
+  focusTitle?: boolean;
+  onNext?: (() => void) | null;
   onBack?: () => void;
 }
+
+/** "follow" sends what we recommend (approve, or edit with Luis's text). "reject" and
+ * "reply_only" first ask for Luis's own reply, and for "reject" a reason. */
+type Mode = "follow" | "reject" | "reply_only";
 
 export function CaseContent({
   view,
   running,
   runError,
   onRun,
-  onDecide,
+  deciding = false,
+  decideError,
+  onSubmit,
+  focusTitle = false,
+  onNext,
   onBack,
 }: CaseContentProps) {
+  const draft = view.draft?.text ?? "";
+  const [mode, setMode] = useState<Mode>("follow");
+  const [reply, setReply] = useState(draft);
+  const [editing, setEditing] = useState(view.draft === null);
+  const [reason, setReason] = useState("");
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (focusTitle && view.status === "done") titleRef.current?.focus();
+  }, [focusTitle, view.status]);
+
+  const { primary, secondary } = cardButtons(view);
+  const followsPrimary = primary !== null && !primary.run;
   const latest = view.conversation.messages.filter((m) => m.author === "member").at(-1);
   const checkAgainInHeader =
     view.can_run && view.status !== "not_checked" && view.status !== "not_about_fee";
+
+  const submit = (action: Action) => {
+    if (view.run === null || onSubmit === undefined) return;
+    onSubmit({
+      run_id: view.run.run_id,
+      action,
+      reply_text: reply,
+      reason: action === "reject" ? reason : null,
+    });
+  };
+  const decide = (action: Action) => {
+    if (action === "approve" || action === "edit") {
+      submit(view.actions.includes("approve") && reply === draft ? "approve" : "edit");
+    } else if (followsPrimary && primary.action === action) {
+      submit(action); // "Send reply" with no recommendation to follow
+    } else {
+      setMode(action === "reject" ? "reject" : "reply_only");
+      setReply(""); // our draft says the opposite, so Luis writes this reply
+      setEditing(true);
+      setReason("");
+    }
+  };
+  const cancel = () => {
+    setMode("follow");
+    setReply(draft);
+    setEditing(view.draft === null);
+    setReason("");
+  };
+
+  const confirming =
+    mode === "follow" ? undefined : secondary.find((b) => !b.run && b.action === mode);
+  const footer = confirming && (
+    <ConfirmDecision
+      label={confirming.label}
+      askReason={mode === "reject"}
+      reason={reason}
+      canSubmit={replyIsValid(reply) && (mode !== "reject" || reasonIsValid(reason))}
+      busy={deciding}
+      onReasonChange={setReason}
+      onSubmit={() => {
+        submit(mode === "reject" ? "reject" : "reply_only");
+      }}
+      onCancel={cancel}
+    />
+  );
 
   return (
     <article className="mx-auto w-full max-w-3xl space-y-6 p-6 motion-safe:animate-rise">
@@ -117,9 +225,30 @@ export function CaseContent({
         running={running}
         runError={runError}
         onRun={onRun}
-        onDecide={onDecide}
+        onDecide={decide}
+        busy={deciding}
+        primaryDisabled={!replyIsValid(reply)}
+        decideError={decideError}
+        footer={footer}
+        titleRef={titleRef}
+        onNext={onNext}
       />
-      {view.status !== "done" && <Reply view={view} />}
+      {(followsPrimary || mode !== "follow") && (
+        <ReplyEditor
+          text={reply}
+          editing={editing}
+          spanish={view.language === "es"}
+          canEdit={mode === "follow" && view.actions.includes("edit")}
+          changed={mode === "follow" && view.draft !== null && reply !== draft}
+          onEdit={() => {
+            setEditing(true);
+          }}
+          onChange={setReply}
+          onUndo={() => {
+            setReply(draft);
+          }}
+        />
+      )}
       <Evidence view={view} />
     </article>
   );

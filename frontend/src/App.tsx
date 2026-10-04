@@ -45,6 +45,9 @@ export default function App() {
               onBack={() => {
                 navigate({ view, caseId: null });
               }}
+              onNext={(id) => {
+                navigate({ view: "open", caseId: id });
+              }}
             />
           )}
         </main>

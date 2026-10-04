@@ -29,6 +29,12 @@
 
   /* Content appears with opacity and a 4 px rise; nothing moves with reduced motion. */
   --animate-rise: rise 200ms ease-out;
+  --animate-fade: fade 150ms ease-out;
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
   @keyframes rise {
     from {
       opacity: 0;

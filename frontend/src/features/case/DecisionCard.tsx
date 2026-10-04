@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode, type Ref } from "react";
 
 import type { Action, CaseView } from "../../api/client";
 import { copy } from "../../copy/en";
@@ -12,6 +12,15 @@ export interface CardProps {
   runError?: string | null;
   onRun: (feeTxnId?: number) => void;
   onDecide: (action: Action) => void;
+  /** A decision is on its way: no decision button can be pressed. */
+  busy?: boolean;
+  /** The primary decision would be refused as it stands (for example, the reply is empty). */
+  primaryDisabled?: boolean;
+  decideError?: string | null;
+  /** Replaces the buttons while Luis confirms a decision (reason, reply only). */
+  footer?: ReactNode;
+  titleRef?: Ref<HTMLHeadingElement>;
+  onNext?: (() => void) | null;
 }
 
 const PRIMARY =
@@ -19,10 +28,24 @@ const PRIMARY =
 const SECONDARY =
   "rounded-md px-3 py-2 font-medium text-navy underline-offset-4 hover:underline disabled:opacity-60";
 
-export function DecisionCard({ view, running, runError, onRun, onDecide }: CardProps) {
+export function DecisionCard({
+  view,
+  running,
+  runError,
+  onRun,
+  onDecide,
+  busy = false,
+  primaryDisabled = false,
+  decideError,
+  footer,
+  titleRef,
+  onNext,
+}: CardProps) {
   const titleId = useId();
   const { primary, secondary } = cardButtons(view);
   const amount = view.status === "done" ? null : view.recommendation.amount;
+  const disabled = (button: CardButton) =>
+    button.run ? running : busy || (button === primary && primaryDisabled);
   const press = (button: CardButton) => {
     if (button.run) onRun(undefined);
     else onDecide(button.action);
@@ -30,12 +53,13 @@ export function DecisionCard({ view, running, runError, onRun, onDecide }: CardP
 
   return (
     <section
+      key={view.status} // a new status fades in
       aria-labelledby={titleId}
-      className="rounded-lg bg-white p-5 shadow-sm ring-1 ring-grey-200"
+      className="rounded-lg bg-white p-5 shadow-sm ring-1 ring-grey-200 motion-safe:animate-fade"
     >
       <div aria-live="polite" className="flex items-center gap-2">
         <StatusDot status={view.status} />
-        <h3 id={titleId} className="font-serif text-xl">
+        <h3 id={titleId} ref={titleRef} tabIndex={-1} className="font-serif text-xl">
           {copy.status[view.status]}
         </h3>
         {amount !== null && (
@@ -53,18 +77,22 @@ export function DecisionCard({ view, running, runError, onRun, onDecide }: CardP
       ))}
 
       {view.can_pick_fee && <FeePicker view={view} disabled={running} onRun={onRun} />}
-      {runError && (
-        <p role="alert" className="mt-3 text-sm text-error">
-          {runError}
-        </p>
+      {[runError, decideError].map(
+        (error) =>
+          error && (
+            <p key={error} role="alert" className="mt-3 text-sm text-error">
+              {error}
+            </p>
+          ),
       )}
 
-      {(primary !== null || secondary.length > 0) && (
+      {footer}
+      {!footer && (primary !== null || secondary.length > 0) && (
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {primary !== null && (
             <button
               type="button"
-              disabled={primary.run && running}
+              disabled={disabled(primary)}
               onClick={() => {
                 press(primary);
               }}
@@ -77,7 +105,7 @@ export function DecisionCard({ view, running, runError, onRun, onDecide }: CardP
             <button
               key={button.label}
               type="button"
-              disabled={button.run && running}
+              disabled={disabled(button)}
               onClick={() => {
                 press(button);
               }}
@@ -87,6 +115,11 @@ export function DecisionCard({ view, running, runError, onRun, onDecide }: CardP
             </button>
           ))}
         </div>
+      )}
+      {onNext && (
+        <button type="button" onClick={onNext} className={`mt-4 ${PRIMARY}`}>
+          {copy.card.next}
+        </button>
       )}
     </section>
   );

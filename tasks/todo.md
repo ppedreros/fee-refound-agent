@@ -296,15 +296,15 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `frontend/src/features/case/CasePane.tsx` (+ test), `DecisionCard.tsx` (+ test), `cardButtons.ts`, `Evidence.tsx`, `EvidenceDay.tsx` (+ test), `Reply.tsx`, `frontend/src/components/ErrorBanner.tsx`, `frontend/src/copy/en.ts` (+ `copy.test.tsx`, AC6 across every status), `frontend/src/test/caseFixtures.ts`, `frontend/src/api/hooks.ts`, `frontend/src/lib/format.ts`, `frontend/src/index.css`, `frontend/src/App.tsx`
 **Scope:** M
 
-### - [ ] T25: UI: decision actions
+### - [x] T25: UI: decision actions
 **Description:** Approve, Edit (textarea, counter, "Undo my changes"), reject with the required reason, `reply_only`, one idempotency key per attempt (reused on retry), the done state, and "Next case" with focus management.
 **Acceptance criteria:**
-- [ ] "Don't refund" and "Refund anyway" can't be submitted without a reason of 10 or more characters (SPEC-ui AC3).
-- [ ] A retry after a network error reuses its `Idempotency-Key` (AC4).
-- [ ] After approving, the card shows "Done" and "Refunded $35 and replied".
+- [x] "Don't refund" and "Refund anyway" can't be submitted without a reason of 10 or more characters (SPEC-ui AC3).
+- [x] A retry after a network error reuses its `Idempotency-Key` (AC4).
+- [x] After approving, the card shows "Done" and "Refunded $35 and replied".
 **Verification:** `npm --prefix frontend test -- useDecision DecisionCard`
 **Dependencies:** T22, T24
-**Files:** `frontend/src/features/case/DecisionActions.tsx`, `ReplyEditor.tsx`, `useDecision.ts` (+ test), `frontend/src/copy/en.ts`
+**Files:** `frontend/src/features/case/DecisionActions.tsx` (+ test), `ReplyEditor.tsx` (replaces `Reply.tsx`), `useDecision.ts` (+ test), `limits.ts`, `CasePane.tsx`, `DecisionCard.tsx`, `frontend/src/copy/en.ts`, `frontend/src/index.css`, `frontend/src/App.tsx`
 **Scope:** M
 
 ### - [ ] T26: Ana in the browser, with a live Jev check

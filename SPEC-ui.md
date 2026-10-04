@@ -136,6 +136,12 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 - **Edit** turns the text into a textarea (1–2,000 characters, with a counter). The action sent becomes `edit`, the primary label doesn't change, and "Undo my changes" restores the draft.
 - When there is no draft, the textarea starts empty.
 
+**As built (T25).**
+- **Following the recommendation.** The primary button sends `approve` with the draft unchanged; once Luis edits the text it sends `edit`. "Undo my changes" restores the draft. The counter counts characters after trimming ("1,234 / 2,000"), and a decision button stays disabled while the reply is empty.
+- **Acting against it, or replying only.** "Don't refund", "Refund anyway" and "Send a reply only" open an inline step that takes the place of the card's buttons: Luis's reply (it starts empty, because our draft says the opposite outcome), the reason field for "Don't refund" and "Refund anyway" (10 to 500 characters), a button with the same label, and "Cancel", which brings the draft back. "Needs supervisor approval" shows no reply until Luis picks one of its actions.
+- **Idempotency.** One key per attempt, a version 4 UUID made with `crypto.getRandomValues` (`randomUUID` needs a secure context). A retry after a network error or a 5xx reuses it; once the server has answered with a 4xx or a result, or the details change, the next attempt gets a new key.
+- **After the decision.** The case and the queue are fetched again, the card fades in as "Done" (150 ms), focus moves to the card title, and "Next case" opens the first other open conversation in the queue. An error from the API (for example 409 `already_decided`) shows its message in the card, and the case is fetched again.
+
 ## Evidence sections (collapsed by default; the header line carries the summary)
 
 | Section | Content |

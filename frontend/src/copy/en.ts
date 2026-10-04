@@ -50,6 +50,7 @@ export const copy = {
     repliedWithoutRefund: "Replied without a refund",
     decidedBy: (summary: string, name: string, when: string) => `${summary} · ${name} · ${when}`,
     pickFee: "Which fee is it?",
+    next: "Next case",
   },
   actions: {
     checkCase: "Check this case",
@@ -64,6 +65,13 @@ export const copy = {
   reply: {
     title: "Reply",
     spanish: "Reply in Spanish",
+    edit: "Edit",
+    undo: "Undo my changes",
+    counter: (count: number) => `${count.toLocaleString("en-US")} / 2,000`,
+  },
+  reason: {
+    label: "Why? This helps us improve.",
+    cancel: "Cancel",
   },
   evidence: {
     // A section header carries its summary after a middle dot: "Account standing · No unpaid balances".
