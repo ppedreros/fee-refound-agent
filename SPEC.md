@@ -50,7 +50,7 @@ Exact versions are pinned when the project is scaffolded, in `uv.lock` and `fron
 - **Backend:** Python 3.14, FastAPI, Pydantic 2, pydantic-settings, SQLAlchemy 2 (async, psycopg 3), Alembic, LangGraph 1.x, `openai` (Responses API), `typesafe-sdk` (Jev), tenacity (retries), structlog (logs), slowapi (rate limit), sse-starlette (SSE).
 - **Frontend:** Node 24 LTS, npm, Vite, React 19, TypeScript 5 (strict), Tailwind CSS 4, TanStack Query 5, `openapi-typescript` to generate API types from the backend's OpenAPI schema, and `@fontsource-variable` Inter and Source Serif 4 (self-hosted fonts).
 - **Database:** PostgreSQL 16.
-- **Tests:** pytest, pytest-asyncio, Vitest, Testing Library, Playwright, `@axe-core/playwright`.
+- **Tests:** pytest, pytest-asyncio, pytest-cov (coverage report in CI; added 2026-10-04, user decision), Vitest, Testing Library, Playwright, `@axe-core/playwright`.
 - **MCP:** the official `mcp` Python SDK (FastMCP).
 - **Quality:** pre-commit (a dev dependency, run through `uv run`), ruff (lint and format), mypy `--strict`, ESLint, Prettier, gitleaks.
 - **CI:** GitHub Actions.

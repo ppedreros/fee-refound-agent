@@ -1,0 +1,97 @@
+# CI gates from SPEC-platform ("Quality gates"). The evals job comes in T38 and e2e in T42.
+# Actions are pinned to commit SHAs (tag in the comment) so a moved tag can't change what runs.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  UV_VERSION: "0.12.23"
+  NODE_VERSION: "24"
+
+jobs:
+  lint:
+    name: lint (pre-commit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --locked
+      - run: npm --prefix frontend ci
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: uv run python -m pre_commit run --all-files --show-diff-on-failure
+
+  backend:
+    name: backend (pytest + coverage)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Integration tests (from T7) use this database; unit and API tests don't need it.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: fees
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: fees
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fees -d fees"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run python -m pytest --cov=backend --cov-report=term-missing
+
+  frontend:
+    name: frontend (vitest + tsc)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run typecheck
+      - run: npm --prefix frontend test
+
+  docker:
+    name: docker (compose build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Compose reads its variables from .env, exactly as on a clean clone.
+      - run: cp .env.example .env
+      - run: docker compose build
