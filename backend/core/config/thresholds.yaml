@@ -1,0 +1,18 @@
+# Confidence thresholds (D3 in docs/agent-design.md; SPEC-agent, "Triage rules").
+# Changing a value is an "ask first" change; the evals report the pass and manual-review rates
+# per threshold so they can be calibrated.
+
+# Jev Choice: act when confidence is at or above these.
+intent_min_confidence: 0.80
+language_min_confidence: 0.70
+tone_min_confidence: 0.60
+fee_choice_min_confidence: 0.85
+clause_choice_min_confidence: 0.85
+
+# Jev Noul, two-sided: a manipulation P(yes) at or below this is a clear "no"; anything above
+# (or missing) is flagged. Multiple requests are flagged at or above their value.
+manipulation_clear_max_p_yes: 0.15
+multiple_requests_min_p_yes: 0.50
+
+# A "clear" case (D5) refunds at most this much.
+clear_max_amount_usd: 35

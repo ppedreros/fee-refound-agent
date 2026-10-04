@@ -196,12 +196,12 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/providers/retry.py`, `backend/providers/cost.py`, `backend/providers/config.py`, `backend/core/config/providers.yaml` + `pricing.yaml`, `backend/providers/jev.py` + `types.py`, `tests/unit/providers/test_retry.py` + `test_cost.py` + `test_jev.py`
 **Scope:** M
 
-### - [ ] T16: Triage thresholds and decision precedence (TDD)
+### - [x] T16: Triage thresholds and decision precedence (TDD)
 **Description:** `triage_rules.py` applies the D3 thresholds to Jev answers and handles Luna labels (D-agent-5 and D-agent-7). `decide.py` covers status precedence, the recommendation (including `none` for `fee_question`), `clear` and `would_auto_approve`. The thresholds live in config.
 **Acceptance criteria:**
-- [ ] Precedence is tested for every pair of competing codes. `drafter_down` and `classifier_down` lead to `needs_your_call`; `classified_with_backup` doesn't change the status.
-- [ ] The Noul bands follow D3 (`p_yes` ≤ 0.15 is a clear "no"). Luna `None` confidence is never treated as a number.
-- [ ] 90% or more coverage on `decide.py`.
+- [x] Precedence is tested for every pair of competing codes. `drafter_down` and `classifier_down` lead to `needs_your_call`; `classified_with_backup` doesn't change the status.
+- [x] The Noul bands follow D3 (`p_yes` ≤ 0.15 is a clear "no"). Luna `None` confidence is never treated as a number.
+- [x] 90% or more coverage on `decide.py`.
 **Verification:** `uv run python -m pytest tests/unit/agents --cov=backend/agents/decide.py`
 **Dependencies:** T13
 **Files:** `backend/agents/triage_rules.py`, `backend/agents/decide.py`, `backend/core/config/thresholds.yaml`, `tests/unit/agents/test_triage_rules.py`, `tests/unit/agents/test_decide.py`

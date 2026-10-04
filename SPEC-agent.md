@@ -126,6 +126,14 @@ The only note is `classified_with_backup`. It never changes the status, but it k
 
 `would_auto_approve = clear`. It is always stored.
 
+**How it is built (T16).** `backend/agents/triage_rules.py` and `decide.py`; the D3 thresholds and the $35 "clear" limit are in `backend/core/config/thresholds.yaml`. Details fixed while building:
+
+- A missing manipulation `p_yes` from Jev counts as "yes" (the asymmetric band of D3).
+- The early exit records `not_fee_request` (routing: no banner).
+- A decline lists only its decisive reason; every check stays visible as evidence. `over_limit` is added only to a refund.
+- `data_timeout` or `data_mismatch` mean no usable data, so the recommendation is `none`.
+- `case_status(codes, action, about_fee)` is a pure function that `finalize` calls again, because `drafter_down` can appear after `decide`.
+
 **`AUTO_APPROVE_ENABLED`.** This module never acts on it. The runner only stores `would_auto_approve`. The flag-on behaviour (only for tests, never in the shipped config) lives in `SPEC-api.md`, which owns the only path that moves money.
 
 ## Case status values (contract used by `data` and `api`)
