@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.000025",
+    "latency_ms": 204,
+    "mode": "live",
+    "model": "jev-1.13.0",
+    "provider": "jev",
+    "tokens_cache_write": 0,
+    "tokens_cached": 0,
+    "tokens_in": 584,
+    "tokens_out": 87
+  },
+  "model": "jev-1.13.0",
+  "prompt_version": "clause-choice-v1",
+  "provider": "jev",
+  "recorded_at": "2026-10-04T20:17:58+00:00",
+  "request": {
+    "masked_input": {
+      "decision": "Refund the $60 Extended overdraft fee, above the staff approval limit.",
+      "facts": "The policy allows this $60 refund, but it is above your $50 limit."
+    },
+    "questions": [
+      {
+        "key": "clause",
+        "options": [
+          {
+            "description": "Members in good standing can receive up to 3 fee refunds in any 12-month period. The 12 months end on the date of the fee being reviewed, and refunds of any fee type count.",
+            "key": "fee-refund-policy#2"
+          },
+          {
+            "description": "We refund a Courtesy Pay fee when a deposit that posted the same day would have covered the payment if it had posted first. Refunds and transfers between the member's own accounts don't count as deposits.",
+            "key": "fee-refund-policy#4"
+          },
+          {
+            "description": "Staff can approve a fee refund of up to $50. Larger refunds need a supervisor.",
+            "key": "staff-approval-limits#1"
+          },
+          {
+            "description": "A member is in good standing when there is no unpaid balance on any account. The Account Standing policy explains what counts as unpaid.",
+            "key": "fee-refund-policy#3"
+          },
+          {
+            "description": "Each fee can be refunded only once. A fee that was already refunded, in this tool or in the core system, is not refunded again.",
+            "key": "fee-refund-policy#5"
+          }
+        ],
+        "prompt": "Which of these policy clauses is the rule behind the `decision`, given the `facts`?"
+      }
+    ]
+  },
+  "response": {
+    "answers": {
+      "clause": {
+        "choice": "staff-approval-limits#1",
+        "confidence": 0.99,
+        "probabilities": {
+          "fee-refund-policy#2": 0.0,
+          "fee-refund-policy#3": 0.0,
+          "fee-refund-policy#4": 0.0,
+          "fee-refund-policy#5": 0.0,
+          "staff-approval-limits#1": 1.0
+        }
+      }
+    }
+  },
+  "sha256": "fad22be8d1c119fd7f9b0e8baaa6295e73c32633635f593dc38f89ef0c9ceabc"
+}

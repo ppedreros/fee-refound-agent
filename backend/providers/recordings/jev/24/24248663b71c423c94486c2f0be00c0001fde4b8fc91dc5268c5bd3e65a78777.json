@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.000017",
+    "latency_ms": 179,
+    "mode": "live",
+    "model": "jev-1.13.0",
+    "provider": "jev",
+    "tokens_cache_write": 0,
+    "tokens_cached": 0,
+    "tokens_in": 411,
+    "tokens_out": 43
+  },
+  "model": "jev-1.13.0",
+  "prompt_version": "fee-choice-v1",
+  "provider": "jev",
+  "recorded_at": "2026-10-04T20:17:41+00:00",
+  "request": {
+    "masked_input": {
+      "message": "I got hit with overdraft fees again. Can you refund the fee?",
+      "subject": "Overdraft fees"
+    },
+    "questions": [
+      {
+        "key": "fee",
+        "options": [
+          {
+            "description": "Sep 14 · −$35.00 · Courtesy Pay fee · after CITY POWER & LIGHT −$60.00",
+            "key": "90902"
+          },
+          {
+            "description": "Sep 14 · −$35.00 · Courtesy Pay fee · after STREAMFLIX −$15.99",
+            "key": "90904"
+          }
+        ],
+        "prompt": "Which of these fees is the member asking about in the `message`?"
+      }
+    ]
+  },
+  "response": {
+    "answers": {
+      "fee": {
+        "choice": "90902",
+        "confidence": 0.29,
+        "probabilities": {
+          "90902": 0.65,
+          "90904": 0.35
+        }
+      }
+    }
+  },
+  "sha256": "24248663b71c423c94486c2f0be00c0001fde4b8fc91dc5268c5bd3e65a78777"
+}

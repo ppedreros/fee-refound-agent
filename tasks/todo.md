@@ -448,9 +448,9 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 ### Checkpoint 5: Every scenario
 - [x] All 18 scenarios pass in `test_graph_scenarios.py` with fakes
 - [x] Every status renders in the UI, and live steps work through nginx
-- [ ] **Prompts frozen.** First full recording run of the 18 scenarios (ask first; needs both keys). Replay is verified with no keys.
+- [x] **Prompts frozen.** First full recording run of the 18 scenarios (ask first; needs both keys). Replay is verified with no keys.
 
-**Checked 2026-10-04.** One table in `test_graph_scenarios.py` (`CONTRACT`) runs all 18 scenarios with fakes and checks each status and reason against SPEC-data. Every status renders in the UI (the status fixtures in the card and copy tests), and the live steps arrive through nginx as they happen (T36). Each scenario was also checked once with live models during its task. The recording run waits for the user's go-ahead.
+**Checked 2026-10-04.** One table in `test_graph_scenarios.py` (`CONTRACT`) runs all 18 scenarios with fakes and checks each status and reason against SPEC-data. Every status renders in the UI (the status fixtures in the card and copy tests), and the live steps arrive through nginx as they happen (T36). Each scenario was also checked once with live models during its task. Recorded on 2026-10-04 with the user's go-ahead (`python -m backend.record`, 33 recordings; scenario 18 is left out on purpose). With no keys, every runnable case replays to the same status, clause and draft as live, and 18 falls back with its evidence. `triage-v1`, `fee-choice-v1`, `clause-choice-v1` and `draft-v1` are frozen.
 
 ---
 

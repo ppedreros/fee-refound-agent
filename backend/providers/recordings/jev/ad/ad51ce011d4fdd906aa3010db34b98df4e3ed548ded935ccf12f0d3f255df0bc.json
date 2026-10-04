@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.000018",
+    "latency_ms": 181,
+    "mode": "live",
+    "model": "jev-1.13.0",
+    "provider": "jev",
+    "tokens_cache_write": 0,
+    "tokens_cached": 0,
+    "tokens_in": 429,
+    "tokens_out": 43
+  },
+  "model": "jev-1.13.0",
+  "prompt_version": "fee-choice-v1",
+  "provider": "jev",
+  "recorded_at": "2026-10-04T20:17:41+00:00",
+  "request": {
+    "masked_input": {
+      "message": "My electric bill payment pushed me into overdraft and I got a fee for it, even though my paycheck came the same day. Can you refund that one?",
+      "subject": "Fee after my electric bill"
+    },
+    "questions": [
+      {
+        "key": "fee",
+        "options": [
+          {
+            "description": "Sep 14 · −$35.00 · Courtesy Pay fee · after CITY POWER & LIGHT −$60.00",
+            "key": "91002"
+          },
+          {
+            "description": "Sep 14 · −$35.00 · Courtesy Pay fee · after STREAMFLIX −$15.99",
+            "key": "91004"
+          }
+        ],
+        "prompt": "Which of these fees is the member asking about in the `message`?"
+      }
+    ]
+  },
+  "response": {
+    "answers": {
+      "fee": {
+        "choice": "91002",
+        "confidence": 1.0,
+        "probabilities": {
+          "91002": 1.0,
+          "91004": 0.0
+        }
+      }
+    }
+  },
+  "sha256": "ad51ce011d4fdd906aa3010db34b98df4e3ed548ded935ccf12f0d3f255df0bc"
+}

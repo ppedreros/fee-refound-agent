@@ -241,7 +241,9 @@ def _record(
     meta: CallMeta,
 ) -> dict[str, Any]:
     return {
-        "key": key,
+        # The request's hash (also the file name). Not called "key": that would read as an API key
+        # to the secret scanner, which must keep watching recordings for real ones.
+        "sha256": key,
         "provider": provider,
         "model": model,
         "prompt_version": prompt_version,

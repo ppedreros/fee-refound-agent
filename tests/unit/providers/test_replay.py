@@ -83,7 +83,7 @@ async def test_a_recorded_answer_is_served_again_in_replay_mode(tmp_path: Path) 
     assert path.parent.parent.name == "jev"
     assert path.parent.name == path.stem[:2]
     file = json.loads(path.read_text(encoding="utf-8"))
-    assert file["key"] == path.stem
+    assert file["sha256"] == path.stem
     assert file["request"]["masked_input"] == STATE
     assert file["prompt_version"] == "triage-v1"
     assert file["recorded_at"]

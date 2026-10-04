@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.000023",
+    "latency_ms": 205,
+    "mode": "live",
+    "model": "jev-1.13.0",
+    "provider": "jev",
+    "tokens_cache_write": 0,
+    "tokens_cached": 0,
+    "tokens_in": 540,
+    "tokens_out": 84
+  },
+  "model": "jev-1.13.0",
+  "prompt_version": "clause-choice-v1",
+  "provider": "jev",
+  "recorded_at": "2026-10-04T20:17:26+00:00",
+  "request": {
+    "masked_input": {
+      "decision": "Explain the $5 Savings below minimum fee; no refund was asked for.",
+      "facts": ""
+    },
+    "questions": [
+      {
+        "key": "clause",
+        "options": [
+          {
+            "description": "$5 in any month a savings account ends below its minimum balance.",
+            "key": "fee-schedule#4"
+          },
+          {
+            "description": "Each fee can be refunded only once. A fee that was already refunded, in this tool or in the core system, is not refunded again.",
+            "key": "fee-refund-policy#5"
+          },
+          {
+            "description": "Members in good standing can receive up to 3 fee refunds in any 12-month period. The 12 months end on the date of the fee being reviewed, and refunds of any fee type count.",
+            "key": "fee-refund-policy#2"
+          },
+          {
+            "description": "A Courtesy Pay fee is charged once for each item paid into overdraft, never twice for the same item.",
+            "key": "courtesy-pay-rules#3"
+          },
+          {
+            "description": "Service fees can be refunded as a courtesy, under the rules below. A member of staff approves every refund; no refund is automatic.",
+            "key": "fee-refund-policy#1"
+          }
+        ],
+        "prompt": "Which of these policy clauses is the rule behind the `decision`, given the `facts`?"
+      }
+    ]
+  },
+  "response": {
+    "answers": {
+      "clause": {
+        "choice": "fee-schedule#4",
+        "confidence": 0.77,
+        "probabilities": {
+          "courtesy-pay-rules#3": 0.0,
+          "fee-refund-policy#1": 0.17,
+          "fee-refund-policy#2": 0.01,
+          "fee-refund-policy#5": 0.0,
+          "fee-schedule#4": 0.82
+        }
+      }
+    }
+  },
+  "sha256": "ee97ad2a49b865bb0ec13887efa4d10fc77c6749c8c2badd43be3b040a0c1e42"
+}

@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.000929",
+    "latency_ms": 2566,
+    "mode": "live",
+    "model": "gpt-6.1-sol",
+    "provider": "openai",
+    "tokens_cache_write": 0,
+    "tokens_cached": 1629,
+    "tokens_in": 1632,
+    "tokens_out": 76
+  },
+  "model": "gpt-6.1-sol",
+  "prompt_version": "draft-v1",
+  "provider": "openai",
+  "recorded_at": "2026-10-04T20:17:57+00:00",
+  "request": {
+    "masked_input": {
+      "amount": "35.00",
+      "facts": [
+        "The paycheck arrived the same day and the bill posted before it."
+      ],
+      "fee_date": "2026-09-14",
+      "fee_type": "Courtesy Pay",
+      "first_name": "{{first_name}}",
+      "language": "en",
+      "outcome": "refund",
+      "policy_clause": null,
+      "sub_account_name": "Everyday Checking",
+      "tone": "neutral"
+    },
+    "questions": null
+  },
+  "response": {
+    "reply": "Hi {{first_name}}, thanks for reaching out. Your paycheck arrived on Sep 14, the same day as the $35 Courtesy Pay fee, but the bill posted before it. We've refunded the fee to your Everyday Checking account, and it will show there shortly. If you need anything else, please reply to this message."
+  },
+  "sha256": "5ba0585ab17a1a5df27116127d681b8386323636c7a96a2fb80ea82e62a20fee"
+}

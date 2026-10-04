@@ -233,6 +233,8 @@ The runner sets `checking` when a run starts and `not_checked` when it resets an
 
 The prompts are versioned files (`triage-v1.yaml`, `fee-choice-v1.yaml`, `clause-choice-v1.yaml`, `draft-v1.md`), and their version is stored on every step. Their content follows the outlines in `docs/agent-design.md` §6. Changing a prompt means bumping its version and re-recording replays, which is an "ask first" change.
 
+**Frozen at Checkpoint 5 (2026-10-04).** `triage-v1`, `fee-choice-v1`, `clause-choice-v1` and `draft-v1` are recorded, so they no longer change without a new version and a new recording.
+
 ## Acceptance criteria
 
 1. Every seed scenario in `SPEC-data.md` reaches its expected status with in-process fake providers. Scenario 5 (5008) gives `needs_your_call` with `fee_question`, the fee, and the `fee-schedule#4` clause.
