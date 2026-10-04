@@ -1,0 +1,1 @@
+Hi {{first_name}}, thanks for reaching out. We reviewed the $amount $fee_type fee from $fee_date. We refund this fee when a deposit that arrived the same day would have covered the payment, and that wasn't the case this time, so we aren't able to refund it. If there's anything else we can help with, just reply to this message.

@@ -1,0 +1,1 @@
+Hola {{first_name}}, gracias por escribirnos. Revisamos el cargo $fee_type de $amount del $fee_date. Devolvemos este cargo cuando un depósito que llegó el mismo día habría cubierto el pago, y esta vez no fue así, así que no podemos devolverlo. Si necesitas algo más, responde a este mensaje.

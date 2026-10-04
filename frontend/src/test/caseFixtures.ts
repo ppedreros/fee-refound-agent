@@ -224,6 +224,7 @@ export const needsSupervisor: CaseView = {
     },
   ],
   recommendation: { action: "refund", amount: "60.00" },
+  draft: null, // nothing in the app can send a refund above the limit, so none is written
   actions: ["reject", "reply_only"],
 };
 

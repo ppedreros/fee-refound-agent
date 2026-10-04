@@ -52,13 +52,20 @@ class FakeClassifier:
         )
 
 
-def jev_answers(intent: str = "fee_refund_request") -> dict[str, ChoiceAnswer | NoulAnswer]:
+def jev_answers(
+    intent: str = "fee_refund_request",
+    *,
+    language: str = "en",
+    manipulation: float = 0.04,
+    multiple_requests: float = 0.05,
+) -> dict[str, ChoiceAnswer | NoulAnswer]:
+    """Confident Jev answers for triage; each signal can be set per scenario."""
     return {
         "intent": ChoiceAnswer(choice=intent, probabilities={intent: 1.0}, confidence=1.0),
-        "language": ChoiceAnswer(choice="en", probabilities={"en": 1.0}, confidence=1.0),
+        "language": ChoiceAnswer(choice=language, probabilities={language: 1.0}, confidence=1.0),
         "tone": ChoiceAnswer(choice="casual", probabilities={"casual": 0.9}, confidence=0.85),
-        "manipulation": NoulAnswer(p_yes=0.04, label=False),
-        "multiple_requests": NoulAnswer(p_yes=0.05, label=False),
+        "manipulation": NoulAnswer(p_yes=manipulation, label=manipulation >= 0.5),
+        "multiple_requests": NoulAnswer(p_yes=multiple_requests, label=multiple_requests >= 0.5),
     }
 
 

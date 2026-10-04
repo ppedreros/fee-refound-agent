@@ -12,6 +12,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.agents.deps import AgentDeps
+from backend.agents.draft_postcheck import check_draft
 from backend.agents.graph import build_graph
 from backend.agents.runner import RunnerDeps, run_case
 from backend.agents.state import GraphState
@@ -270,3 +271,32 @@ async def test_the_run_timeout_gives_the_reason_of_the_step_that_stalled(
 
     assert result.status == "needs_your_call"
     assert result.result["reasons"] == ["classifier_down"]  # triage was running
+
+
+@pytest.mark.parametrize(
+    ("language", "opening", "reason_words"),
+    [
+        ("en", "Hi {{first_name}},", "up to 3 fee refunds in any 12-month period"),
+        (
+            "es",
+            "Hola {{first_name}},",
+            "hasta 3 reembolsos de cargos en cualquier periodo de 12 meses",
+        ),
+    ],
+)
+async def test_sol_down_on_a_decline_gives_the_decline_template_in_the_members_language(
+    reader: async_sessionmaker[AsyncSession], language: str, opening: str, reason_words: str
+) -> None:
+    classifier = FakeClassifier(jev_answers(language=language))
+
+    final, _ = await run(5106, classifier, reader, FakeDrafter([None]))
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["yearly_limit", "drafter_down"]
+    assert result["recommendation"]["action"] == "no_refund"
+    draft = result["draft"]
+    assert draft["source"] == "template"
+    assert draft["text"].startswith(opening)
+    assert reason_words in draft["text"]
+    assert check_draft(draft["text"], amount=Decimal("35.00")) == []

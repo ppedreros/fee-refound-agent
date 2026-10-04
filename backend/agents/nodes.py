@@ -1,8 +1,8 @@
 """The graph's nodes (SPEC-agent, "Nodes"). Each takes the state and the deps and returns its update
 plus a StepReport for the run trace. Load nodes only read; every decision is plain code.
 
-At this stage declines have no fallback template yet (T31), and more than one fee candidate
-gives `fee_ambiguous` until the Jev fee choice lands (T32).
+At this stage more than one fee candidate gives `fee_ambiguous` until the Jev fee choice lands
+(T32).
 """
 
 import datetime as dt
@@ -63,6 +63,14 @@ TRIAGE_PROMPT = "triage-v1"
 DRAFT_PROMPT = "draft-v1"
 CLAUSE_PROMPT = "clause-choice-v1"
 DRAFT_TRIES = 2  # a reply that fails the post-check is asked for once more (§6)
+DECLINE_TEMPLATES = frozenset(
+    {
+        ReasonCode.YEARLY_LIMIT,
+        ReasonCode.DEPOSIT_NOT_SAME_DAY,
+        ReasonCode.NOT_GOOD_STANDING,
+        ReasonCode.ALREADY_REFUNDED,
+    }
+)
 SOMEONE = "The member"  # how the facts for Sol refer to the member: never by name
 TRANSACTIONS_LOOKBACK_DAYS = 30  # find_fee_candidates looks this far back from the message
 REFUNDS_LOOKBACK_DAYS = 400  # covers the 365-day limit window ending on any candidate fee
@@ -302,7 +310,7 @@ async def find_policy(state: GraphState, deps: AgentDeps) -> tuple[Update, StepR
         found = []
     summary = {
         "decision": _decision_sentence(decision, fee),
-        "facts": " ".join(_draft_facts(state, decision)),
+        "facts": " ".join(_case_facts(state, decision)),
     }
     asked: dict[str, Any] = {"query": query, "state": summary, "options": [c.id for c in found]}
     output: dict[str, Any] = {"search": [c.id for c in found], "clause_id": clause_id}
@@ -372,6 +380,8 @@ def _decision_sentence(decision: Decision, fee: Transaction | None) -> str:
         return "No fee was identified."
     what = format_money(-fee.amount) + (f" {fee.fee_type} fee" if fee.fee_type else " fee")
     match decision.recommendation.action:
+        case "refund" if ReasonCode.OVER_LIMIT in decision.reasons:
+            return f"Refund the {what}, above the staff approval limit."
         case "refund":
             return f"Refund the {what}."
         case "no_refund":
@@ -396,7 +406,7 @@ async def draft(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]
         fee_date=fee.date.isoformat(),
         fee_type=fee.fee_type,
         sub_account_name=fee.sub_account_name,
-        facts=_draft_facts(state, decision),
+        facts=_case_facts(state, decision),
         policy_clause=state.clause.text if action == "no_refund" and state.clause else None,
     )
     asked = payload.model_dump(mode="json")
@@ -441,38 +451,49 @@ async def draft(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]
     )
 
 
-def _draft_facts(state: GraphState, decision: Decision) -> list[str]:
-    """What happened, as plain sentences with no amount: the post-check allows only the decided
-    one. The member is never named (the reply uses the placeholder)."""
+def _case_facts(state: GraphState, decision: Decision) -> list[str]:
+    """What happened, as plain sentences, for Sol and the clause choice. The member is never
+    named (the reply uses the placeholder). A refund within the limit names no amount, because
+    the post-check allows only the decided one; above the limit there is no draft, and the
+    sentence says the limit."""
     facts = _merged_facts(state)
     if decision.recommendation.action == "refund":
-        summary = render_summary("ready_to_refund", facts, "en", first_name=SOMEONE)
+        status = (
+            "needs_supervisor" if ReasonCode.OVER_LIMIT in decision.reasons else "ready_to_refund"
+        )
+        summary = render_summary(status, facts, "en", first_name=SOMEONE)
         return [summary] if summary else []
     reason = next((c for c in decision.reasons if GROUPS[c] is ReasonGroup.POLICY), None)
     return [render_reason(reason, facts, "en", first_name=SOMEONE).message] if reason else []
 
 
 def _template_reply(state: GraphState, language: Language) -> str | None:
-    """The fallback reply, from the same facts. Decline templates come in T31."""
+    """The fallback reply, from the same facts: "refunded", or one per decline reason."""
     decision, fee = _decision(state), _fee(state)
-    if decision.recommendation.action != "refund":
+    facts = _merged_facts(state)
+    values = {
+        "fee_date": format_date(fee.date, language),
+        "amount": format_money(-fee.amount),
+        "fee_type": fee.fee_type or "service",
+        "sub_account_name": fee.sub_account_name,
+    }
+    if decision.recommendation.action == "refund":
+        payroll = facts.get("deposit_kind") == "payroll_deposit"
+        values["deposit"] = {
+            "en": "your paycheck" if payroll else "your deposit",
+            "es": "la nómina" if payroll else "el depósito",
+        }[language]
+        return render_template("refunded", language, values)
+
+    reason = next((c for c in decision.reasons if GROUPS[c] is ReasonGroup.POLICY), None)
+    if reason not in DECLINE_TEMPLATES:
         return None
-    payroll = _merged_facts(state).get("deposit_kind") == "payroll_deposit"
-    deposit = {
-        "en": "your paycheck" if payroll else "your deposit",
-        "es": "la nómina" if payroll else "el depósito",
-    }[language]
-    return render_template(
-        "refunded",
-        language,
-        {
-            "deposit": deposit,
-            "fee_date": format_date(fee.date, language),
-            "amount": format_money(-fee.amount),
-            "fee_type": fee.fee_type or "service",
-            "sub_account_name": fee.sub_account_name,
-        },
+    refunded_on = facts.get("refunded_on")
+    values["max_refunds"] = str(facts.get("max_refunds", ""))
+    values["refunded_on"] = (
+        format_date(refunded_on, language) if isinstance(refunded_on, dt.date) else ""
     )
+    return render_template(f"declined_{reason}", language, values)
 
 
 def _combined(metas: list[CallMeta]) -> CallMeta:
@@ -496,12 +517,14 @@ async def finalize(state: GraphState, deps: AgentDeps) -> tuple[Update, StepRepo
     """Recompute the status with every reason (a reason can appear after `decide`) and build the
     run's `result`, which the runner stores and the API serves."""
     triage_, decision = state.triage, state.decision
+    # Luis reads them in this order: what triage saw, what decided the case, then what happened
+    # after the decision (a drafter failure).
     codes = list(
         dict.fromkeys(
             [
                 *(triage_.reasons if triage_ else ()),
-                *state.reasons,
                 *((*decision.reasons, *decision.notes) if decision else ()),
+                *state.reasons,
             ]
         )
     )
@@ -529,12 +552,14 @@ def after_identify_fee(state: GraphState) -> str:
 
 def after_find_policy(state: GraphState) -> str:
     """Draft only when there is a recommendation to send, to a refund request (or an unknown
-    intent), in a language we write."""
+    intent), in a language we write. A refund above the limit gets no draft: nothing in this app
+    can send it (D-api-1)."""
     decision, triage_ = _decision(state), _triage(state)
     wants_reply = triage_.topic in ("fee_refund_request", None)
     writable = triage_.language in ("en", "es")
     has_outcome = decision.recommendation.action in ("refund", "no_refund")
-    return "draft" if has_outcome and wants_reply and writable else "finalize"
+    over_limit = ReasonCode.OVER_LIMIT in decision.reasons
+    return "draft" if has_outcome and wants_reply and writable and not over_limit else "finalize"
 
 
 # --- Helpers ---

@@ -383,15 +383,15 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 
 Each task below adds its seed scenarios, so that the graph scenario tests, the API rules and the UI fixtures cover them.
 
-### - [ ] T31: Policy "no" scenarios (6, 7, 8, 11, 17) and the supervisor route
+### - [x] T31: Policy "no" scenarios (6, 7, 8, 11, 17) and the supervisor route
 **Description:** Seed scenarios 6 (3 refunds already), 7 (deposit 2 days later), 8 (past-due LOAN), 11 (already refunded) and 17 (fee above $50). Add EN and ES decline templates, decline drafts that carry the clause, the `recommend_no_refund` and `needs_supervisor` paths, and the 403 `over_limit` in the API.
 **Acceptance criteria:**
-- [ ] Each scenario reaches its expected status and reason from SPEC-data.
-- [ ] Scenario 17: approve gives 403 with the supervisor message, and the offered actions exclude refunds (SPEC-api AC3).
-- [ ] The UI renders "We recommend not refunding" with the quote, "Refund anyway" with a reason, and "Needs supervisor approval".
+- [x] Each scenario reaches its expected status and reason from SPEC-data.
+- [x] Scenario 17: approve gives 403 with the supervisor message, and the offered actions exclude refunds (SPEC-api AC3).
+- [x] The UI renders "We recommend not refunding" with the quote, "Refund anyway" with a reason, and "Needs supervisor approval".
 **Verification:** `uv run python -m pytest tests/integration/agents/test_graph_scenarios.py tests/api/test_decision_rules.py`; `npm --prefix frontend test`
 **Dependencies:** T30
-**Files:** `backend/db/seed/scenarios.py`, `backend/agents/prompts/templates/`, `tests/integration/agents/test_graph_scenarios.py`, `tests/api/test_decision_rules.py`, `frontend/src/features/case/fixtures.ts`
+**Files:** `backend/db/seed/scenarios.py`, `backend/core/config/descriptions.yaml`, `backend/agents/prompts/templates/` (declines, "refunded" in Spanish), `backend/agents/nodes.py`, `tests/integration/agents/test_graph_scenarios.py` + `test_fallbacks.py` + `fakes.py`, `tests/unit/agents/test_reply_templates.py`, `tests/unit/tools/test_classify_description.py`, `tests/api/test_decision_rules.py` + `test_runs.py`, `frontend/src/test/caseFixtures.ts`
 **Scope:** M
 
 ### - [ ] T32: Fee identification scenarios (9, 10, 15) and "Pick the fee"

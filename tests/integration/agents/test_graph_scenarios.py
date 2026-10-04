@@ -5,6 +5,7 @@ import json
 from typing import Any
 from uuid import uuid4
 
+import pytest
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -23,6 +24,7 @@ async def run(
     classifier: FakeClassifier,
     reader: async_sessionmaker[AsyncSession],
     ranker: Classifier | None = None,
+    drafter: FakeDrafter | None = None,
 ) -> tuple[dict[str, Any], list[StepRecord]]:
     graph = build_graph()
     final: dict[str, Any] = {}
@@ -30,7 +32,10 @@ async def run(
     async for mode, chunk in graph.astream(
         GraphState(case_id=case_id, run_id=uuid4()),
         context=AgentDeps(
-            reader=reader, classifier=classifier, drafter=FakeDrafter(), ranker=ranker
+            reader=reader,
+            classifier=classifier,
+            drafter=drafter or FakeDrafter(),
+            ranker=ranker,
         ),
         stream_mode=["values", "custom"],
     ):
@@ -186,3 +191,68 @@ async def test_ana_with_jev_down_for_the_clause_choice_still_quotes_the_rules_cl
     step = policy_step(records)
     assert step.status == "finished"
     assert step.output is not None and step.output["rerank_error"] == "timeout"
+
+
+# --- When the policy says no (SPEC-data scenarios 6, 7, 8, 11 and 17) ---
+
+
+@pytest.mark.parametrize(
+    ("case_id", "status", "reason", "clause", "amount"),
+    [
+        (5106, "recommend_no_refund", "yearly_limit", "fee-refund-policy#2", "35.00"),
+        (5107, "recommend_no_refund", "deposit_not_same_day", "fee-refund-policy#4", "35.00"),
+        (5108, "recommend_no_refund", "not_good_standing", "fee-refund-policy#3", "35.00"),
+        (5111, "recommend_no_refund", "already_refunded", "fee-refund-policy#5", "35.00"),
+        (5117, "needs_supervisor", "over_limit", "staff-approval-limits#1", "60.00"),
+    ],
+)
+async def test_when_the_policy_says_no_the_case_says_why_and_quotes_the_rule(
+    reader: async_sessionmaker[AsyncSession],
+    case_id: int,
+    status: str,
+    reason: str,
+    clause: str,
+    amount: str,
+) -> None:
+    final, _ = await run(case_id, FakeClassifier(jev_answers()), reader)
+    result = final["result"]
+
+    assert result["status"] == status
+    assert result["reasons"] == [reason]
+    assert result["clause"]["id"] == clause
+    assert result["recommendation"]["amount"] == amount
+    assert result["clear"] is False
+
+
+async def test_a_decline_draft_is_told_the_clause_in_plain_facts(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    drafter = FakeDrafter()
+
+    final, _ = await run(5106, FakeClassifier(jev_answers()), reader, drafter=drafter)
+
+    (payload,) = drafter.payloads
+    assert payload.outcome == "no_refund"
+    assert payload.policy_clause == final["result"]["clause"]["text"]
+    assert payload.facts == ["The member already had 3 refunds in the last 12 months."]
+    assert final["result"]["draft"]["source"] == "model"
+
+
+async def test_above_the_limit_nothing_is_drafted_and_jev_hears_about_the_limit(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    """Luis can't refund it here (D-api-1), so there is no refund reply to write."""
+    drafter, ranker = FakeDrafter(), FakeRanker("staff-approval-limits#1")
+
+    final, records = await run(5117, FakeClassifier(jev_answers()), reader, ranker, drafter)
+
+    assert final["result"]["status"] == "needs_supervisor"
+    assert final["result"]["draft"] is None
+    assert drafter.payloads == []
+    assert "draft" not in [record.node for record in records]
+    (state,) = ranker.states
+    assert state == {
+        "decision": "Refund the $60 Extended overdraft fee, above the staff approval limit.",
+        "facts": "The policy allows this $60 refund, but it is above your $50 limit.",
+    }
+    assert final["result"]["clause"]["found_by"] == "search_confirmed"

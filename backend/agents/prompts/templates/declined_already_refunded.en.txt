@@ -1,0 +1,1 @@
+Hi {{first_name}}, thanks for reaching out. We checked the $amount $fee_type fee from $fee_date, and it was already refunded to your account on $refunded_on, so there's nothing more to refund. If there's anything else we can help with, just reply to this message.

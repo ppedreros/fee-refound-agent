@@ -16,6 +16,10 @@ SEEDED = {
     "Deposit Fee Refund Out of Network Fee": TransactionKind(
         kind="fee_refund", fee_type="Out of Network"
     ),
+    "Deposit ACH NORTHWIND FOODS*PAYROLL": TransactionKind(kind="payroll_deposit"),
+    "Fee Withdrawal ; Extended Overdraft fee": TransactionKind(
+        kind="fee", fee_type="Extended overdraft"
+    ),
 }
 
 

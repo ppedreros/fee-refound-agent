@@ -1,1 +1,1 @@
-Hola {{first_name}}, gracias por escribirnos. Revisamos la cuenta: $deposit llegó el $fee_date, el mismo día del cargo de $amount ($fee_type), así que hemos reembolsado el cargo en la cuenta $sub_account_name. Lo verá allí en breve. Si necesita algo más, responda a este mensaje.
+Hola {{first_name}}, gracias por escribirnos. Revisamos tu cuenta: $deposit llegó el $fee_date, el mismo día del cargo $fee_type de $amount, así que te devolvimos el cargo en tu cuenta $sub_account_name. Lo verás allí en breve. Si necesitas algo más, responde a este mensaje.

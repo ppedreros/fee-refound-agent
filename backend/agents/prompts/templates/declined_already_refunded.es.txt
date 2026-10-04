@@ -1,0 +1,1 @@
+Hola {{first_name}}, gracias por escribirnos. Revisamos el cargo $fee_type de $amount del $fee_date, y ya te lo devolvimos el $refunded_on, así que no queda nada por devolver. Si necesitas algo más, responde a este mensaje.

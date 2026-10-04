@@ -261,3 +261,48 @@ async def test_dont_refund_leaves_an_eval_candidate_with_masked_text(
     assert candidate.expected["recommendation"] == "no_refund"  # what Luis did
     stored = json.dumps([candidate.masked_input, candidate.expected])
     assert "Ana" not in stored and "Torres" not in stored
+
+
+# --- When the policy says no (SPEC-data scenarios 6 and 17) ---
+
+
+async def checked(client: httpx.AsyncClient, app: FastAPI, case_id: int) -> dict[str, Any]:
+    await client.post(f"/cases/{case_id}/run")
+    await wait_for_runs(app)
+    case: dict[str, Any] = (await client.get(f"/cases/{case_id}")).json()
+    return case
+
+
+async def test_above_the_limit_approving_needs_a_supervisor_and_no_refund_is_offered(
+    client: httpx.AsyncClient, app: FastAPI, with_clauses: Engine
+) -> None:
+    case = await checked(client, app, 5117)
+
+    assert case["status"] == "needs_supervisor"
+    assert case["actions"] == ["reject", "reply_only"]
+    refused = await decide(client, body(case), case_id=5117)
+    assert error(refused) == (403, "over_limit")
+    kept = await decide(
+        client,
+        body(case, "reject", reason="Waiting for the supervisor to review it."),
+        case_id=5117,
+    )
+    assert (kept.status_code, kept.json()["refunded"]) == (200, False)
+    assert rows(with_clauses, "SELECT id FROM refunds") == []
+
+
+async def test_a_decline_sends_the_reply_and_refund_anyway_refunds(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    case = await checked(client, app, 5106)
+    assert case["status"] == "recommend_no_refund"
+    assert case["actions"] == ["approve", "edit", "reject"]
+
+    response = await decide(
+        client,
+        body(case, "reject", reason="A long-standing member; one more refund is fine."),
+        case_id=5106,
+    )
+
+    result = response.json()
+    assert (result["refunded"], result["amount"]) == (True, "35.00")

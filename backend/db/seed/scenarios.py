@@ -244,4 +244,210 @@ BRIEF = Scenario(
     },
 )
 
-SCENARIOS = [BRIEF]
+
+# --- Scenarios 2-18 (SPEC-data, "Seed"). Ids follow one scheme, so they never collide with the
+# brief's: conversation 5100+n, member 400+n, account 7000+10n+k, sub-account 1400+10n+k,
+# transaction 90000+100n+k, message 9200+10n+k. Account numbers are "77" + n + k. ---
+
+CREDIT_UNION = 7
+MESSAGE_AT = "2026-09-15 09:00:00"
+
+
+def member_scenario(
+    n: int,
+    title: str,
+    *,
+    name: tuple[str, str],
+    subject: str,
+    messages: list[str],
+    sub_accounts: list[dict[str, Any]],
+    transactions: list[dict[str, Any]],
+    received_at: str = MESSAGE_AT,
+) -> Scenario:
+    """One member with one open conversation. Messages are the member's, a minute apart."""
+    member = 400 + n
+    start = utc(received_at)
+    accounts = sorted({sub["account_id"] for sub in sub_accounts})
+    return Scenario(
+        number=n,
+        title=title,
+        rows={
+            "conversations": [
+                {
+                    "id": 5100 + n,
+                    "member_id": member,
+                    "subject": subject,
+                    "status": "waiting_for_bank",
+                    "created_at": start,
+                }
+            ],
+            "messages": [
+                {
+                    "id": 9200 + 10 * n + k,
+                    "conversation_id": 5100 + n,
+                    "author_id": str(member),
+                    "body": body,
+                    "created_at": start + dt.timedelta(minutes=k - 1),
+                }
+                for k, body in enumerate(messages, start=1)
+            ],
+            "accounts": [
+                {
+                    "id": account,
+                    "member_id": member,
+                    "credit_union_id": CREDIT_UNION,
+                    "account_number": f"77{n:02d}{account % 10:02d}",
+                    "is_primary": account % 10 == 1,
+                }
+                for account in accounts
+            ],
+            "sub_accounts": sub_accounts,
+            "transactions": transactions,
+            "member_profiles": [{"member_id": member, "first_name": name[0], "last_name": name[1]}],
+        },
+    )
+
+
+def sub_account(
+    n: int,
+    k: int,
+    kind: str,
+    name: str,
+    balance: str,
+    available: str | None = None,
+    *,
+    account: int = 1,
+) -> dict[str, Any]:
+    return {
+        "id": 1400 + 10 * n + k,
+        "account_id": 7000 + 10 * n + account,
+        "type": kind,
+        "name": name,
+        "balance": Decimal(balance),
+        "available": Decimal(available if available is not None else balance),
+    }
+
+
+def txn(
+    n: int, k: int, sub: int, day: str, sequence: int, description: str, amount: str, after: str
+) -> dict[str, Any]:
+    """Transaction k of scenario n on sub-account k=`sub`, posted `sequence`-th on `day`."""
+    date = dt.date.fromisoformat(day)
+    return {
+        "id": 90000 + 100 * n + k,
+        "sub_account_id": 1400 + 10 * n + sub,
+        "date": date,
+        "description": description,
+        "amount": Decimal(amount),
+        "balance_after": Decimal(after),
+        "posting_ref": f"{date:%Y%m%d}-{sequence:04d}",
+    }
+
+
+COURTESY_PAY = "Fee Withdrawal ; Courtesy Pay fee"
+EXTENDED_OVERDRAFT = "Fee Withdrawal ; Extended Overdraft fee"
+COURTESY_PAY_REFUND = "Deposit Fee Refund Courtesy Pay Fee"
+
+
+def same_day_paycheck(
+    n: int, day: str, *, bill: str = "Withdrawal Debit Card CITY POWER & LIGHT"
+) -> list[dict[str, Any]]:
+    """Ana's pattern: a $60 bill takes the balance below zero, the $35 fee follows, and the
+    paycheck posts last the same day. With it first, the balance would have stayed positive."""
+    return [
+        txn(n, 1, 1, day, 0, bill, "-60.00", "-40.00"),
+        txn(n, 2, 1, day, 5, COURTESY_PAY, "-35.00", "-75.00"),
+        txn(n, 3, 1, day, 10, "Deposit ACH NORTHWIND FOODS*PAYROLL", "1250.00", "1175.00"),
+    ]
+
+
+def checking(n: int, balance: str = "1175.00") -> dict[str, Any]:
+    return sub_account(n, 1, "CHECKING", "Everyday Checking", balance)
+
+
+SCENARIO_6 = member_scenario(
+    6,
+    "Three fee refunds already in the 12 months before the fee: we recommend not refunding",
+    name=("Grace", "Kim"),
+    subject="Overdraft fee again",
+    messages=["My paycheck came in the same day as this overdraft fee. Could you refund it?"],
+    sub_accounts=[checking(6)],
+    transactions=[
+        txn(6, 4, 1, "2025-11-10", 2, COURTESY_PAY_REFUND, "35.00", "410.00"),
+        txn(6, 5, 1, "2026-02-03", 2, COURTESY_PAY_REFUND, "35.00", "365.00"),
+        txn(6, 6, 1, "2026-06-20", 2, COURTESY_PAY_REFUND, "35.00", "290.00"),
+        *same_day_paycheck(6, "2026-09-14"),
+    ],
+)
+
+SCENARIO_7 = member_scenario(
+    7,
+    "The paycheck arrived two days after the fee: we recommend not refunding",
+    name=("Omar", "Haddad"),
+    subject="Fee before payday",
+    messages=["The overdraft fee hit right before my paycheck arrived. Can you take it back?"],
+    sub_accounts=[checking(7, "885.00")],
+    transactions=[
+        txn(
+            7, 1, 1, "2026-09-12", 0, "Withdrawal Debit Card CITY POWER & LIGHT", "-60.00", "-20.00"
+        ),
+        txn(7, 2, 1, "2026-09-12", 5, COURTESY_PAY, "-35.00", "-55.00"),
+        txn(7, 3, 1, "2026-09-14", 3, "Deposit ACH NORTHWIND FOODS*PAYROLL", "940.00", "885.00"),
+    ],
+)
+
+SCENARIO_8 = member_scenario(
+    8,
+    "A past-due loan payment: we recommend not refunding",
+    name=("Lucia", "Moreno"),
+    subject="Overdraft fee",
+    messages=["My salary arrived the same day as the overdraft fee. Can you refund the fee?"],
+    sub_accounts=[
+        checking(8),
+        sub_account(8, 2, "LOAN", "Auto Loan", "8400.00", "-150.00", account=2),
+    ],
+    transactions=same_day_paycheck(8, "2026-09-14"),
+)
+
+SCENARIO_11 = member_scenario(
+    11,
+    "The fee was already refunded: we recommend not refunding",
+    name=("Ethan", "Brooks"),
+    subject="Refund the overdraft fee",
+    messages=[
+        "I was charged an overdraft fee on Sep 10 even though my paycheck came that day. "
+        "Please refund it."
+    ],
+    sub_accounts=[checking(11, "1210.00")],
+    transactions=[
+        *same_day_paycheck(11, "2026-09-10"),
+        txn(11, 4, 1, "2026-09-11", 1, COURTESY_PAY_REFUND, "35.00", "1210.00"),
+    ],
+)
+
+SCENARIO_17 = member_scenario(
+    17,
+    "A $60 fee, above Luis's $50 approval limit: needs supervisor approval",
+    name=("Nora", "Fischer"),
+    subject="Overdraft charge",
+    messages=["My paycheck landed the same day, but I was still charged $60. Can you refund it?"],
+    sub_accounts=[checking(17, "1290.00")],
+    transactions=[
+        txn(
+            17,
+            1,
+            1,
+            "2026-09-14",
+            0,
+            "Withdrawal Debit Card CITY POWER & LIGHT",
+            "-100.00",
+            "-50.00",
+        ),
+        txn(17, 2, 1, "2026-09-14", 5, EXTENDED_OVERDRAFT, "-60.00", "-110.00"),
+        txn(
+            17, 3, 1, "2026-09-14", 10, "Deposit ACH NORTHWIND FOODS*PAYROLL", "1400.00", "1290.00"
+        ),
+    ],
+)
+
+SCENARIOS = [BRIEF, SCENARIO_6, SCENARIO_7, SCENARIO_8, SCENARIO_11, SCENARIO_17]

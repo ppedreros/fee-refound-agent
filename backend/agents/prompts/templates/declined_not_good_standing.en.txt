@@ -1,0 +1,1 @@
+Hi {{first_name}}, thanks for reaching out. We reviewed the $amount $fee_type fee from $fee_date. We can refund fees only when there's no unpaid balance on any of your accounts, and right now there is one, so we aren't able to refund this fee. If there's anything else we can help with, just reply to this message.

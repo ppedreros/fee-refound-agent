@@ -95,6 +95,12 @@ This differs from the first version of D6, where `find_policy` ran in parallel w
 
 **Templates.** The fallback templates are in `backend/agents/prompts/templates/`, in English and Spanish, one for "refunded" and one per decline reason (`yearly_limit`, `not_good_standing`, `deposit_not_same_day`, `already_refunded`).
 
+**As built (T31).**
+- **Decline templates.** `declined_<reason>.{en,es}.txt` for `yearly_limit`, `deposit_not_same_day`, `not_good_standing` and `already_refunded`. They explain the rule in plain words, with the limit or the refund date where it applies; a test renders every template and runs it through the post-check. The Spanish replies use "tú", as Sol's examples do; the existing "refunded" template is aligned with them.
+- **Above the limit, no draft.** A refund above the staff limit gets no draft. This narrows the `draft` rule above: Luis can only "Don't refund" or "Send a reply only" (D-api-1), and a "we've refunded" reply would never be sent. For the clause choice, such a case is described as "Refund the $60 Extended overdraft fee, above the staff approval limit.", with the fact "The policy allows this $60 refund, but it is above your $50 limit." In a live check this made Jev confirm `staff-approval-limits#1`; before, it chose the same-day clause and the cross-check fell back.
+- **Reason order.** `finalize` lists triage's reasons, then the decision's, then those that appear later (`drafter_down`), so Luis reads the policy reason before "Reply written from a standard template".
+- **Live check (2026-10-04).** Scenarios 6, 7, 8, 11 and 17 reached their statuses with live Jev and Sol, and Sol's decline replies explained each rule in plain words. Jev confirmed the clause for 6, 7 and 17; for 8 and 11 it was unsure (confidence 0.4), and the cross-check quoted the rule's clause, as designed.
+
 ## Decision (`backend/agents/decide.py`)
 
 **Codes added in this spec.** `fee_question` is in the uncertainty group. Luis sees "Ana is asking why a fee was charged, not for a refund.", and the next step is "Write a reply, or refund anyway".

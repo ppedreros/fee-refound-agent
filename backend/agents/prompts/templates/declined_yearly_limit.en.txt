@@ -1,0 +1,1 @@
+Hi {{first_name}}, thanks for reaching out. We reviewed the $amount $fee_type fee from $fee_date. Our policy allows up to $max_refunds fee refunds in any 12-month period, and that limit has already been reached, so we aren't able to refund this one. If there's anything else we can help with, just reply to this message.

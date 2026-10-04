@@ -184,6 +184,10 @@ Only the `api` decision handler calls this. The interface is what a real core in
 | 17 | new | Fee above Luis's approval limit | Needs supervisor approval (`over_limit`) |
 | 18 | new | Ana-like case whose model answers are intentionally not recorded. Demonstrates the fallback in replay mode. | Needs your call (`classifier_down`) in replay. Normal in live. |
 
+**Scenarios as built (Phase 5).** `member_scenario(n, …)` in `backend/db/seed/scenarios.py` builds each one with a single id scheme, so ids never collide with the brief's: conversation 5100+n, member 400+n, account 7000+10n+k, sub-account 1400+10n+k, transaction 90000+100n+k, message 9200+10n+k, and account numbers "77" + n + k. Fee days are around Sep 14, 2026, and each day's balances add up, except where a scenario says otherwise. The fee types named after the fee schedule ("Extended overdraft", "Savings below minimum", "Paper statement") join "Courtesy Pay" and "Out of Network" in `descriptions.yaml`, so every fee finds its schedule clause.
+
+- **T31.** 6: Grace Kim, three Courtesy Pay refunds (Nov 10, Feb 3, Jun 20) before a same-day-paycheck fee. 7: Omar Haddad, fee on Sep 12, paycheck on Sep 14. 8: Lucia Moreno, a same-day case plus an Auto Loan with `available` −150. 11: Ethan Brooks, a same-day fee on Sep 10 refunded by the core on Sep 11. 17: Nora Fischer, a $60 Extended overdraft fee with a same-day paycheck.
+
 ## Acceptance criteria
 
 1. `alembic upgrade head` on an empty database creates every table. `alembic downgrade base` removes them cleanly.

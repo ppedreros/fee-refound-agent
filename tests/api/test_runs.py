@@ -36,8 +36,11 @@ async def test_the_open_queue_lists_conversations_waiting_for_us_oldest_first(
 
     assert response.status_code == 200
     items = response.json()["items"]
-    assert [item["id"] for item in items] == [5008, 5011, 5012]
-    ana = items[-1]
+    received = [item["received_at"] for item in items]
+    assert received == sorted(received)  # oldest unanswered message first
+    brief = [item["id"] for item in items if item["id"] < 5100]
+    assert brief == [5008, 5011, 5012]  # 5010 waits for the member; 5009 is closed
+    ana = next(item for item in items if item["id"] == 5012)
     assert ana == {
         "id": 5012,
         "member_name": "Ana T.",
@@ -57,14 +60,19 @@ async def test_the_done_view_lists_closed_conversations(client: httpx.AsyncClien
 
 
 async def test_the_queue_pages_with_an_opaque_cursor(client: httpx.AsyncClient) -> None:
-    first = (await client.get("/cases", params={"limit": 2})).json()
-    second = (
-        await client.get("/cases", params={"limit": 2, "cursor": first["next_cursor"]})
-    ).json()
+    everything = [i["id"] for i in (await client.get("/cases")).json()["items"]]
+    paged: list[int] = []
+    cursor = None
+    while True:
+        params = {"limit": 2} | ({"cursor": cursor} if cursor else {})
+        page = (await client.get("/cases", params=params)).json()
+        paged += [i["id"] for i in page["items"]]
+        cursor = page["next_cursor"]
+        if cursor is None:
+            break
 
-    assert [i["id"] for i in first["items"]] == [5008, 5011]
-    assert [i["id"] for i in second["items"]] == [5012]
-    assert second["next_cursor"] is None
+    assert paged == everything
+    assert len(everything) > 2
 
 
 async def test_queue_parameters_are_validated(client: httpx.AsyncClient) -> None:

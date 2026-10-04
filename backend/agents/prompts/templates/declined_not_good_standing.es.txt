@@ -1,0 +1,1 @@
+Hola {{first_name}}, gracias por escribirnos. Revisamos el cargo $fee_type de $amount del $fee_date. Solo podemos devolver cargos cuando no hay saldos pendientes en ninguna de tus cuentas, y ahora mismo hay uno, así que no podemos devolver este cargo. Si necesitas algo más, responde a este mensaje.

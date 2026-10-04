@@ -1,0 +1,1 @@
+Hola {{first_name}}, gracias por escribirnos. Revisamos el cargo $fee_type de $amount del $fee_date. Nuestra política permite hasta $max_refunds reembolsos de cargos en cualquier periodo de 12 meses, y ya se alcanzó ese límite, así que esta vez no podemos devolverlo. Si necesitas algo más, responde a este mensaje.
