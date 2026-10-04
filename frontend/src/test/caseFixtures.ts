@@ -150,6 +150,7 @@ export const anaReady: CaseView = {
   actions: ["approve", "edit", "reject"],
   can_run: true,
   can_pick_fee: false,
+  checking_run_id: null,
 };
 
 const unchecked = {
@@ -194,7 +195,13 @@ export const notChecked: CaseView = {
   },
 };
 
-export const checking: CaseView = { ...anaReady, status: "checking", actions: [], can_run: false };
+export const checking: CaseView = {
+  ...anaReady,
+  status: "checking",
+  actions: [],
+  can_run: false,
+  checking_run_id: "7a1c2e9d-3b4f-4c5a-8d6e-0f1a2b3c4d5e",
+};
 
 export const recommendNoRefund: CaseView = {
   ...anaReady,

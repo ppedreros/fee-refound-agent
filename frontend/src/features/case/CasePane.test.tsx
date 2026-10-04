@@ -1,10 +1,11 @@
-import { screen } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError, api, type CaseView } from "../../api/client";
 import { copy } from "../../copy/en";
 import { anaReady, checking, spanish } from "../../test/caseFixtures";
+import { FakeEventSource } from "../../test/eventSource";
 import { renderWithClient } from "../../test/render";
 import { CasePane } from "./CasePane";
 
@@ -27,10 +28,13 @@ const anaNotChecked: CaseView = {
 
 beforeEach(() => {
   vi.mocked(api.listCases).mockResolvedValue({ items: [], next_cursor: null });
+  FakeEventSource.instances = [];
+  vi.stubGlobal("EventSource", FakeEventSource);
 });
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 function renderPane() {
@@ -38,23 +42,33 @@ function renderPane() {
 }
 
 describe("Case pane", () => {
-  it("checks the case and shows the result once the check is done", async () => {
+  it("checks the case, shows the steps as they happen, then the result", async () => {
     const user = userEvent.setup();
     getCase
       .mockResolvedValueOnce(anaNotChecked)
       .mockResolvedValueOnce(checking)
       .mockResolvedValue(anaReady);
-    runCase.mockResolvedValue({ run_id: "bf5975f1-b419-4d2b-bc60-5328e5909ced" });
+    runCase.mockResolvedValue({ run_id: checking.checking_run_id ?? "" });
     renderPane();
 
     await user.click(await screen.findByRole("button", { name: copy.actions.checkCase }));
 
     expect(runCase).toHaveBeenCalledWith(5012, undefined);
     expect(await screen.findByRole("heading", { name: copy.status.checking })).toBeInTheDocument();
+    const source = FakeEventSource.latest();
+    expect(source.url).toContain(checking.checking_run_id);
+    act(() => {
+      source.send({ event: "step", node: "load_conversation", state: "started" });
+    });
+    const card = screen.getByRole("region", { name: copy.status.checking });
+    expect(within(card).getByText(copy.steps.load_conversation)).toBeInTheDocument();
+    act(() => {
+      source.send({ event: "done", status: "ready_to_refund" });
+    });
     expect(
-      await screen.findByRole("heading", { name: copy.status.ready_to_refund }, { timeout: 3000 }),
+      await screen.findByRole("heading", { name: copy.status.ready_to_refund }),
     ).toBeInTheDocument();
-    expect(screen.getByText(anaReady.summary ?? "")).toBeInTheDocument();
+    expect(source.closed).toBe(true);
   });
 
   it("follows a check that is already running instead of showing an error", async () => {
@@ -69,6 +83,7 @@ describe("Case pane", () => {
 
     expect(await screen.findByRole("heading", { name: copy.status.checking })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).toBeNull();
+    expect(FakeEventSource.latest().url).toContain(checking.checking_run_id);
   });
 
   it("shows why a case can't be checked", async () => {

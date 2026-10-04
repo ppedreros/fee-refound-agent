@@ -131,6 +131,13 @@ Server-sent events (sse-starlette).
 - A finished run returns its full history, then `done`.
 - A keep-alive comment is sent every 15 seconds.
 
+**As built (T36).**
+- **One channel per active run.** `RunEvents` (`backend/api/events.py`) lives in the API process. Each background check opens its run's channel before it starts and publishes every runner event into it. A follower gets the channel's whole history first (the step in progress included), then the live events until `done`, when the channel goes away.
+- **A run that ended** (or one this process isn't running) is read back from `agent_steps`: `started` and `finished`/`failed` for each recorded step, then `done` with the run's outcome (or `failed`/`interrupted`). If it is still running elsewhere, the stream ends without `done`, and the browser's EventSource reconnects.
+- **What goes out.** Events carry only `event`, `node`, `state` or `status`, never a step record. A run that doesn't belong to the case is 404 "We couldn't find that check." Keep-alive comments go out every 15 seconds (`sse-starlette`).
+- **Following a check.** `GET /cases/{id}` gives `checking_run_id` while a check runs, so the page can attach to it even after a reload.
+- **Live check (2026-10-04, through nginx on :8080).** Ana's events arrived as they happened: `draft` started at 0.68 s and finished at 4.19 s, which is how long Sol took, so nothing is buffered.
+
 ### `POST /cases/{id}/decision`
 
 The only action that moves money.

@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -8,10 +7,11 @@ import {
   type CaseView,
   type DecisionRequest,
 } from "../../api/client";
-import { queryKeys, useCase, useCases, useRunCase } from "../../api/hooks";
+import { useCase, useCases, useRunCase } from "../../api/hooks";
 import { ErrorBanner } from "../../components/ErrorBanner";
 import { copy } from "../../copy/en";
 import { formatShortDate } from "../../lib/format";
+import { LiveSteps } from "./LiveSteps";
 import { cardButtons } from "./cardButtons";
 import { ConfirmDecision } from "./DecisionActions";
 import { DecisionCard } from "./DecisionCard";
@@ -26,14 +26,13 @@ interface CasePaneProps {
   onNext: (id: number) => void;
 }
 
-/** One case: loads it, starts checks and follows them, and sends Luis's decision. */
+/** One case: loads it, starts checks and follows their live steps, and sends Luis's decision. */
 export function CasePane({ caseId, onBack, onNext }: CasePaneProps) {
   const query = useCase(caseId);
   const run = useRunCase(caseId);
   const decision = useDecision(caseId);
   const open = useCases("open");
   const [decided, setDecided] = useState(false);
-  useQueueRefreshAfterCheck(query.data);
 
   if (query.isPending) return <CaseSkeleton />;
   if (query.isError) {
@@ -232,6 +231,11 @@ export function CaseContent({
         footer={footer}
         titleRef={titleRef}
         onNext={onNext}
+        live={
+          view.checking_run_id !== null && (
+            <LiveSteps key={view.checking_run_id} caseId={view.id} runId={view.checking_run_id} />
+          )
+        }
       />
       {(followsPrimary || mode !== "follow") && (
         <ReplyEditor
@@ -252,18 +256,6 @@ export function CaseContent({
       <Evidence view={view} />
     </article>
   );
-}
-
-/** When a check finishes, the queue's status and amount change too. */
-function useQueueRefreshAfterCheck(view: CaseView | undefined) {
-  const client = useQueryClient();
-  const previous = useRef(view?.status);
-  useEffect(() => {
-    if (previous.current === "checking" && view?.status !== "checking") {
-      void client.invalidateQueries({ queryKey: queryKeys.allCases });
-    }
-    previous.current = view?.status;
-  }, [client, view?.status]);
 }
 
 function CaseSkeleton() {

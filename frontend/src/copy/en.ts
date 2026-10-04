@@ -113,6 +113,12 @@ export const copy = {
     finalize: "Done",
     other: "Another step",
   },
+  // Live steps: the state of each step, read out after its label.
+  live: {
+    running: "In progress",
+    finished: "Done",
+    failed: "Didn't finish",
+  },
   time: {
     justNow: "Just now",
     minutesAgo: (minutes: number) => `${String(minutes)} min ago`,

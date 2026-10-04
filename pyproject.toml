@@ -13,6 +13,7 @@ dependencies = [
     "pydantic-settings>=2.6",
     "pyyaml>=6.0",
     "sqlalchemy[asyncio]>=2.0",
+    "sse-starlette>=3.5",
     "structlog>=24.4",
     "typesafe-sdk>=0.7.2",
     "uvicorn[standard]>=0.32",

@@ -184,6 +184,8 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 | `draft` | Writing a reply |
 | `finalize` | Done |
 
+**As built (T36).** "Check this case" (or a 409) refetches the case, whose `checking_run_id` mounts `LiveSteps`: an `EventSource` on that run, one row per label in the order the steps started (the three reads share one row, done when all three are), a pulsing dot while a row runs, a green check when it is done, and "Didn't finish" in grey when it failed. On `done` the stream closes and the case and the queue are fetched again, so the card shows the new status without a reload. This replaces the one-second polling of T24.
+
 **Display.**
 - Each step fades in when it starts and gets a check when it finishes.
 - A thin Terracotta line shows progress. It is not a percentage.

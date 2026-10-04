@@ -225,6 +225,7 @@ class CaseView(BaseModel):
     actions: list[Action]
     can_run: bool
     can_pick_fee: bool
+    checking_run_id: UUID | None  # the check in progress, whose live steps the page follows
 
 
 # --- POST /cases/{id}/decision ---

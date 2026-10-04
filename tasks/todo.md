@@ -435,14 +435,14 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `backend/db/seed/scenarios.py`, `backend/agents/runner.py`, `deps.py` (`reserve_s`, `model_deadline`), `steps.py` (`bounded`), `nodes.py`, `backend/core/config/runs.yaml`, `tests/integration/agents/test_fallbacks.py` (interrupted runs were already covered in `test_runner.py` and `tests/api/test_runs.py`)
 **Scope:** S–M
 
-### - [ ] T36: Live steps over SSE (API, nginx, UI)
+### - [x] T36: Live steps over SSE (API, nginx, UI)
 **Description:** Add `GET /cases/{id}/runs/{run_id}/events`: replay the recorded steps, then send live events with a keep-alive. The runner emits custom stream events. The UI `LiveSteps` (EventSource, attach on 409, collapse on done) replaces the polling from T24.
 **Acceptance criteria:**
-- [ ] Ana's stream has `started` and `finished` for each node, in order, then `done`. A late subscriber gets the full history (SPEC-agent AC8; SPEC-api AC8).
-- [ ] It works **through nginx** in compose, with no buffering. The UI steps appear one by one (SPEC-ui AC5).
+- [x] Ana's stream has `started` and `finished` for each node, in order, then `done`. A late subscriber gets the full history (SPEC-agent AC8; SPEC-api AC8).
+- [x] It works **through nginx** in compose, with no buffering. The UI steps appear one by one (SPEC-ui AC5).
 **Verification:** `uv run python -m pytest tests/api/test_runs.py -k events`; `npm --prefix frontend test -- LiveSteps`; manual check through `:8080`
 **Dependencies:** T31–T35 (or any time after T30, if run in parallel)
-**Files:** `backend/api/routes_events.py`, `backend/agents/runner.py`, `frontend/src/features/case/LiveSteps.tsx` (+ test), `frontend/src/features/case/useRunEvents.ts`
+**Files:** `backend/api/routes_events.py`, `events.py` (+ test), `routes_cases.py`, `main.py`, `view_model.py` + `schemas.py` (`checking_run_id`), `pyproject.toml` (`sse-starlette`), `frontend/src/features/case/LiveSteps.tsx` (+ test), `useRunEvents.ts`, `steps.ts`, `CasePane.tsx`, `DecisionCard.tsx`, `frontend/src/api/` (regenerated types, no polling), `frontend/src/test/eventSource.ts`, `tests/api/test_runs.py` + `test_case_view.py`
 **Scope:** M
 
 ### Checkpoint 5: Every scenario

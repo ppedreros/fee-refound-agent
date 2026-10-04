@@ -9,9 +9,6 @@ export const queryKeys = {
   case: (id: number) => ["case", id] as const,
 };
 
-/** While a case is being checked, ask again this often (live steps replace this later). */
-export const POLL_MS = 1000;
-
 export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
@@ -40,8 +37,7 @@ export function useCase(id: number) {
   return useQuery({
     queryKey: queryKeys.case(id),
     queryFn: () => api.getCase(id),
-    staleTime: 5000,
-    refetchInterval: (query) => (query.state.data?.status === "checking" ? POLL_MS : false),
+    staleTime: 5000, // a check in progress is followed live (useRunEvents), not polled
   });
 }
 

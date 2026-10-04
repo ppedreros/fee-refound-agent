@@ -22,6 +22,8 @@ export interface CardProps {
   footer?: ReactNode;
   titleRef?: Ref<HTMLHeadingElement>;
   onNext?: (() => void) | null;
+  /** While checking: the live steps, in place of the generic sentence. */
+  live?: ReactNode;
 }
 
 const PRIMARY =
@@ -41,6 +43,7 @@ export function DecisionCard({
   footer,
   titleRef,
   onNext,
+  live,
 }: CardProps) {
   const titleId = useId();
   const { primary, secondary } = cardButtons(view);
@@ -69,7 +72,7 @@ export function DecisionCard({
       </div>
 
       <div className="mt-2 space-y-2 text-grey-800">
-        <CardBody view={view} />
+        {view.status === "checking" && live ? live : <CardBody view={view} />}
       </div>
       {view.notes.map((note) => (
         <p key={note.message} className="mt-2 text-sm text-grey-600">

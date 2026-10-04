@@ -115,6 +115,18 @@
             "title": "Candidates",
             "type": "array"
           },
+          "checking_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checking Run Id"
+          },
           "clause": {
             "anyOf": [
               {
@@ -251,7 +263,8 @@
           "decision",
           "actions",
           "can_run",
-          "can_pick_fee"
+          "can_pick_fee",
+          "checking_run_id"
         ],
         "title": "CaseView",
         "type": "object"
@@ -1512,6 +1525,54 @@
           }
         },
         "summary": "Check Case"
+      }
+    },
+    "/cases/{case_id}/runs/{run_id}/events": {
+      "get": {
+        "operationId": "run_events_cases__case_id__runs__run_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Case Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Events"
       }
     },
     "/health": {

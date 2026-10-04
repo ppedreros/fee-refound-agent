@@ -14,6 +14,7 @@ import {
   formatShortDate,
 } from "../../lib/format";
 import { EvidenceDay } from "./EvidenceDay";
+import { stepLabel } from "./steps";
 
 type StepView = components["schemas"]["StepView"];
 
@@ -192,9 +193,4 @@ function preparedSteps(steps: StepView[]): PreparedStep[] {
     });
   }
   return [...merged.values()];
-}
-
-function stepLabel(node: string): string {
-  if (node.startsWith("load_") && node !== "load_conversation") return copy.steps.load;
-  return node in copy.steps ? copy.steps[node as keyof typeof copy.steps] : copy.steps.other;
 }

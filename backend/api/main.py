@@ -10,10 +10,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from backend.agents.runner import reset_interrupted_runs
 from backend.api.errors import install_error_handlers
+from backend.api.events import RunEvents
 from backend.api.middleware import RequestIdMiddleware
 from backend.api.resources import AppResources, default_resources
 from backend.api.routes_cases import router as cases_router
 from backend.api.routes_decision import router as decision_router
+from backend.api.routes_events import router as events_router
 from backend.api.routes_health import router as health_router
 from backend.core.logging import configure_logging
 from backend.core.settings import Settings, load_settings
@@ -30,6 +32,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.resources = resources
     app.state.engine = resources.writer_engine  # /health checks the database as app_writer
     app.state.run_tasks = set()
+    app.state.run_events = RunEvents()  # live steps for the page (SSE)
     await _reset_interrupted_runs(resources)
     yield
     tasks = list(app.state.run_tasks)
@@ -55,6 +58,7 @@ def create_app(
     app.include_router(health_router)
     app.include_router(cases_router)
     app.include_router(decision_router)
+    app.include_router(events_router)
     return app
 
 

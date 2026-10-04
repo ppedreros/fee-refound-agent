@@ -1,6 +1,12 @@
 """GET /cases (the queue) and POST /cases/{id}/run (SPEC-api)."""
 
+import asyncio
+import json
+from typing import Any
+from uuid import UUID, uuid4
+
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import Engine, text
 from sqlalchemy.engine import URL
@@ -186,3 +192,90 @@ async def test_startup_interrupts_runs_left_running(
         run_status = connection.execute(text("SELECT status FROM agent_runs")).scalar_one()
         case_status = connection.execute(text("SELECT status FROM cases")).scalar_one()
     assert (run_status, case_status) == ("interrupted", "not_checked")
+
+
+# --- Live steps (server-sent events) ---
+
+NODES = {
+    "load_conversation",
+    "triage",
+    "load_accounts",
+    "load_transactions",
+    "load_refund_history",
+    "identify_fee",
+    "run_checks",
+    "decide",
+    "find_policy",
+    "draft",
+    "finalize",
+}
+
+
+def sse_events(text: str) -> list[dict[str, Any]]:
+    return [
+        json.loads(line.removeprefix("data: "))
+        for line in text.splitlines()
+        if line.startswith("data: ")
+    ]
+
+
+def assert_every_node_starts_then_finishes(events: list[dict[str, Any]]) -> None:
+    steps = [(e["node"], e["state"]) for e in events if e["event"] == "step"]
+    assert {node for node, _ in steps} == NODES
+    for node in NODES:
+        assert steps.index((node, "started")) < steps.index((node, "finished"))
+    assert steps[:2] == [("load_conversation", "started"), ("load_conversation", "finished")]
+
+
+async def test_a_finished_run_streams_its_whole_history_then_done(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    run_id = (await client.post("/cases/5012/run")).json()["run_id"]
+    await wait_for_runs(app)
+
+    response = await client.get(f"/cases/5012/runs/{run_id}/events")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    events = sse_events(response.text)
+    assert_every_node_starts_then_finishes(events)
+    assert events[-1] == {"event": "done", "status": "ready_to_refund"}
+
+
+async def test_a_late_follower_gets_the_steps_so_far_then_the_live_ones(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    classifier: FakeClassifier,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate = asyncio.Event()
+    answer = classifier.classify
+
+    async def held(*args: Any, **kwargs: Any) -> Any:
+        await gate.wait()  # the run stops inside triage until the follower is there
+        return await answer(*args, **kwargs)
+
+    monkeypatch.setattr(classifier, "classify", held)
+    run_id = (await client.post("/cases/5012/run")).json()["run_id"]
+    while not app.state.run_events.history(UUID(run_id)):
+        await asyncio.sleep(0.01)
+
+    follower = asyncio.create_task(client.get(f"/cases/5012/runs/{run_id}/events"))
+    await asyncio.sleep(0.1)
+    gate.set()
+    events = sse_events((await follower).text)
+    await wait_for_runs(app)
+
+    assert_every_node_starts_then_finishes(events)
+    assert events[-1] == {"event": "done", "status": "ready_to_refund"}
+
+
+async def test_a_run_of_another_case_has_no_events(client: httpx.AsyncClient, app: FastAPI) -> None:
+    run_id = (await client.post("/cases/5012/run")).json()["run_id"]
+    await wait_for_runs(app)
+
+    other_case = await client.get(f"/cases/5011/runs/{run_id}/events")
+    unknown = await client.get(f"/cases/5012/runs/{uuid4()}/events")
+
+    assert (other_case.status_code, unknown.status_code) == (404, 404)
+    assert other_case.json()["error"]["message"] == "We couldn't find that check."

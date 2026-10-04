@@ -1,9 +1,11 @@
 """GET /cases/{id}: everything Luis's case pane reads, and nothing it must not show (SPEC-api)."""
 
+import asyncio
 import json
 from typing import Any
 
 import httpx
+import pytest
 from fastapi import FastAPI
 
 from backend.policy.reasons import ReasonCode
@@ -160,3 +162,28 @@ async def test_an_unknown_case_is_a_friendly_404(client: httpx.AsyncClient) -> N
 
     assert response.status_code == 404
     assert response.json()["error"]["message"] == "We couldn't find that conversation."
+
+
+async def test_a_case_being_checked_names_the_check_so_the_page_can_follow_it(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    classifier: FakeClassifier,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate = asyncio.Event()
+    answer = classifier.classify
+
+    async def held(*args: Any, **kwargs: Any) -> Any:
+        await gate.wait()
+        return await answer(*args, **kwargs)
+
+    monkeypatch.setattr(classifier, "classify", held)
+    run_id = (await client.post("/cases/5012/run")).json()["run_id"]
+
+    during = (await client.get("/cases/5012")).json()
+    gate.set()
+    await wait_for_runs(app)
+    after = (await client.get("/cases/5012")).json()
+
+    assert (during["status"], during["checking_run_id"]) == ("checking", run_id)
+    assert after["checking_run_id"] is None

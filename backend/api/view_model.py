@@ -9,7 +9,7 @@ import re
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import exists, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.actions import actions_for
@@ -88,7 +88,7 @@ async def load_case_view(session: AsyncSession, case_id: int, params: PolicyPara
     case = await session.get(Case, case_id)
     run = await session.get(AgentRun, case.latest_run_id) if case and case.latest_run_id else None
     running = await session.scalar(
-        select(exists().where(AgentRun.case_id == case_id, AgentRun.status == "running"))
+        select(AgentRun.id).where(AgentRun.case_id == case_id, AgentRun.status == "running")
     )
     status = case.status if case else "not_checked"
     result: Json = (run.result if run else None) or {}
@@ -125,7 +125,8 @@ async def load_case_view(session: AsyncSession, case_id: int, params: PolicyPara
         run=await _run(session, run) if run else None,
         decision=await _decision(session, case_id),
         actions=actions_for(status, result, params.staff_limit_usd),
-        can_run=conversation.status in OPEN_STATUSES and not running and status != "done",
+        can_run=conversation.status in OPEN_STATUSES and running is None and status != "done",
+        checking_run_id=running,
         can_pick_fee=ReasonCode.FEE_AMBIGUOUS.value in result.get("reasons", [])
         and bool(candidates),
     )

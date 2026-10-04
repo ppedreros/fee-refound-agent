@@ -12,6 +12,7 @@ from sqlalchemy import select
 from backend.agents.deps import AgentDeps
 from backend.agents.runner import RunInProgress, RunnerDeps, run_case, start_run
 from backend.api.errors import NOT_FOUND, ApiError
+from backend.api.events import RunEvents
 from backend.api.queue import View, list_queue
 from backend.api.resources import AppResources
 from backend.api.schemas import CaseView, QueuePage, RunRequest, RunStarted
@@ -88,6 +89,12 @@ async def check_case(
 
 def _start_in_background(app: FastAPI, case_id: int, run_id: UUID, fee_txn_id: int | None) -> None:
     resources: AppResources = app.state.resources
+    hub: RunEvents = app.state.run_events
+    hub.open(run_id)  # before the run starts, so a follower misses nothing
+
+    async def publish(event: dict[str, Any]) -> None:
+        await hub.publish(run_id, event)
+
     deps = RunnerDeps(
         writer=resources.writer,
         agent=AgentDeps(
@@ -97,6 +104,7 @@ def _start_in_background(app: FastAPI, case_id: int, run_id: UUID, fee_txn_id: i
             chooser=resources.chooser,
         ),
         provider_modes=resources.provider_modes,
+        on_event=publish,
     )
 
     async def run() -> None:
