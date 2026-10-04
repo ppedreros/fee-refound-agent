@@ -497,14 +497,14 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `evals/meter.py`, `compare.py`, `report.py`, `run.py`, `providers.py`, `evals/reports/` (generated), `tests/unit/evals/test_report.py` + `test_compare.py`, `tests/integration/evals/test_run.py`
 **Scope:** S–M
 
-### - [ ] T40: Feedback loop and shadow-mode agreement
+### - [x] T40: Feedback loop and shadow-mode agreement
 **Description:** `evals.import_feedback` turns `eval_candidates` into YAML cases with `pending_review: true` and sets `exported_at`. A shadow-mode report gives the agreement between `would_auto_approve` and Luis's decisions (D5).
 **Acceptance criteria:**
-- [ ] An `edit` decision made through the API becomes a pending YAML case, and a second run exports nothing new (SPEC-evals AC6).
-- [ ] The shadow report prints the agreement rate over the decided clear cases.
+- [x] An `edit` decision made through the API becomes a pending YAML case, and a second run exports nothing new (SPEC-evals AC6).
+- [x] The shadow report prints the agreement rate over the decided clear cases.
 **Verification:** `uv run python -m pytest tests/integration/evals/test_import_feedback.py`; `uv run python -m evals.shadow_report`
 **Dependencies:** T38
-**Files:** `evals/import_feedback.py`, `evals/shadow_report.py`, `tests/integration/evals/test_import_feedback.py`
+**Files:** `evals/import_feedback.py`, `evals/shadow_report.py`, `evals/database.py` (`app_database`), `tests/integration/evals/test_import_feedback.py` (the shadow report's tests too)
 **Scope:** S
 
 ### - [ ] T41: UI polish: motion, accessibility, keyboard, responsive, states, copy lint

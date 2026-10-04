@@ -90,6 +90,14 @@ def eval_database(settings: Settings, eval_settings: EvalSettings) -> EvalDataba
     )
 
 
+def app_database(settings: Settings, eval_settings: EvalSettings) -> URL:
+    """The app's own database as `app_writer`, on the same server: where Luis's decisions are
+    (the feedback import and the shadow report read them there)."""
+    server = eval_settings.server_url()
+    app = make_url(settings.app_database_url.get_secret_value())
+    return app.set(host=server.host, port=server.port)
+
+
 def prepare(database: EvalDatabase, settings: Settings) -> None:
     """Drop and recreate the eval database, then bootstrap it as `backend.bootstrap` does."""
     admin = create_engine(database.server, isolation_level="AUTOCOMMIT", poolclass=pool.NullPool)
