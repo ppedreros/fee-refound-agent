@@ -18,9 +18,14 @@ from backend.providers.chain import ClassifierChain
 from backend.providers.config import providers_config
 from backend.providers.jev import JevClassifier
 from backend.providers.openai_classifier import OpenAIClassifier
+from backend.providers.openai_drafter import OpenAIDrafter
 from backend.providers.types import (
     Classification,
     Classifier,
+    Draft,
+    Drafter,
+    DrafterUnavailable,
+    DraftInput,
     ProviderUnavailable,
     Question,
     UnavailableReason,
@@ -31,7 +36,8 @@ from backend.providers.types import (
 class AppResources:
     writer_engine: AsyncEngine  # app_writer: API reads, the run trace, decisions; also /health
     reader_engine: AsyncEngine  # agent_reader: the only database access the graph gets
-    classifier: Classifier
+    classifier: Classifier  # Jev, then Luna
+    drafter: Drafter  # Sol
     provider_modes: dict[str, str]
     closers: list[Callable[[], Awaitable[None]]] = field(default_factory=list)
     policy_params: PolicyParams = field(default_factory=lambda: current_policy().params)
@@ -46,6 +52,19 @@ class AppResources:
             await close()
         await self.writer_engine.dispose()
         await self.reader_engine.dispose()
+
+
+class UnavailableDrafter:
+    """Stands in for Sol with no key: every call fails with `reason`, and the draft node uses the
+    template with `drafter_down`. Replay mode replaces it in T29."""
+
+    def __init__(self, reason: UnavailableReason) -> None:
+        self._reason: UnavailableReason = reason
+
+    async def draft(
+        self, payload: DraftInput, *, instructions: str, deadline: float | None = None
+    ) -> Draft:
+        raise DrafterUnavailable(self._reason)
 
 
 class UnavailableClassifier:
@@ -71,6 +90,7 @@ def default_resources(settings: Settings) -> AppResources:
     closers: list[Callable[[], Awaitable[None]]] = []
     jev: Classifier = UnavailableClassifier("replay_miss")
     luna: Classifier = UnavailableClassifier("replay_miss")
+    sol: Drafter = UnavailableDrafter("replay_miss")
     if modes.jev == "live" and settings.jev_api_key is not None:
         jev_client = AsyncTypeSafeClient(api_key=settings.jev_api_key.get_secret_value())
         jev = JevClassifier(jev_client, config=config.jev)
@@ -81,6 +101,7 @@ def default_resources(settings: Settings) -> AppResources:
             api_key=settings.openai_api_key.get_secret_value(), max_retries=0
         )
         luna = OpenAIClassifier(openai_client, config=config.luna)
+        sol = OpenAIDrafter(openai_client, config=config.sol)
         closers.append(openai_client.close)
     return AppResources(
         writer_engine=create_async_engine(
@@ -90,6 +111,7 @@ def default_resources(settings: Settings) -> AppResources:
             settings.agent_database_url.get_secret_value(), pool_pre_ping=True
         ),
         classifier=ClassifierChain(jev, luna),
+        drafter=sol,
         provider_modes={"jev": modes.jev, "openai": modes.openai},
         closers=closers,
     )

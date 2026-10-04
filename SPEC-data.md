@@ -50,8 +50,8 @@ The approval limit is not stored here. It is a policy parameter (see `SPEC-polic
 | Table | Columns | Notes |
 |---|---|---|
 | `cases` | `conversation_id` PK/FK, `topic`, `status`, `latest_run_id`, `updated_at`, `row_version` | A case is one conversation. A missing row means "not checked yet". The allowed values of `status` are owned by `SPEC-agent.md`. |
-| `agent_runs` | Partial unique index on `(case_id) WHERE status = 'running'`, so there is one active run per case. Columns: `id` uuid PK, `case_id`, `status` (`running`, `completed`, `failed`, `interrupted`), `started_at`, `finished_at`, `outcome`, `reason_codes` text[], `would_auto_approve`, `classifier_used`, `provider_mode` jsonb, `policy_version`, `prompt_versions` jsonb, `result` jsonb, `total_latency_ms`, `tokens_in`, `tokens_out`, `tokens_cached`, `cost_usd` numeric(10,6) | `result` holds the facts, rules, clause, recommendation and draft. The draft keeps the `{{first_name}}` placeholder. |
-| `agent_steps` | `id`, `run_id` FK, `node`, `kind` (`rule`, `jev`, `llm`, `tool`), `status`, `started_at`, `latency_ms`, `model`, `prompt_version`, `tokens_in`, `tokens_out`, `tokens_cached`, `cost_usd`, `attempts`, `error_code`, `input_masked` jsonb, `output` jsonb | One row per node execution |
+| `agent_runs` | Partial unique index on `(case_id) WHERE status = 'running'`, so there is one active run per case. Columns: `id` uuid PK, `case_id`, `status` (`running`, `completed`, `failed`, `interrupted`), `started_at`, `finished_at`, `outcome`, `reason_codes` text[], `would_auto_approve`, `classifier_used`, `provider_mode` jsonb, `policy_version`, `prompt_versions` jsonb, `result` jsonb, `total_latency_ms`, `tokens_in`, `tokens_out`, `tokens_cached`, `tokens_cache_write`, `cost_usd` numeric(10,6) | `result` holds the facts, rules, clause, recommendation and draft. The draft keeps the `{{first_name}}` placeholder. |
+| `agent_steps` | `id`, `run_id` FK, `node`, `kind` (`rule`, `jev`, `llm`, `tool`), `status`, `started_at`, `latency_ms`, `model`, `prompt_version`, `tokens_in`, `tokens_out`, `tokens_cached`, `tokens_cache_write`, `cost_usd`, `attempts`, `error_code`, `input_masked` jsonb, `output` jsonb | One row per node execution |
 | `decisions` | `id` uuid PK, `case_id`, `run_id`, `idempotency_key` UNIQUE, `staff_id` FK, `action`, `final_reply`, `reason`, `created_at` | The allowed values of `action` are owned by `SPEC-api.md` |
 | `refunds` | `id`, `fee_txn_id` UNIQUE FK, `refund_txn_id` FK, `amount`, `decision_id` FK, `created_at` | `UNIQUE(fee_txn_id)` is the money-level idempotency |
 | `audit_events` | `id` bigserial, `at`, `actor` (staff id or `system`), `action`, `case_id`, `run_id`, `request_id`, `details` jsonb | Append-only: a trigger rejects `UPDATE` and `DELETE`. No personal data in `details`. |
@@ -122,6 +122,8 @@ Every tool:
 - They live in `backend/tools/queries.py` and return the frozen models in `backend/tools/models.py`. A message's author is `member` when `author_id` is numeric, otherwise `staff`. `list_our_refunds` returns `fee_txn_id`, `amount` and `refunded_at`.
 - Every tool goes through one wrapper: the timeout from `backend/core/config/tools.yaml` (3 s), and any database failure becomes `ToolTimeout` (client timeout, or the role's `statement_timeout`) or `ToolError` (`not_found`, `database`). The one retry from `docs/agent-design.md` §5 is applied by the graph's node wrapper with the shared retry policy and the run deadline (T15, T17), not inside the tools.
 - Kinds are classified in Python after the query, so the patterns stay in `descriptions.yaml` and in one place.
+
+**Migration 0002 (T28).** `tokens_cache_write` on `agent_steps` and `agent_runs`: the tokens a call wrote to OpenAI's prompt cache, which are priced above plain input, next to the cached (read) ones.
 
 ## Core-banking adapter (the one write path for money)
 

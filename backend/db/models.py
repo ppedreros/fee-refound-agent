@@ -242,6 +242,7 @@ class AgentRun(Base):
     tokens_in: Mapped[int | None] = mapped_column(sa.Integer)
     tokens_out: Mapped[int | None] = mapped_column(sa.Integer)
     tokens_cached: Mapped[int | None] = mapped_column(sa.Integer)
+    tokens_cache_write: Mapped[int | None] = mapped_column(sa.Integer)
     cost_usd: Mapped[Decimal | None] = mapped_column(Cost)
 
 
@@ -265,6 +266,7 @@ class AgentStep(Base):
     tokens_in: Mapped[int | None] = mapped_column(sa.Integer)
     tokens_out: Mapped[int | None] = mapped_column(sa.Integer)
     tokens_cached: Mapped[int | None] = mapped_column(sa.Integer)
+    tokens_cache_write: Mapped[int | None] = mapped_column(sa.Integer)
     cost_usd: Mapped[Decimal | None] = mapped_column(Cost)
     attempts: Mapped[int | None] = mapped_column(sa.Integer)
     error_code: Mapped[str | None] = mapped_column(sa.Text)

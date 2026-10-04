@@ -15,7 +15,7 @@ from backend.agents.deps import AgentDeps
 from backend.agents.runner import RunInProgress, RunnerDeps, reset_interrupted_runs, run_case
 from backend.agents.state import GraphState
 from backend.agents.steps import StepReport, as_node
-from tests.integration.agents.fakes import FakeClassifier, jev_answers
+from tests.integration.agents.fakes import FakeClassifier, FakeDrafter, jev_answers
 
 SECRETS = ("Ana", "Torres", "884210", "884211")
 GRAPH_ORDER_AFTER_READS = [
@@ -39,7 +39,9 @@ def runner_deps(
 
     return RunnerDeps(
         writer=writer,
-        agent=AgentDeps(reader=reader, classifier=FakeClassifier(jev_answers())),
+        agent=AgentDeps(
+            reader=reader, classifier=FakeClassifier(jev_answers()), drafter=FakeDrafter()
+        ),
         provider_modes={"jev": "live", "openai": "replay"},
         on_event=collect,
     )
@@ -66,7 +68,7 @@ async def test_a_run_writes_one_run_row_and_one_step_row_per_node(
     assert run["classifier_used"] == "jev"
     assert run["would_auto_approve"] is True
     assert run["provider_mode"] == {"jev": "live", "openai": "replay"}
-    assert run["prompt_versions"] == {"triage": "triage-v1"}
+    assert run["prompt_versions"] == {"triage": "triage-v1", "draft": "draft-v1"}
     assert run["policy_version"]
     assert run["result"]["recommendation"]["amount"] == "35.00"
     assert len(steps) == 11
@@ -94,6 +96,8 @@ async def test_the_run_totals_add_up_from_its_steps(
         1,
     )
     assert run["tokens_in"] == sum(s["tokens_in"] or 0 for s in steps)
+    assert run["tokens_cached"] == sum(s["tokens_cached"] or 0 for s in steps) == 1100
+    assert run["tokens_cache_write"] == sum(s["tokens_cache_write"] or 0 for s in steps)
     assert run["cost_usd"] == sum((s["cost_usd"] or Decimal(0) for s in steps), Decimal(0))
     assert run["total_latency_ms"] >= max(s["latency_ms"] for s in steps)
 

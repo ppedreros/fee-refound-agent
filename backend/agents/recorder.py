@@ -70,6 +70,7 @@ async def record_step(writer: Writer, run_id: UUID, record: StepRecord) -> None:
                 tokens_in=meta.tokens_in if meta else None,
                 tokens_out=meta.tokens_out if meta else None,
                 tokens_cached=meta.tokens_cached if meta else None,
+                tokens_cache_write=meta.tokens_cache_write if meta else None,
                 cost_usd=meta.cost_usd if meta else None,
                 attempts=meta.attempts if meta else None,
                 error_code=record.error_code,

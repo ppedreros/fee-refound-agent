@@ -1,9 +1,8 @@
 """The graph's nodes (SPEC-agent, "Nodes"). Each takes the state and the deps and returns its update
 plus a StepReport for the run trace. Load nodes only read; every decision is plain code.
 
-At this stage two nodes are simpler than their final form: `find_policy` uses the deciding rule's
-clause (`rule_fallback`; search comes in T30) and `draft` uses the reply templates (Sol comes in
-T28).
+At this stage `find_policy` uses the deciding rule's clause (`rule_fallback`; search comes in
+T30), and declines have no fallback template yet (T31).
 """
 
 import datetime as dt
@@ -11,9 +10,10 @@ from typing import Any
 
 from pydantic import TypeAdapter
 
-from backend.agents.decide import case_status, decide
+from backend.agents.decide import Decision, case_status, decide
 from backend.agents.deps import AgentDeps
-from backend.agents.prompts import load_questions, render_template
+from backend.agents.draft_postcheck import Problem, check_draft
+from backend.agents.prompts import load_prompt, load_questions, render_template
 from backend.agents.state import ClauseRef, DraftReply, GraphState
 from backend.agents.steps import StepReport, run_tool
 from backend.agents.triage_rules import Triage, apply_triage_rules, triage_unavailable
@@ -26,6 +26,8 @@ from backend.policy.reasons import (
     ReasonGroup,
     format_date,
     format_money,
+    render_reason,
+    render_summary,
 )
 from backend.policy.rules import (
     check_approval_limit,
@@ -39,12 +41,15 @@ from backend.policy.search import get_clause
 from backend.privacy.mask import MaskingDictionary, mask
 from backend.privacy.sanitize import sanitize
 from backend.providers.chain import ClassifierUnavailable
-from backend.providers.types import ProviderUnavailable
+from backend.providers.types import CallMeta, DraftInput, ProviderUnavailable
 from backend.tools import queries
 from backend.tools.errors import ToolError
 from backend.tools.models import Message, Transaction
 
 TRIAGE_PROMPT = "triage-v1"
+DRAFT_PROMPT = "draft-v1"
+DRAFT_TRIES = 2  # a reply that fails the post-check is asked for once more (§6)
+SOMEONE = "The member"  # how the facts for Sol refer to the member: never by name
 TRANSACTIONS_LOOKBACK_DAYS = 30  # find_fee_candidates looks this far back from the message
 REFUNDS_LOOKBACK_DAYS = 400  # covers the 365-day limit window ending on any candidate fee
 READS = ["load_accounts", "load_transactions", "load_refund_history"]
@@ -276,43 +281,112 @@ async def find_policy(state: GraphState, deps: AgentDeps) -> tuple[Update, StepR
 
 
 async def draft(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]:
-    """The reply, from the facts only (D2): the member's message is never an input here."""
+    """The reply, by Sol, from the facts only (D2): the member's message is never an input here.
+    A reply that fails the post-check is asked for once more; Sol failing, or a second failed
+    post-check, gives the template and `drafter_down`, so Luis still has a reply to send."""
     decision, fee, triage_ = _decision(state), _fee(state), _triage(state)
     language: Language = "es" if triage_.language == "es" else "en"
+    action = decision.recommendation.action
+    amount = -fee.amount
+    payload = DraftInput(
+        language=language,
+        tone=triage_.tone,
+        outcome=action,
+        amount=f"{amount:.2f}",
+        fee_date=fee.date.isoformat(),
+        fee_type=fee.fee_type,
+        sub_account_name=fee.sub_account_name,
+        facts=_draft_facts(state, decision),
+        policy_clause=state.clause.text if action == "no_refund" and state.clause else None,
+    )
+    asked = payload.model_dump(mode="json")
+    metas: list[CallMeta] = []
+    problems: list[Problem] = []
+    failure: str | None = None
+    for _ in range(DRAFT_TRIES):
+        try:
+            drafted = await deps.drafter.draft(
+                payload, instructions=load_prompt(DRAFT_PROMPT), deadline=deps.deadline
+            )
+        except ProviderUnavailable as error:
+            failure = error.reason
+            break
+        metas.append(drafted.meta)
+        problems = check_draft(drafted.reply, amount=amount, policy_clause=payload.policy_clause)
+        if not problems:
+            output = {"source": "model", "chars": len(drafted.reply), "tries": len(metas)}
+            return {"draft": DraftReply(text=drafted.reply, source="model")}, StepReport(
+                kind="llm",
+                input_masked=asked,
+                output=output,
+                meta=_combined(metas),
+                prompt_version=DRAFT_PROMPT,
+            )
+
+    template = _template_reply(state, language)
+    update: Update = {"reasons": [ReasonCode.DRAFTER_DOWN]}
+    if template is not None:
+        update["draft"] = DraftReply(text=template, source="template")
+    output = {"source": "template" if template else None, "postcheck": list(problems)}
+    return update, StepReport(
+        kind="llm",
+        input_masked=asked,
+        output=output,
+        meta=_combined(metas) if metas else None,
+        prompt_version=DRAFT_PROMPT,
+        error_code=failure or "postcheck_failed",
+    )
+
+
+def _draft_facts(state: GraphState, decision: Decision) -> list[str]:
+    """What happened, as plain sentences with no amount: the post-check allows only the decided
+    one. The member is never named (the reply uses the placeholder)."""
     facts = _merged_facts(state)
-    payroll = facts.get("deposit_kind") == "payroll_deposit"
+    if decision.recommendation.action == "refund":
+        summary = render_summary("ready_to_refund", facts, "en", first_name=SOMEONE)
+        return [summary] if summary else []
+    reason = next((c for c in decision.reasons if GROUPS[c] is ReasonGroup.POLICY), None)
+    return [render_reason(reason, facts, "en", first_name=SOMEONE).message] if reason else []
+
+
+def _template_reply(state: GraphState, language: Language) -> str | None:
+    """The fallback reply, from the same facts. Decline templates come in T31."""
+    decision, fee = _decision(state), _fee(state)
+    if decision.recommendation.action != "refund":
+        return None
+    payroll = _merged_facts(state).get("deposit_kind") == "payroll_deposit"
     deposit = {
         "en": "your paycheck" if payroll else "your deposit",
         "es": "la nómina" if payroll else "el depósito",
     }[language]
-    draft_input: dict[str, Any] = {
-        "language": language,
-        "tone": triage_.tone,
-        "outcome": decision.recommendation.action,
-        "amount": format_money(-fee.amount),
-        "fee_date": fee.date.isoformat(),
-        "fee_type": fee.fee_type,
-        "sub_account_name": fee.sub_account_name,
-        "first_name": "{{first_name}}",
-    }
-    text = None
-    if decision.recommendation.action == "refund":
-        text = render_template(
-            "refunded",
-            language,
-            {
-                "deposit": deposit,
-                "fee_date": format_date(fee.date, language),
-                "amount": format_money(-fee.amount),
-                "fee_type": fee.fee_type or "service",
-                "sub_account_name": fee.sub_account_name,
-            },
-        )
-    if text is None:  # decline templates come in T31
-        return {}, StepReport(kind="llm", input_masked=draft_input, output={"draft": None})
-    reply = DraftReply(text=text, source="template")
-    output = {"source": reply.source, "chars": len(text)}
-    return {"draft": reply}, StepReport(kind="llm", input_masked=draft_input, output=output)
+    return render_template(
+        "refunded",
+        language,
+        {
+            "deposit": deposit,
+            "fee_date": format_date(fee.date, language),
+            "amount": format_money(-fee.amount),
+            "fee_type": fee.fee_type or "service",
+            "sub_account_name": fee.sub_account_name,
+        },
+    )
+
+
+def _combined(metas: list[CallMeta]) -> CallMeta:
+    """One step, several calls (a post-check retry): the trace keeps all their cost."""
+    last = metas[-1]
+    costs = [m.cost_usd for m in metas]
+    return last.model_copy(
+        update={
+            "latency_ms": sum(m.latency_ms for m in metas),
+            "tokens_in": sum(m.tokens_in for m in metas),
+            "tokens_out": sum(m.tokens_out for m in metas),
+            "tokens_cached": sum(m.tokens_cached for m in metas),
+            "tokens_cache_write": sum(m.tokens_cache_write for m in metas),
+            "cost_usd": None if None in costs else sum(c for c in costs if c is not None),
+            "attempts": sum(m.attempts for m in metas),
+        }
+    )
 
 
 async def finalize(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]:

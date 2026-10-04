@@ -133,6 +133,7 @@ def _totals(records: list[StepRecord], deps: RunnerDeps, latency_ms: int) -> dic
         "tokens_in": sum(m.tokens_in for m in metas),
         "tokens_out": sum(m.tokens_out for m in metas),
         "tokens_cached": sum(m.tokens_cached for m in metas),
+        "tokens_cache_write": sum(m.tokens_cache_write for m in metas),
         "cost_usd": sum((m.cost_usd for m in metas if m.cost_usd is not None), Decimal("0")),
         "prompt_versions": {r.node: r.prompt_version for r in records if r.prompt_version},
         "policy_version": deps.agent.policy.version,

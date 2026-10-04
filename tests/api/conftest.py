@@ -16,7 +16,7 @@ from backend.api.main import create_app
 from backend.api.resources import AppResources
 from backend.core.settings import Settings
 from backend.providers.types import Classifier
-from tests.integration.agents.fakes import FakeClassifier, jev_answers
+from tests.integration.agents.fakes import FakeClassifier, FakeDrafter, jev_answers
 from tests.integration.roles import TEST_AGENT_ROLE, TEST_APP_ROLE, role_url
 
 SETTINGS = Settings(
@@ -35,6 +35,7 @@ def resources_for(
             writer_engine=create_async_engine(role_url(test_database_url, TEST_APP_ROLE)),
             reader_engine=create_async_engine(role_url(test_database_url, TEST_AGENT_ROLE)),
             classifier=classifier,
+            drafter=FakeDrafter(),
             provider_modes={"jev": "live", "openai": "replay"},
         )
 

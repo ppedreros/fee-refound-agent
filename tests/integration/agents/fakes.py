@@ -4,10 +4,14 @@ models)."""
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
 
+from backend.policy.reasons import format_money
 from backend.providers.types import (
     CallMeta,
     ChoiceAnswer,
     Classification,
+    Draft,
+    DrafterUnavailable,
+    DraftInput,
     NoulAnswer,
     ProviderUnavailable,
     Question,
@@ -54,3 +58,43 @@ def jev_answers(intent: str = "fee_refund_request") -> dict[str, ChoiceAnswer | 
         "manipulation": NoulAnswer(p_yes=0.04, label=False),
         "multiple_requests": NoulAnswer(p_yes=0.05, label=False),
     }
+
+
+def good_reply(payload: DraftInput) -> str:
+    """What Sol would write: the placeholder, the decided amount, nothing else."""
+    money = format_money(Decimal(payload.amount))
+    return (
+        "Hi {{first_name}}, thanks for reaching out. We've refunded the "
+        f"{money} {payload.fee_type} fee to your {payload.sub_account_name} account."
+    )
+
+
+class FakeDrafter:
+    """Writes like Sol would. Each entry of `replies` is one call: None means Sol is down, a
+    string is that reply, and `good_reply` is used once the list runs out."""
+
+    def __init__(self, replies: Sequence[str | None] = ()) -> None:
+        self.replies = list(replies)
+        self.payloads: list[DraftInput] = []
+
+    async def draft(
+        self, payload: DraftInput, *, instructions: str, deadline: float | None = None
+    ) -> Draft:
+        self.payloads.append(payload)
+        reply = self.replies.pop(0) if self.replies else good_reply(payload)
+        if reply is None:
+            raise DrafterUnavailable("timeout")
+        return Draft(
+            reply=reply,
+            meta=CallMeta(
+                provider="openai",
+                model="gpt-6.1-sol",
+                mode="live",
+                latency_ms=900,
+                tokens_in=1300,
+                tokens_out=120,
+                tokens_cached=1100,
+                cost_usd=Decimal("0.001710"),
+                attempts=1,
+            ),
+        )

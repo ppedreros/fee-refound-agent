@@ -3,11 +3,12 @@ clean shutdown."""
 
 import pytest
 
-from backend.api.resources import UnavailableClassifier, default_resources
+from backend.api.resources import UnavailableClassifier, UnavailableDrafter, default_resources
 from backend.core.settings import Settings
 from backend.providers.chain import ClassifierChain, ClassifierUnavailable
 from backend.providers.jev import JevClassifier
 from backend.providers.openai_classifier import OpenAIClassifier
+from backend.providers.openai_drafter import OpenAIDrafter
 
 
 def settings(jev_api_key: str | None = None, openai_api_key: str | None = None) -> Settings:
@@ -28,6 +29,7 @@ async def test_with_both_keys_jev_answers_first_and_luna_backs_it_up() -> None:
     assert isinstance(chain, ClassifierChain)
     assert isinstance(chain.primary, JevClassifier)
     assert isinstance(chain.backup, OpenAIClassifier)
+    assert isinstance(resources.drafter, OpenAIDrafter)
     assert resources.provider_modes == {"jev": "live", "openai": "live"}
     await resources.close()
 
@@ -49,4 +51,5 @@ async def test_without_any_key_classification_is_unavailable_as_a_replay_miss() 
         await resources.classifier.classify({}, [])
 
     assert (raised.value.primary_reason, raised.value.reason) == ("replay_miss", "replay_miss")
+    assert isinstance(resources.drafter, UnavailableDrafter)
     await resources.close()

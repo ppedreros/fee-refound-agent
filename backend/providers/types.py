@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from typing import Literal, Protocol
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 MAX_CHOICE_OPTIONS = 255
 
@@ -55,7 +55,8 @@ class CallMeta(BaseModel, frozen=True):
     latency_ms: int
     tokens_in: int
     tokens_out: int
-    tokens_cached: int = 0
+    tokens_cached: int = 0  # read from the prompt cache
+    tokens_cache_write: int = 0  # written to the prompt cache (priced higher than plain input)
     cost_usd: Decimal | None = None  # filled from the price table (T15)
     attempts: int
 
@@ -97,3 +98,40 @@ class Classifier(Protocol):
         *,
         deadline: float | None = None,  # monotonic seconds: the run's remaining time
     ) -> Classification: ...
+
+
+class DrafterUnavailable(ProviderUnavailable):
+    """Sol couldn't write the reply. The node uses the template and adds `drafter_down`."""
+
+
+class DraftInput(BaseModel):
+    """Everything Sol may know about a case (D2: facts only). There is no field that could hold
+    the member's message, and the name is always the placeholder, filled in for Luis later."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    language: Literal["en", "es"]
+    tone: Literal["formal", "casual", "upset", "neutral"]
+    outcome: Literal["refund", "no_refund"]
+    amount: str  # "35.00"
+    fee_date: str  # ISO date
+    fee_type: str | None
+    sub_account_name: str
+    facts: list[str]  # verified facts, in plain English, with no other amounts
+    policy_clause: str | None  # the clause text, for declines only
+    first_name: Literal["{{first_name}}"] = "{{first_name}}"
+
+
+class Draft(BaseModel, frozen=True):
+    reply: str
+    meta: CallMeta
+
+
+class Drafter(Protocol):
+    async def draft(
+        self,
+        payload: DraftInput,
+        *,
+        instructions: str,  # the static system prompt, sent first so it can be cached
+        deadline: float | None = None,
+    ) -> Draft: ...

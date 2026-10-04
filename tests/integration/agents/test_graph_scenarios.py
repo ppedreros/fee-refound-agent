@@ -11,7 +11,7 @@ from backend.agents.deps import AgentDeps
 from backend.agents.graph import build_graph
 from backend.agents.state import GraphState
 from backend.agents.steps import StepRecord
-from tests.integration.agents.fakes import FakeClassifier, jev_answers
+from tests.integration.agents.fakes import FakeClassifier, FakeDrafter, jev_answers
 
 SEEDED_SECRETS = ("Ana", "Torres", "884210", "884211")
 
@@ -24,7 +24,7 @@ async def run(
     records: list[StepRecord] = []
     async for mode, chunk in graph.astream(
         GraphState(case_id=case_id, run_id=uuid4()),
-        context=AgentDeps(reader=reader, classifier=classifier),
+        context=AgentDeps(reader=reader, classifier=classifier, drafter=FakeDrafter()),
         stream_mode=["values", "custom"],
     ):
         if mode == "values":
@@ -34,7 +34,7 @@ async def run(
     return final, records
 
 
-async def test_ana_is_ready_to_refund_with_a_template_reply(
+async def test_ana_is_ready_to_refund_with_a_drafted_reply(
     reader: async_sessionmaker[AsyncSession],
 ) -> None:
     final, _ = await run(5012, FakeClassifier(jev_answers()), reader)
@@ -48,7 +48,7 @@ async def test_ana_is_ready_to_refund_with_a_template_reply(
     assert result["clause"]["found_by"] == "rule_fallback"
     assert "{{first_name}}" in result["draft"]["text"]
     assert "$35" in result["draft"]["text"]
-    assert result["draft"]["source"] == "template"
+    assert result["draft"]["source"] == "model"
 
 
 async def test_ana_runs_every_node_once_and_the_reads_in_parallel(

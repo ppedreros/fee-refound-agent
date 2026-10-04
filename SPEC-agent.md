@@ -91,6 +91,8 @@ This differs from the first version of D6, where `find_policy` ran in parallel w
 - no run of 6 or more digits
 - 800 characters or fewer
 
+**As built (T28).** The `draft` node sends Sol the facts as plain English sentences with no amount, built from the rules' facts: for a refund, the card sentence ("The paycheck arrived the same day and the bill posted before it."); for a decline, the decisive reason's sentence, with the member called "The member". A reply that fails the post-check is asked for once more; if Sol fails, or the second reply fails too, the node uses the template and adds `drafter_down`. Its step is then `failed`, with `error_code` set to the provider's reason or `postcheck_failed`, and `output.postcheck` lists the last problems. Both calls' tokens and cost are summed into the one step. Amounts are recognised in English and Spanish forms ("$35", "$35.00", "US$35", "35,00 $", "35 dólares"). Declines have no template until T31, so a failed decline draft leaves no draft, only `drafter_down`. When Luna answers triage, that step is an `llm` step too, and it carries the masked message, because classifying is its job; the test that no message text reaches an `llm` step's input covers Sol's step, the only one that writes free text.
+
 **Templates.** The fallback templates are in `backend/agents/prompts/templates/`, in English and Spanish, one for "refunded" and one per decline reason (`yearly_limit`, `not_good_standing`, `deposit_not_same_day`, `already_refunded`).
 
 ## Decision (`backend/agents/decide.py`)

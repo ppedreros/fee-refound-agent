@@ -338,15 +338,15 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/providers/openai_classifier.py`, `openai_common.py`, `chain.py`, `types.py` (`fallback_reason`), `backend/agents/nodes.py`, `backend/api/resources.py`, `pyproject.toml` (`openai`), `tests/unit/providers/test_openai_classifier.py` + `test_chain.py` + `openai_fakes.py`, `tests/unit/api/test_resources.py`, `tests/integration/agents/test_fallbacks.py`
 **Scope:** M
 
-### - [ ] T28: Sol drafter, post-check and prompt caching
+### - [x] T28: Sol drafter, post-check and prompt caching
 **Description:** `OpenAIDrafter` (`gpt-6.1-sol`, effort `low`), with structured `reply` output and the static system prompt first, so prefix caching applies. The `draft-v1.md` prompt. `DraftInput` has no field for the member's message. The post-check covers the placeholder, amounts, digits and length. Two failures fall back to the template with `drafter_down`, which leads to `needs_your_call`.
 **Acceptance criteria:**
-- [ ] Ana gets a Sol draft in English that passes the post-check. Cached tokens are recorded on the second run.
-- [ ] Sol down, or two post-check failures → template + `drafter_down` → `needs_your_call`, with the recommendation kept (SPEC-agent AC4).
-- [ ] A test proves that no message text reaches any `llm` step input.
+- [x] Ana gets a Sol draft in English that passes the post-check. Cached tokens are recorded on the second run.
+- [x] Sol down, or two post-check failures → template + `drafter_down` → `needs_your_call`, with the recommendation kept (SPEC-agent AC4).
+- [x] A test proves that no message text reaches any `llm` step input.
 **Verification:** `uv run python -m pytest tests/unit/providers/test_openai_drafter.py tests/unit/agents/test_draft_postcheck.py tests/integration/agents/test_fallbacks.py`; one live Ana run (needs `OPENAI_API_KEY`, open question 1)
 **Dependencies:** T26 (can run in parallel with T27)
-**Files:** `backend/providers/openai_drafter.py`, `backend/agents/prompts/draft-v1.md`, `backend/agents/draft_postcheck.py`, `tests/unit/providers/test_openai_drafter.py`, `tests/unit/agents/test_draft_postcheck.py`
+**Files:** `backend/providers/openai_drafter.py`, `types.py` (`DraftInput`, `Draft`, `Drafter`, cache-write tokens), `backend/agents/prompts/draft-v1.md` (+ `load_prompt`), `backend/agents/draft_postcheck.py`, `backend/agents/nodes.py`, `deps.py`, `recorder.py`, `runner.py`, `backend/db/models.py` + migration `0002_cache_write_tokens.py`, `backend/api/resources.py`, `routes_cases.py`, `tests/unit/providers/test_openai_drafter.py`, `tests/unit/agents/test_draft_postcheck.py`, `tests/integration/agents/test_fallbacks.py` + `fakes.py`, updated agent and API tests
 **Scope:** M
 
 ### - [ ] T29: Replay store, modes, `/health` and header badge

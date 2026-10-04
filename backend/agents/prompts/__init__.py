@@ -56,6 +56,12 @@ class QuestionSet:
 
 
 @cache
+def load_prompt(name: str) -> str:
+    """A system prompt such as `draft-v1`, sent exactly as written, so its prefix caches."""
+    return (PROMPTS_DIR / f"{name}.md").read_text(encoding="utf-8")
+
+
+@cache
 def load_questions(name: str) -> QuestionSet:
     """Load a question file such as `triage-v1`."""
     path = PROMPTS_DIR / f"{name}.yaml"

@@ -88,14 +88,14 @@ async def test_anas_case_quotes_the_clause_and_fills_in_the_reply(
     assert case["clause"]["text"].startswith("We refund a Courtesy Pay fee")
     assert case["draft"]["text"].startswith("Hi Ana, thanks for reaching out.")
     assert "$35" in case["draft"]["text"]
-    assert case["draft"]["source"] == "template"
+    assert case["draft"]["source"] == "model"
 
 
 async def test_anas_case_shows_how_it_was_prepared(client: httpx.AsyncClient, app: FastAPI) -> None:
     run = (await checked_ana(client, app))["run"]
 
     assert run["provider_mode"] == {"jev": "live", "openai": "replay"}
-    assert run["cost_usd"] == "0.000032"
+    assert run["cost_usd"] == "0.001742"  # Jev $0.000032 and Sol $0.001710
     assert run["duration_ms"] >= 0
     assert len(run["steps"]) == 11
     assert run["steps"][0] == {

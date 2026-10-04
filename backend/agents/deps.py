@@ -8,13 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.agents.triage_rules import THRESHOLDS, Thresholds
 from backend.policy.loader import Policy, current_policy
-from backend.providers.types import Classifier
+from backend.providers.types import Classifier, Drafter
 
 
 @dataclass(frozen=True)
 class AgentDeps:
     reader: async_sessionmaker[AsyncSession]  # agent_reader sessions only: nodes never write
-    classifier: Classifier
+    classifier: Classifier  # Jev, then Luna (ClassifierChain)
+    drafter: Drafter  # Sol
     policy: Policy = field(default_factory=current_policy)
     thresholds: Thresholds = THRESHOLDS
     deadline: float | None = None  # monotonic seconds; the runner sets it from the run timeout
