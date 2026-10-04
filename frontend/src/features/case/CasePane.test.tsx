@@ -11,7 +11,10 @@ import { CasePane } from "./CasePane";
 
 vi.mock("../../api/client", async (importOriginal) => {
   const original = await importOriginal<typeof import("../../api/client")>();
-  return { ...original, api: { listCases: vi.fn(), getCase: vi.fn(), runCase: vi.fn() } };
+  return {
+    ...original,
+    api: { listCases: vi.fn(), getCase: vi.fn(), runCase: vi.fn(), revealAccount: vi.fn() },
+  };
 });
 
 const getCase = vi.mocked(api.getCase);
@@ -119,9 +122,8 @@ describe("Case pane", () => {
     ).toBeInTheDocument();
     const quoted = screen.getAllByText(anaReady.conversation.messages[0]?.body ?? "")[0];
     expect(quoted?.tagName).toBe("Q"); // the header quotes it; the thread below has it too
-    expect(
-      screen.getByText("Primary Savings, Everyday Checking ••4210 · Vacation Savings ••4211"),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Primary Savings, Everyday Checking ••4210/)).toBeInTheDocument();
+    expect(screen.getByText(/Vacation Savings ••4211/)).toBeInTheDocument();
   });
 
   it("tags a reply written in Spanish, and only that one", async () => {
@@ -137,6 +139,21 @@ describe("Case pane", () => {
 
     await screen.findByRole("heading", { name: copy.status.ready_to_refund });
     expect(screen.queryByText(copy.reply.spanish)).toBeNull();
+  });
+
+  it("shows an account's full number on request, for this session", async () => {
+    const user = userEvent.setup();
+    getCase.mockResolvedValue(anaReady);
+    vi.mocked(api.revealAccount).mockResolvedValue({ account_number: "884210" });
+    renderPane();
+
+    const shows = await screen.findAllByRole("button", { name: copy.case.show });
+    expect(shows).toHaveLength(2);
+    await user.click(shows[0] as HTMLElement);
+
+    expect(api.revealAccount).toHaveBeenCalledWith(5012, 710);
+    expect(await screen.findByText(/884210/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: copy.case.show })).toHaveLength(1);
   });
 
   it("opens an evidence section on request", async () => {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   ApiError,
+  api,
   messageOf,
   type Action,
   type CaseView,
@@ -205,18 +206,7 @@ export function CaseContent({
             </time>
           </p>
         )}
-        {view.member.accounts.length > 0 && (
-          <p className="text-sm text-grey-600">
-            {copy.evidence.titled(
-              ...view.member.accounts.map((account) =>
-                copy.case.account(
-                  account.sub_accounts.map((sub) => sub.name).join(", "),
-                  account.masked_number,
-                ),
-              ),
-            )}
-          </p>
-        )}
+        <Accounts caseId={view.id} accounts={view.member.accounts} />
       </header>
 
       <DecisionCard
@@ -255,6 +245,59 @@ export function CaseContent({
       )}
       <Evidence view={view} />
     </article>
+  );
+}
+
+/** The member's accounts, masked. "Show" reveals one full number for this session; the API
+ * audits every reveal (D9). */
+function Accounts({
+  caseId,
+  accounts,
+}: {
+  caseId: number;
+  accounts: CaseView["member"]["accounts"];
+}) {
+  const [revealed, setRevealed] = useState<Record<number, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  if (accounts.length === 0) return null;
+
+  const reveal = async (accountId: number) => {
+    try {
+      const { account_number } = await api.revealAccount(caseId, accountId);
+      setRevealed((shown) => ({ ...shown, [accountId]: account_number }));
+      setError(null);
+    } catch (failure) {
+      setError(messageOf(failure));
+    }
+  };
+
+  return (
+    <p className="text-sm text-grey-600">
+      {accounts.map((account, index) => {
+        const names = account.sub_accounts.map((sub) => sub.name).join(", ");
+        const number = revealed[account.account_id];
+        return (
+          <span key={account.account_id}>
+            {index > 0 && copy.case.separator}
+            {copy.case.account(names, number ?? account.masked_number)}
+            {number === undefined && (
+              <button
+                type="button"
+                onClick={() => void reveal(account.account_id)}
+                className="ml-1.5 font-medium text-navy underline-offset-2 hover:underline"
+              >
+                {copy.case.show}
+              </button>
+            )}
+          </span>
+        );
+      })}
+      {error && (
+        <span role="alert" className="ml-2 text-error">
+          {error}
+        </span>
+      )}
+    </p>
   );
 }
 

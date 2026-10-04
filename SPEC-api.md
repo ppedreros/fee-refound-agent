@@ -20,6 +20,13 @@ Expose the five endpoints from the brief, plus a stream for live steps and an au
 - **Rate limits** (slowapi, per client): `RATE_LIMIT` (default 60/minute) on every route, and 10/minute on `POST /cases/{id}/run`. A 429 carries `Retry-After` and "You're going a bit fast. Please wait a few seconds."
 - **API types.** The OpenAPI schema is the source of the frontend's types (`npm --prefix frontend run gen:api`).
 
+**As built (T37).**
+- **Errors.** Starlette's own errors use the same envelope: an unknown page is 404 "We couldn't find that page.", a wrong method 405 `method_not_allowed`. Any other exception is the calm 500; the log line (`unhandled_error`, with the request id) names the error type and where it happened, never its message, which can carry case data.
+- **Rate limits are built on `limits`**, the library slowapi wraps, in a middleware that belongs to its app (`backend/api/ratelimit.py`). slowapi keeps its limiter and its per-route limits at module level, so every app instance, and every test, would share one counter. The limits are a moving window per client address: `RATE_LIMIT` on every route, `/health` included, and 10/minute more on `POST /cases/{id}/run`. Behind nginx every browser shares nginx's address, which is fine for one staff tool. The 429 sits inside the request-id middleware, so it still carries `X-Request-ID`.
+- **Reveal.** `{"account_number": "884210"}`. The audit event's details hold only `account_id`, never the number; an account that isn't the case member's is 404 "We couldn't find that account." The page shows "Show" after each masked account and keeps a revealed number for the session only.
+- **Auto-approve** lives in `backend/api/auto_approve.py`, called after a background run when `AUTO_APPROVE_ENABLED` is on and the run says `would_auto_approve`. It approves the draft with the first name filled in, as `SYSTEM`, with the run id as the key; if the case was decided or checked again meanwhile, it does nothing. Compose pins the flag to `false`.
+- **Live check (2026-10-04).** Through the stack: an unknown page gave the friendly 404, the reveal returned the number and wrote its audit event, another member's account gave 404, and the 61st request in a minute got 429 with `Retry-After: 54`.
+
 ## Endpoints
 
 ### `GET /health`

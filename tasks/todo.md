@@ -456,7 +456,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 
 ## Phase 6: Hardening and evals
 
-### - [ ] T37: API hardening: errors, validation, rate limits, reveal, auto-approve hook
+### - [x] T37: API hardening: errors, validation, rate limits, reveal, auto-approve hook
 **Description:**
 - The global error envelope and the friendly 500.
 - Strict validation of every input.
@@ -464,12 +464,12 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 - `GET …/accounts/{account_id}/number`, audited.
 - The auto-approve completion hook, behind its flag and exercised only in tests.
 **Acceptance criteria:**
-- [ ] 404, 422 and 429 (with `Retry-After`) return friendly bodies, and no response contains a traceback (SPEC-api AC5, AC6).
-- [ ] The reveal returns the full number and writes an audit event. Another member's account gives 404 (AC7).
-- [ ] With the flag on, in a test only, a clear case is approved by `SYSTEM` through the decision service. With the flag off, nothing happens.
+- [x] 404, 422 and 429 (with `Retry-After`) return friendly bodies, and no response contains a traceback (SPEC-api AC5, AC6).
+- [x] The reveal returns the full number and writes an audit event. Another member's account gives 404 (AC7).
+- [x] With the flag on, in a test only, a clear case is approved by `SYSTEM` through the decision service. With the flag off, nothing happens.
 **Verification:** `uv run python -m pytest tests/api`
 **Dependencies:** Checkpoint 5
-**Files:** `backend/api/errors.py`, `backend/api/ratelimit.py`, `backend/api/routes_cases.py`, `tests/api/test_errors.py`, `tests/api/test_reveal.py`
+**Files:** `backend/api/errors.py`, `ratelimit.py`, `auto_approve.py`, `routes_cases.py`, `routes_decision.py`, `middleware.py`, `main.py`, `schemas.py`, `backend/core/settings.py`, `docker-compose.yml`, `pyproject.toml` (`limits`), `frontend/src/features/case/CasePane.tsx` ("Show"), `frontend/src/api/`, `tests/api/test_errors.py`, `test_reveal.py`, `test_auto_approve.py`
 **Scope:** M
 
 ### - [ ] T38: Eval runner, cases, scoring, replay track in CI

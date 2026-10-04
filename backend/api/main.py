@@ -12,6 +12,7 @@ from backend.agents.runner import reset_interrupted_runs
 from backend.api.errors import install_error_handlers
 from backend.api.events import RunEvents
 from backend.api.middleware import RequestIdMiddleware
+from backend.api.ratelimit import RateLimitMiddleware
 from backend.api.resources import AppResources, default_resources
 from backend.api.routes_cases import router as cases_router
 from backend.api.routes_decision import router as decision_router
@@ -53,7 +54,8 @@ def create_app(
     app.state.settings = settings
     app.state.version = app_version(settings)
     app.state.resources_factory = resources
-    app.add_middleware(RequestIdMiddleware)
+    app.add_middleware(RateLimitMiddleware, limit=settings.rate_limit)
+    app.add_middleware(RequestIdMiddleware)  # added last: outermost, so every response has an id
     install_error_handlers(app)
     app.include_router(health_router)
     app.include_router(cases_router)

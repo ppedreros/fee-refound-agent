@@ -248,3 +248,7 @@ class DecisionResult(BaseModel):
     refunded: bool
     amount: Decimal | None  # what this decision refunded
     case_status: CaseStatus
+
+
+class AccountNumber(BaseModel):
+    account_number: str  # shown to Luis for this session only; the reveal is audited

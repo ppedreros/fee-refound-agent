@@ -116,6 +116,8 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 
 **As built (T32).** The fee picker is its own component (`FeePicker.tsx`). Its rows use the API's labels, which name the payment that caused each fee ("Sep 14 · −$35.00 · Courtesy Pay fee · after CITY POWER & LIGHT −$60.00"), so two same-day fees can be told apart.
 
+**As built (T37).** The header lists each account as its own item, "Everyday Checking ••4210 · Show". "Show" swaps the masked digits for the full number for as long as the case stays open (it is fetched again after a reload), and a failed reveal shows the API's message after the accounts.
+
 **`needs_your_call` specifics**
 
 - **`fee_ambiguous`.** Shows the candidates as radio rows ("Sep 14 · −$35.00 · Courtesy Pay fee"). The action is "Check again with this fee", which runs `POST /run` with that `fee_txn_id`.

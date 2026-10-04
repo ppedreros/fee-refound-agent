@@ -3,12 +3,12 @@
 from typing import Annotated
 from uuid import UUID
 
-import structlog
 from fastapi import APIRouter, Header, Path, Request
 from sqlalchemy.exc import IntegrityError
 
 from backend.api.decision_service import Actor, make_decision
 from backend.api.errors import ApiError
+from backend.api.middleware import current_request_id
 from backend.api.resources import AppResources
 from backend.api.schemas import DecisionRequest, DecisionResult
 from backend.core.settings import Settings
@@ -33,7 +33,7 @@ async def post_decision(
     actor = Actor(
         staff_id=settings.staff_id,
         now=resources.clock.now(),
-        request_id=_uuid(structlog.contextvars.get_contextvars().get("request_id")),
+        request_id=current_request_id(),
     )
 
     async def decide() -> DecisionResult:

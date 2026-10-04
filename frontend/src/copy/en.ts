@@ -22,6 +22,8 @@ export const copy = {
     back: "Back to queue",
     title: (name: string, subject: string) => `${name} · ${subject}`,
     account: (names: string, masked: string) => `${names} ${masked}`,
+    show: "Show",
+    separator: " · ",
   },
   status: {
     not_checked: "Not checked yet",

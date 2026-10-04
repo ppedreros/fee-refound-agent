@@ -51,3 +51,12 @@ class RequestIdMiddleware:
                     status=status,
                     duration_ms=round((time.perf_counter() - started) * 1000),
                 )
+
+
+def current_request_id() -> uuid.UUID | None:
+    """The id of the request being handled, for audit events."""
+    value = structlog.contextvars.get_contextvars().get("request_id")
+    try:
+        return uuid.UUID(value) if value else None
+    except ValueError:
+        return None

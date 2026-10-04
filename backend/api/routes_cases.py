@@ -11,13 +11,16 @@ from sqlalchemy import select
 
 from backend.agents.deps import AgentDeps
 from backend.agents.runner import RunInProgress, RunnerDeps, run_case, start_run
+from backend.api.auto_approve import auto_approve
 from backend.api.errors import NOT_FOUND, ApiError
 from backend.api.events import RunEvents
+from backend.api.middleware import current_request_id
 from backend.api.queue import View, list_queue
 from backend.api.resources import AppResources
-from backend.api.schemas import CaseView, QueuePage, RunRequest, RunStarted
+from backend.api.schemas import AccountNumber, CaseView, QueuePage, RunRequest, RunStarted
 from backend.api.view_model import load_case_view
-from backend.db.models import AgentRun, Case, Conversation
+from backend.core.settings import Settings
+from backend.db.models import Account, AgentRun, AuditEvent, Case, Conversation
 
 router = APIRouter()
 log = structlog.get_logger()
@@ -44,6 +47,34 @@ async def get_case(request: Request, case_id: Annotated[int, Path(ge=1)]) -> Cas
     resources = _resources(request)
     async with resources.writer() as session:
         return await load_case_view(session, case_id, resources.policy_params)
+
+
+@router.get("/cases/{case_id}/accounts/{account_id}/number")
+async def reveal_account_number(
+    request: Request,
+    case_id: Annotated[int, Path(ge=1)],
+    account_id: Annotated[int, Path(ge=1)],
+) -> AccountNumber:
+    """The full number, for this one request, and audited (SPEC-api; D9)."""
+    settings: Settings = request.app.state.settings
+    async with _resources(request).writer() as session, session.begin():
+        number = await session.scalar(
+            select(Account.account_number)
+            .join(Conversation, Conversation.member_id == Account.member_id)
+            .where(Conversation.id == case_id, Account.id == account_id)
+        )
+        if number is None:  # no such account, or not this member's
+            raise ApiError(404, "not_found", "We couldn't find that account.")
+        session.add(
+            AuditEvent(
+                actor=settings.staff_id,
+                action="account_number_revealed",
+                case_id=case_id,
+                request_id=current_request_id(),
+                details={"account_id": account_id},
+            )
+        )
+    return AccountNumber(account_number=number)
 
 
 @router.post("/cases/{case_id}/run", status_code=status.HTTP_202_ACCEPTED)
@@ -107,11 +138,16 @@ def _start_in_background(app: FastAPI, case_id: int, run_id: UUID, fee_txn_id: i
         on_event=publish,
     )
 
+    settings: Settings = app.state.settings
+
     async def run() -> None:
         try:
-            await run_case(case_id, deps, run_id=run_id, pinned_fee_txn_id=fee_txn_id)
+            result = await run_case(case_id, deps, run_id=run_id, pinned_fee_txn_id=fee_txn_id)
         except Exception:  # run_case logged it and marked the run failed
             log.warning("background_run_failed", run_id=str(run_id))
+            return
+        if settings.auto_approve_enabled and result.result.get("would_auto_approve"):
+            await auto_approve(resources, case_id, run_id)  # tests only (D5)
 
     task = asyncio.create_task(run())
     tasks: set[asyncio.Task[None]] = app.state.run_tasks

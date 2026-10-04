@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     owner_database_url: SecretStr | None = None  # bootstrap only; compose gives it to migrate
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     masking_salt: SecretStr  # HMAC key for member ids in logs
+    rate_limit: str = Field(default="60/minute", pattern=r"^\d+/(second|minute|hour|day)$")
+    # Off in the shipped config: when on, clear cases are approved by SYSTEM (D5; tests only).
+    auto_approve_enabled: bool = False
     app_version: str | None = None  # the git sha /health reports; see backend/core/version.py
     staff_id: str = Field(default="S07", pattern=r"^[A-Z][A-Z0-9]{1,15}$")  # who uses the UI
     host: str = "127.0.0.1"

@@ -14,6 +14,7 @@ export type RunStarted = Schemas["RunStarted"];
 export type DecisionRequest = Schemas["DecisionRequest"];
 export type DecisionResult = Schemas["DecisionResult"];
 export type Health = Schemas["HealthResponse"];
+export type AccountNumber = Schemas["AccountNumber"];
 export type View = "open" | "done";
 
 /** A request that failed, with a message Luis can read. `code` is for UI logic only. */
@@ -90,4 +91,6 @@ export const api = {
       body: JSON.stringify(decision),
     }),
   health: () => request<Health>("/health"),
+  revealAccount: (caseId: number, accountId: number) =>
+    request<AccountNumber>(`/cases/${String(caseId)}/accounts/${String(accountId)}/number`),
 };

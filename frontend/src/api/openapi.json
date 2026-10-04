@@ -1,6 +1,19 @@
 {
   "components": {
     "schemas": {
+      "AccountNumber": {
+        "properties": {
+          "account_number": {
+            "title": "Account Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_number"
+        ],
+        "title": "AccountNumber",
+        "type": "object"
+      },
       "AccountView": {
         "properties": {
           "account_id": {
@@ -1402,6 +1415,57 @@
           }
         },
         "summary": "Get Case"
+      }
+    },
+    "/cases/{case_id}/accounts/{account_id}/number": {
+      "get": {
+        "description": "The full number, for this one request, and audited (SPEC-api; D9).",
+        "operationId": "reveal_account_number_cases__case_id__accounts__account_id__number_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Case Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Account Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountNumber"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reveal Account Number"
       }
     },
     "/cases/{case_id}/decision": {

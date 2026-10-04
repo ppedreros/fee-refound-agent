@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cases/{case_id}/accounts/{account_id}/number": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reveal Account Number
+         * @description The full number, for this one request, and audited (SPEC-api; D9).
+         */
+        get: operations["reveal_account_number_cases__case_id__accounts__account_id__number_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cases/{case_id}/decision": {
         parameters: {
             query?: never;
@@ -110,6 +130,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountNumber */
+        AccountNumber: {
+            /** Account Number */
+            account_number: string;
+        };
         /** AccountView */
         AccountView: {
             /** Account Id */
@@ -587,6 +612,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reveal_account_number_cases__case_id__accounts__account_id__number_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+                account_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountNumber"];
                 };
             };
             /** @description Validation Error */
