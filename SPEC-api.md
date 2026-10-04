@@ -30,6 +30,8 @@ Expose the five endpoints from the brief, plus a stream for live steps and an au
 {"status": "ok", "database": "ok", "provider_mode": {"jev": "replay", "openai": "replay"}, "version": "<git sha>"}
 ```
 
+The database check is `SELECT 1` as `app_writer`, with a 2-second timeout. When it fails or times out, the response is 503 and both `status` and `database` are `"unavailable"`. The error is never shown or logged with a trace.
+
 ### `GET /cases`
 
 The queue.

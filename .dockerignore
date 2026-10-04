@@ -1,0 +1,6 @@
+# Build context of the backend image. Allow-list, so .env and other local files never get in.
+*
+!pyproject.toml
+!uv.lock
+!backend/
+**/__pycache__

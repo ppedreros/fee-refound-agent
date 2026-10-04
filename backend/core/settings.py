@@ -2,10 +2,15 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, SecretStr, ValidationError, field_validator
+from pydantic import BaseModel, SecretStr, ValidationError, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import ArgumentError
 
 ProviderMode = Literal["live", "replay"]
+
+# The role each database URL must log in as (SPEC-data, "Database roles").
+ROLE_FOR_URL = {"app_database_url": "app_writer", "agent_database_url": "agent_reader"}
 
 
 class ConfigError(Exception):
@@ -23,14 +28,35 @@ class Settings(BaseSettings):
     provider_mode: Literal["auto", "live", "replay"] = "auto"
     jev_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
+    app_database_url: SecretStr
+    agent_database_url: SecretStr
+    owner_database_url: SecretStr | None = None  # bootstrap only; compose gives it to migrate
     host: str = "127.0.0.1"
     port: int = 8000
 
-    @field_validator("jev_api_key", "openai_api_key", mode="before")
+    @field_validator("jev_api_key", "openai_api_key", "owner_database_url", mode="before")
     @classmethod
-    def _blank_key_is_missing(cls, value: object) -> object:
+    def _blank_is_missing(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
             return None
+        return value
+
+    @field_validator("app_database_url", "agent_database_url", "owner_database_url")
+    @classmethod
+    def _check_database_url(cls, value: SecretStr | None, info: ValidationInfo) -> SecretStr | None:
+        # Error messages here are never shown (load_settings keeps only the names), but they
+        # must not echo the URL anyway: it holds a password.
+        if value is None:
+            return None
+        try:
+            url = make_url(value.get_secret_value())
+        except ArgumentError:
+            raise ValueError("not a database URL") from None
+        if url.get_backend_name() != "postgresql":
+            raise ValueError("not a PostgreSQL URL")
+        role = ROLE_FOR_URL.get(str(info.field_name))
+        if role is not None and (url.username != role or not url.password):
+            raise ValueError(f"must log in as {role}, with a password")
         return value
 
     @property

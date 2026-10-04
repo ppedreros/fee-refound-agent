@@ -11,9 +11,15 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 @pytest.fixture(autouse=True)
-def clean_provider_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in ("PROVIDER_MODE", "JEV_API_KEY", "OPENAI_API_KEY"):
+def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in ("PROVIDER_MODE", "JEV_API_KEY", "OPENAI_API_KEY", "OWNER_DATABASE_URL"):
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(
+        "APP_DATABASE_URL", "postgresql+psycopg://app_writer:writer-secret@db:5432/fees"
+    )
+    monkeypatch.setenv(
+        "AGENT_DATABASE_URL", "postgresql+psycopg://agent_reader:reader-secret@db:5432/fees"
+    )
 
 
 def test_auto_mode_is_live_for_providers_with_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -88,6 +94,78 @@ def test_keys_never_appear_in_the_settings_repr(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setenv("JEV_API_KEY", "jev-secret-value")
 
     assert "jev-secret-value" not in repr(load_settings(env_file=None))
+
+
+def test_database_passwords_never_appear_in_the_settings_repr() -> None:
+    settings_repr = repr(load_settings(env_file=None))
+
+    assert "writer-secret" not in settings_repr
+    assert "reader-secret" not in settings_repr
+
+
+def test_missing_database_url_names_the_variable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("APP_DATABASE_URL")
+
+    with pytest.raises(ConfigError) as error:
+        load_settings(env_file=None)
+
+    assert "APP_DATABASE_URL" in str(error.value)
+
+
+def test_malformed_database_url_names_the_variable_but_not_the_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AGENT_DATABASE_URL", "not-a-url-reader-secret")
+
+    with pytest.raises(ConfigError) as error:
+        load_settings(env_file=None)
+
+    assert "AGENT_DATABASE_URL" in str(error.value)
+    assert "reader-secret" not in str(error.value)
+
+
+def test_database_url_must_use_postgres(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_DATABASE_URL", "sqlite:///fees.db")
+
+    with pytest.raises(ConfigError) as error:
+        load_settings(env_file=None)
+
+    assert "APP_DATABASE_URL" in str(error.value)
+
+
+@pytest.mark.parametrize(
+    ("variable", "url"),
+    [
+        ("APP_DATABASE_URL", "postgresql+psycopg://fees:writer-secret@db:5432/fees"),
+        ("AGENT_DATABASE_URL", "postgresql+psycopg://app_writer:reader-secret@db:5432/fees"),
+    ],
+)
+def test_database_url_must_log_in_as_its_role(
+    monkeypatch: pytest.MonkeyPatch, variable: str, url: str
+) -> None:
+    monkeypatch.setenv(variable, url)
+
+    with pytest.raises(ConfigError) as error:
+        load_settings(env_file=None)
+
+    assert variable in str(error.value)
+
+
+def test_role_database_url_needs_a_password(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_DATABASE_URL", "postgresql+psycopg://app_writer@db:5432/fees")
+
+    with pytest.raises(ConfigError) as error:
+        load_settings(env_file=None)
+
+    assert "APP_DATABASE_URL" in str(error.value)
+
+
+def test_owner_database_url_is_optional_and_blank_counts_as_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OWNER_DATABASE_URL", "  ")
+
+    assert load_settings(env_file=None).owner_database_url is None
 
 
 def test_startup_with_invalid_mode_exits_with_one_plain_line() -> None:

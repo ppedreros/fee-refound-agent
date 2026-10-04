@@ -38,16 +38,17 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 **Files:** `frontend/package.json`, `frontend/vite.config.ts`, `frontend/src/index.css`, `frontend/src/App.tsx` + `App.test.tsx`, `frontend/src/copy/en.ts` (plus generated config)
 **Scope:** M (scaffold)
 
-### - [ ] T3: Docker compose stack with a database health check
-**Description:** Four services: `db`, `migrate` (runs `backend.bootstrap`, a no-op until T8), `backend` and `frontend`. The backend image runs as non-root and binds `$PORT`. The frontend nginx config is templated from `BACKEND_URL` and doesn't buffer SSE. There is a named volume, and `.env.example` lists every variable. `/health` checks the database.
+### - [x] T3: Docker compose stack with a database health check
+**Description:** Four services: `db`, `migrate` (runs `backend.bootstrap`, which for now only creates the `app_writer` and `agent_reader` login roles as the owner; D-platform-1), `backend` and `frontend`. The backend image runs as non-root and binds `$PORT`. The frontend nginx config is templated from `BACKEND_URL` and doesn't buffer SSE. There is a named volume, and `.env.example` lists every variable. `/health` checks the database as `app_writer`.
 **Acceptance criteria:**
-- [ ] `cp .env.example .env && docker compose up --build` serves the shell at `:8080`, and `/api/health` returns 200 with `"database": "ok"` (SPEC-platform AC1, apart from the provider fields).
-- [ ] With `db` stopped, `/health` returns 503 with `"database": "unavailable"` and no trace (AC2).
-- [ ] `down` then `up` keeps the volume (AC7).
-**Verification:** `docker compose up --build`; `curl localhost:8080/api/health`; `docker compose stop db` and curl again · `uv run python -m pytest tests/api/test_health.py`
+- [x] `cp .env.example .env && docker compose up --build` serves the shell at `:8080`, and `/api/health` returns 200 with `"database": "ok"` (SPEC-platform AC1, apart from the provider fields).
+- [x] With `db` stopped, `/health` returns 503 with `"database": "unavailable"` and no trace (AC2).
+- [x] `down` then `up` keeps the volume, and `migrate` exits 0 again (AC7). Both roles can log in with the passwords from their URLs.
+- [x] A missing or malformed database URL, or a URL whose user isn't the expected role, stops startup with one line naming the variable.
+**Verification:** `docker compose up --build`; `curl localhost:8080/api/health`; `docker compose stop db` and curl again · `uv run python -m pytest tests/api/test_health.py tests/unit/core tests/unit/db`
 **Dependencies:** T1, T2
-**Files:** `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile` + `frontend/nginx.conf.template`, `.env.example`, `tests/api/test_health.py`
-**Scope:** M
+**Files:** `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile` + `frontend/nginx.conf.template`, `.dockerignore` files, `.env.example`, `backend/core/settings.py`, `backend/api/routes_health.py`, `backend/db/engine.py`, `backend/db/roles.py`, `backend/bootstrap.py`, `tests/api/test_health.py`, `tests/unit/db/test_login_roles.py`
+**Scope:** M (L in files, but most are small config)
 
 ### - [ ] T4: Logging, request ids, clock
 **Description:** structlog JSON logging with a deny-list processor and HMAC-hashed member ids, request-id middleware, and the `Clock` protocol with a fixed clock for tests.
@@ -106,7 +107,7 @@ A test fixture creates the `fees_test` database.
 **Scope:** M
 
 ### - [ ] T8: Database roles and bootstrap
-**Description:** `backend/db/roles.py` creates `agent_reader` and `app_writer` idempotently, with passwords from the environment. `agent_reader` gets `default_transaction_read_only` and a 3-second `statement_timeout`. `backend/bootstrap.py` runs migrations and then roles. The seed and the policy loader are added in T9 and T11. The `migrate` service runs it.
+**Description:** `backend/db/roles.py` already creates the `agent_reader` and `app_writer` login roles (T3, D-platform-1). T8 adds their grants from SPEC-data. `agent_reader` gets `default_transaction_read_only` and a 3-second `statement_timeout`. `backend/bootstrap.py` runs migrations and then roles. The seed and the policy loader are added in T9 and T11. The `migrate` service runs it.
 **Acceptance criteria:**
 - [ ] Running bootstrap twice succeeds.
 - [ ] As `agent_reader`, `SELECT` works and `INSERT`, `UPDATE` and `DELETE` on every table fail (SPEC-data AC4).

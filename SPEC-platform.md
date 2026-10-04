@@ -26,7 +26,7 @@ Give every other module a working skeleton: one command to run everything, confi
 | Service | Image or build | Role | Ready when |
 |---|---|---|---|
 | `db` | `postgres:16` | Database. Named volume `pgdata`, so data survives restarts. | `pg_isready` passes |
-| `migrate` | backend image | One-shot job: `python -m backend.bootstrap` (migrations, roles, seed, policy clauses). It is safe to run on every start. | Exits 0 |
+| `migrate` | backend image | One-shot job: `python -m backend.bootstrap` (migrations, roles, seed, policy clauses). It is safe to run on every start. It is the only service that gets `OWNER_DATABASE_URL` (D-platform-1). | Exits 0 |
 | `backend` | backend image | `python -m backend.api` (checks the configuration, then serves on `$PORT`) | `GET /health` returns 200 |
 | `frontend` | multi-stage: build with Node, serve with nginx | Serves the built UI on port 8080. Proxies `/api/*` to `backend:8000/*` with the prefix stripped. | nginx is up |
 
@@ -52,8 +52,9 @@ Settings use `pydantic-settings` and load from the environment. Startup fails wi
 | Variable | Example in `.env.example` | Notes |
 |---|---|---|
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `fees`, `change-me`, `fees` | For the `db` service |
-| `APP_DATABASE_URL` | `postgresql+psycopg://app_writer:change-me@db:5432/fees` | Used by the API and the decision writer |
-| `AGENT_DATABASE_URL` | `postgresql+psycopg://agent_reader:change-me@db:5432/fees` | Read-only role, used by agent tools |
+| `APP_DATABASE_URL` | `postgresql+psycopg://app_writer:change-me@db:5432/fees` | Used by the API and the decision writer. Its user must be `app_writer`; bootstrap sets that role's password from this URL. |
+| `AGENT_DATABASE_URL` | `postgresql+psycopg://agent_reader:change-me@db:5432/fees` | Read-only role, used by agent tools. Its user must be `agent_reader`; bootstrap sets that role's password from this URL. |
+| `OWNER_DATABASE_URL` | commented out | Owner role, for `backend.bootstrap` only. Compose builds it from `POSTGRES_*` and passes it to `migrate` alone, so `.env` has no active line for it. Set it by hand only to run bootstrap outside compose. |
 | `JEV_API_KEY` | empty | Empty puts Jev in replay mode |
 | `OPENAI_API_KEY` | empty | Empty puts OpenAI in replay mode |
 | `PROVIDER_MODE` | `auto` | `auto`, `live` or `replay`. `auto` means live when the key is present, replay when it isn't |
@@ -119,3 +120,7 @@ Thresholds, timeouts and prices live in versioned config files under `backend/co
 - **Always:** keep `.env.example` complete. Every variable the code reads has an entry and a comment.
 - **Ask first:** adding a service to compose, or changing ports.
 - **Never:** commit `.env`, or log settings values.
+
+## Decisions taken in this spec
+
+- **D-platform-1 (2026-10-04, user decision).** The `app_writer` and `agent_reader` login roles are created from the first compose task (T3), not from T8, because `/health` checks the database as `app_writer`. Bootstrap connects as the owner through `OWNER_DATABASE_URL`, which compose builds from `POSTGRES_*` for `migrate` only. Each role's password comes from its own URL. T8 adds the grants, the read-only default and the statement timeout. Rejected: the owner in `APP_DATABASE_URL` until T8 (the API would hold owner rights, and every `.env` would need a manual edit later); accepting a 503 until T8 (breaks the start order and AC1).

@@ -67,7 +67,7 @@ The approval limit is not stored here. It is a policy parameter (see `SPEC-polic
 
 The runner records `agent_runs` and `agent_steps` through `app_writer`. The graph's nodes and tools only ever hold an `agent_reader` session. That is what "agents only read" means in this codebase.
 
-The `migrate` job creates the roles idempotently. Their passwords come from the environment.
+The `migrate` job connects as the owner (`OWNER_DATABASE_URL`) and creates the roles idempotently. Each role's password comes from its own URL (`APP_DATABASE_URL`, `AGENT_DATABASE_URL`), whose user must be the role's name. The login roles exist from T3, so `/health` can check the database as `app_writer`; the grants and role settings above come in T8 (D-platform-1 in `SPEC-platform.md`).
 
 ## Read-only tools (`backend/tools/`)
 

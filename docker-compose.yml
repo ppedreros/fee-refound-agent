@@ -1,0 +1,73 @@
+# One command runs everything: docker compose up --build  (after: cp .env.example .env)
+# Start order: db (healthy) -> migrate (exits 0) -> backend (healthy) -> frontend.
+# Each service gets only the variables it needs; the owner credentials reach migrate alone.
+
+name: fee-refund-agent
+
+# migrate and backend run the same image; BuildKit's cache makes the second build free.
+x-backend-image: &backend-image
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    <<: *backend-image
+    command: ["python", "-m", "backend.bootstrap"]
+    environment:
+      OWNER_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      APP_DATABASE_URL: ${APP_DATABASE_URL:?set APP_DATABASE_URL in .env}
+      AGENT_DATABASE_URL: ${AGENT_DATABASE_URL:?set AGENT_DATABASE_URL in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    <<: *backend-image
+    environment:
+      APP_DATABASE_URL: ${APP_DATABASE_URL:?set APP_DATABASE_URL in .env}
+      AGENT_DATABASE_URL: ${AGENT_DATABASE_URL:?set AGENT_DATABASE_URL in .env}
+      PROVIDER_MODE: ${PROVIDER_MODE:-auto}
+      JEV_API_KEY: ${JEV_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:

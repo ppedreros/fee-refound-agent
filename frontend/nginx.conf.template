@@ -1,0 +1,32 @@
+# Rendered at container start: envsubst fills in the BACKEND_URL environment variable. nginx's
+# own variables ($uri, $scheme, ...) stay as they are, because no environment variable has
+# their names.
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+
+    # Live steps (server-sent events): pass each event on as soon as the backend sends it.
+    location ~ ^/api/cases/[^/]+/runs/[^/]+/events$ {
+        rewrite ^/api(/.*)$ $1 break;
+        proxy_pass ${BACKEND_URL};
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
+
+    # The API, with the /api prefix stripped: /api/health -> /health.
+    location /api/ {
+        proxy_pass ${BACKEND_URL}/;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # The single-page app.
+    location / {
+        try_files $uri /index.html;
+    }
+}

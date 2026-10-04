@@ -108,7 +108,7 @@ The `e2e` job is enabled in CI: it brings the stack up with compose, runs Playwr
 
 | Resource | Details |
 |---|---|
-| `backend` | Docker web service, same image, health check path `/health`, pre-deploy `python -m backend.bootstrap` |
+| `backend` | Docker web service, same image, health check path `/health`, pre-deploy `python -m backend.bootstrap` (needs `OWNER_DATABASE_URL`, see SPEC-platform D-platform-1) |
 | `frontend` | Docker web service, same nginx image, with `BACKEND_URL` pointing to `backend`. SSE works the same as locally. |
 | `db` | Managed PostgreSQL |
 
