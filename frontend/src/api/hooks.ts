@@ -27,6 +27,11 @@ function isClientError(error: unknown): boolean {
   return error instanceof ApiError && error.status !== null && error.status < 500;
 }
 
+/** Read once: the modes don't change while the app runs. */
+export function useHealth() {
+  return useQuery({ queryKey: ["health"], queryFn: api.health, staleTime: Infinity, retry: false });
+}
+
 export function useCases(view: View) {
   return useQuery({ queryKey: queryKeys.cases(view), queryFn: () => api.listCases(view) });
 }

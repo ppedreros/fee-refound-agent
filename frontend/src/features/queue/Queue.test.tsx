@@ -22,6 +22,12 @@ beforeEach(() => {
     Promise.resolve({ items: view === "open" ? [ana, marcus, daniel] : [], next_cursor: null }),
   );
   vi.mocked(api.getCase).mockReturnValue(new Promise(() => undefined));
+  vi.mocked(api.health).mockResolvedValue({
+    status: "ok",
+    database: "ok",
+    provider_mode: { jev: "live", openai: "live" },
+    version: "dev",
+  });
 });
 
 afterEach(() => {

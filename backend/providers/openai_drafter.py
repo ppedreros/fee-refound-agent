@@ -52,7 +52,12 @@ class OpenAIDrafter:
         self._sleep = sleep
 
     async def draft(
-        self, payload: DraftInput, *, instructions: str, deadline: float | None = None
+        self,
+        payload: DraftInput,
+        *,
+        instructions: str,
+        prompt_version: str | None = None,
+        deadline: float | None = None,
     ) -> Draft:
         message: EasyInputMessageParam = {
             "role": "user",

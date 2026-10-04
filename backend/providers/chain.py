@@ -51,15 +51,20 @@ class ClassifierChain:
         state: Mapping[str, str],
         questions: Sequence[Question],
         *,
+        prompt_version: str | None = None,  # part of the replay key
         deadline: float | None = None,
     ) -> Classification:
         started = self._clock()
         try:
-            return await self._primary.classify(state, questions, deadline=deadline)
+            return await self._primary.classify(
+                state, questions, prompt_version=prompt_version, deadline=deadline
+            )
         except ProviderUnavailable as primary:
             log.info("classifier_fallback", reason=primary.reason, attempts=primary.attempts)
             try:
-                answer = await self._backup.classify(state, questions, deadline=deadline)
+                answer = await self._backup.classify(
+                    state, questions, prompt_version=prompt_version, deadline=deadline
+                )
             except ProviderUnavailable as backup:
                 error = ClassifierUnavailable(backup.reason, primary_reason=primary.reason)
                 error.attempts = primary.attempts + backup.attempts

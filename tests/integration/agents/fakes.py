@@ -30,6 +30,7 @@ class FakeClassifier:
         state: Mapping[str, str],
         questions: Sequence[Question],
         *,
+        prompt_version: str | None = None,  # part of the replay key
         deadline: float | None = None,
     ) -> Classification:
         self.states.append(state)
@@ -78,7 +79,12 @@ class FakeDrafter:
         self.payloads: list[DraftInput] = []
 
     async def draft(
-        self, payload: DraftInput, *, instructions: str, deadline: float | None = None
+        self,
+        payload: DraftInput,
+        *,
+        instructions: str,
+        prompt_version: str | None = None,
+        deadline: float | None = None,
     ) -> Draft:
         self.payloads.append(payload)
         reply = self.replies.pop(0) if self.replies else good_reply(payload)

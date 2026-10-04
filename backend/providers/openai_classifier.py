@@ -64,6 +64,7 @@ class OpenAIClassifier:
         state: Mapping[str, str],
         questions: Sequence[Question],
         *,
+        prompt_version: str | None = None,  # part of the replay key
         deadline: float | None = None,
     ) -> Classification:
         instructions = FRAME + "\n".join(_describe(question) for question in questions)

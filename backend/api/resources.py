@@ -4,32 +4,16 @@ Built once at startup from the settings. Tests pass their own factory, because s
 the real role names.
 """
 
-from collections.abc import Awaitable, Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
-from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
-from typesafe_sdk import AsyncTypeSafeClient
 
 from backend.core.clock import Clock, SystemClock
 from backend.core.settings import Settings
 from backend.policy.loader import PolicyParams, current_policy
-from backend.providers.chain import ClassifierChain
-from backend.providers.config import providers_config
-from backend.providers.jev import JevClassifier
-from backend.providers.openai_classifier import OpenAIClassifier
-from backend.providers.openai_drafter import OpenAIDrafter
-from backend.providers.types import (
-    Classification,
-    Classifier,
-    Draft,
-    Drafter,
-    DrafterUnavailable,
-    DraftInput,
-    ProviderUnavailable,
-    Question,
-    UnavailableReason,
-)
+from backend.providers.factory import build_providers
+from backend.providers.types import Classifier, Drafter
 
 
 @dataclass
@@ -54,55 +38,9 @@ class AppResources:
         await self.reader_engine.dispose()
 
 
-class UnavailableDrafter:
-    """Stands in for Sol with no key: every call fails with `reason`, and the draft node uses the
-    template with `drafter_down`. Replay mode replaces it in T29."""
-
-    def __init__(self, reason: UnavailableReason) -> None:
-        self._reason: UnavailableReason = reason
-
-    async def draft(
-        self, payload: DraftInput, *, instructions: str, deadline: float | None = None
-    ) -> Draft:
-        raise DrafterUnavailable(self._reason)
-
-
-class UnavailableClassifier:
-    """Stands in for a classifier with no key: every call fails with `reason`, and the chain
-    moves on to the next one. Replay mode replaces it in T29."""
-
-    def __init__(self, reason: UnavailableReason) -> None:
-        self._reason: UnavailableReason = reason
-
-    async def classify(
-        self,
-        state: Mapping[str, str],
-        questions: Sequence[Question],
-        *,
-        deadline: float | None = None,
-    ) -> Classification:
-        raise ProviderUnavailable(self._reason)
-
-
 def default_resources(settings: Settings) -> AppResources:
-    modes = settings.provider_modes
-    config = providers_config()
-    closers: list[Callable[[], Awaitable[None]]] = []
-    jev: Classifier = UnavailableClassifier("replay_miss")
-    luna: Classifier = UnavailableClassifier("replay_miss")
-    sol: Drafter = UnavailableDrafter("replay_miss")
-    if modes.jev == "live" and settings.jev_api_key is not None:
-        jev_client = AsyncTypeSafeClient(api_key=settings.jev_api_key.get_secret_value())
-        jev = JevClassifier(jev_client, config=config.jev)
-        closers.append(jev_client.aclose)
-    if modes.openai == "live" and settings.openai_api_key is not None:
-        # Our call policy owns retries, so the SDK makes exactly one attempt per call.
-        openai_client = AsyncOpenAI(
-            api_key=settings.openai_api_key.get_secret_value(), max_retries=0
-        )
-        luna = OpenAIClassifier(openai_client, config=config.luna)
-        sol = OpenAIDrafter(openai_client, config=config.sol)
-        closers.append(openai_client.close)
+    """Each provider in the mode the settings give it: live with its key, replay without one."""
+    providers = build_providers(settings)
     return AppResources(
         writer_engine=create_async_engine(
             settings.app_database_url.get_secret_value(), pool_pre_ping=True
@@ -110,8 +48,8 @@ def default_resources(settings: Settings) -> AppResources:
         reader_engine=create_async_engine(
             settings.agent_database_url.get_secret_value(), pool_pre_ping=True
         ),
-        classifier=ClassifierChain(jev, luna),
-        drafter=sol,
-        provider_modes={"jev": modes.jev, "openai": modes.openai},
-        closers=closers,
+        classifier=providers.classifier,
+        drafter=providers.drafter,
+        provider_modes=providers.modes,
+        closers=providers.closers,
     )

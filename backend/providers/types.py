@@ -96,6 +96,7 @@ class Classifier(Protocol):
         state: Mapping[str, str],
         questions: Sequence[Question],
         *,
+        prompt_version: str | None = None,  # the questions' version, part of the replay key
         deadline: float | None = None,  # monotonic seconds: the run's remaining time
     ) -> Classification: ...
 
@@ -133,5 +134,6 @@ class Drafter(Protocol):
         payload: DraftInput,
         *,
         instructions: str,  # the static system prompt, sent first so it can be cached
+        prompt_version: str | None = None,  # part of the replay key
         deadline: float | None = None,
     ) -> Draft: ...

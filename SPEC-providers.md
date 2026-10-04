@@ -91,6 +91,12 @@ These are the defaults from `docs/agent-design.md` §5. They live in `backend/co
 - **Recording.** `--record`, which only the evals runner uses, makes the live call and writes the file. Recording is an "ask first" action.
 - **Safety check.** A test scans every recording for seeded names, account numbers and the regex patterns below. The test fails if any appear.
 
+**As built (T29).**
+- **Modes in one place.** `backend/providers/factory.py` builds the classifier chain and the drafter for each process. `replay` serves recordings; `live` uses the real adapter, or an "unavailable" (`auth`) stand-in when the key is missing, so a misconfigured live mode falls back instead of crashing; `record=True` (the evals runner only) wraps the live adapters so every answer is written. Luna and Sol share the `openai` mode and one client.
+- **Keys and files.** Every call now carries its `prompt_version` (`triage-v1`, `draft-v1`), which the key includes. For Sol, the key's input is the `DraftInput` and its questions are `null`. A recording holds the key, provider, model, prompt version, the masked request, the response (`answers`, or `reply`), the recorded `CallMeta` and `recorded_at`. A hit returns the recorded answer with its recorded tokens and cost and `mode = "replay"`; it doesn't wait for the recorded latency.
+- **Scan.** `find_personal_data` looks for the seed's names and account numbers and for the masking patterns (email, phone, card, any other run of six or more digits). The test scans every committed recording; a second test proves it catches each kind.
+- **No recordings yet.** Recording waits until the prompts are final (Phase 5). Until then, replay mode misses on every call, so a check without keys ends in "Needs your call" with `classifier_down` and `drafter_down`, the evidence, the recommendation and the template reply, as the fallback rules promise.
+
 ## Cost
 
 - **Prices.** `backend/core/config/pricing.yaml` holds, for each model, the price per 1M tokens for input, output, cache read and cache write. It is filled from the official pricing pages when the project is scaffolded. For Jev, output costs 0.

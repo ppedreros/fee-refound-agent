@@ -349,15 +349,15 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/providers/openai_drafter.py`, `types.py` (`DraftInput`, `Draft`, `Drafter`, cache-write tokens), `backend/agents/prompts/draft-v1.md` (+ `load_prompt`), `backend/agents/draft_postcheck.py`, `backend/agents/nodes.py`, `deps.py`, `recorder.py`, `runner.py`, `backend/db/models.py` + migration `0002_cache_write_tokens.py`, `backend/api/resources.py`, `routes_cases.py`, `tests/unit/providers/test_openai_drafter.py`, `tests/unit/agents/test_draft_postcheck.py`, `tests/integration/agents/test_fallbacks.py` + `fakes.py`, updated agent and API tests
 **Scope:** M
 
-### - [ ] T29: Replay store, modes, `/health` and header badge
+### - [x] T29: Replay store, modes, `/health` and header badge
 **Description:** Replay keys and files, the hit, miss and record paths, the mode used by every adapter, `/health` `provider_mode` and `version`, the discreet "Replay mode" note in the UI header, and the recordings PII scan.
 **Acceptance criteria:**
-- [ ] With no keys, a recorded request returns the recorded answer with `mode = replay`. An unrecorded one raises `replay_miss`, and the fallback follows (SPEC-providers AC4).
-- [ ] The recordings scan finds no personal data (AC9).
-- [ ] `/health` shows both modes and the version. The header shows "Replay mode" (SPEC-ui AC8).
+- [x] With no keys, a recorded request returns the recorded answer with `mode = replay`. An unrecorded one raises `replay_miss`, and the fallback follows (SPEC-providers AC4).
+- [x] The recordings scan finds no personal data (AC9).
+- [x] `/health` shows both modes and the version. The header shows "Replay mode" (SPEC-ui AC8).
 **Verification:** `uv run python -m pytest tests/unit/providers/test_replay.py tests/unit/providers/test_recordings_have_no_pii.py`; `npm --prefix frontend test -- Header`
 **Dependencies:** T27, T28
-**Files:** `backend/providers/replay.py`, `backend/providers/factory.py`, `backend/api/main.py`, `frontend/src/components/Header.tsx` (+ test), `tests/unit/providers/test_replay.py`
+**Files:** `backend/providers/replay.py`, `factory.py` (+ test), `recordings/`, `types.py` + every adapter and fake (`prompt_version`), `backend/core/version.py` (+ test), `settings.py` (`APP_VERSION`), `backend/api/main.py`, `routes_health.py`, `resources.py`, `backend/agents/nodes.py`, `docker-compose.yml`, `.env.example`, `frontend/src/components/Header.tsx` (+ test), `frontend/src/api/` (regenerated types, `useHealth`), `tests/unit/providers/test_replay.py` + `test_recordings_have_no_pii.py`, `tests/api/test_health.py`
 **Scope:** M
 
 ### - [ ] T30: Policy search: full-text, Jev clause choice, cross-check

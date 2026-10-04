@@ -32,6 +32,8 @@ Expose the five endpoints from the brief, plus a stream for live steps and an au
 
 The database check is `SELECT 1` as `app_writer`, with a 2-second timeout. When it fails or times out, the response is 503 and both `status` and `database` are `"unavailable"`. The error is never shown or logged with a trace.
 
+**As built (T29).** `provider_mode` and `version` are in both the 200 and the 503 body. The modes come from the settings (the same resolution that builds the providers), and the version is resolved once at startup (D-platform-3).
+
 ### `GET /cases`
 
 The queue.

@@ -326,11 +326,14 @@ export interface components {
              * @enum {string}
              */
             database: "ok" | "unavailable";
+            provider_mode: components["schemas"]["ProviderModes"];
             /**
              * Status
              * @enum {string}
              */
             status: "ok" | "unavailable";
+            /** Version */
+            version: string;
         };
         /** MemberView */
         MemberView: {
@@ -338,6 +341,19 @@ export interface components {
             accounts: components["schemas"]["AccountView"][];
             /** Name */
             name: string;
+        };
+        /** ProviderModes */
+        ProviderModes: {
+            /**
+             * Jev
+             * @enum {string}
+             */
+            jev: "live" | "replay";
+            /**
+             * Openai
+             * @enum {string}
+             */
+            openai: "live" | "replay";
         };
         /** QueueItem */
         QueueItem: {

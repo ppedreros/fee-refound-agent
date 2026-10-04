@@ -156,7 +156,10 @@ async def triage(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport
     asked = {"state": jev_state}
     try:
         classification = await deps.classifier.classify(
-            jev_state, questions.questions, deadline=deps.deadline
+            jev_state,
+            questions.questions,
+            prompt_version=questions.version,
+            deadline=deps.deadline,
         )
     except ProviderUnavailable as error:
         result = triage_unavailable(last_known_language=state.last_known_language)
@@ -306,7 +309,10 @@ async def draft(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]
     for _ in range(DRAFT_TRIES):
         try:
             drafted = await deps.drafter.draft(
-                payload, instructions=load_prompt(DRAFT_PROMPT), deadline=deps.deadline
+                payload,
+                instructions=load_prompt(DRAFT_PROMPT),
+                prompt_version=DRAFT_PROMPT,
+                deadline=deps.deadline,
             )
         except ProviderUnavailable as error:
             failure = error.reason

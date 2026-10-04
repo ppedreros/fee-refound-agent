@@ -7,6 +7,8 @@ const plural = (count: number, one: string, many: string) =>
 export const copy = {
   app: {
     title: "Fee refunds",
+    replay: "Replay mode",
+    replayTooltip: "Model answers are recorded, not live.",
   },
   queue: {
     label: "Conversations",

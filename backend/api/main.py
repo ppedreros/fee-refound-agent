@@ -17,6 +17,7 @@ from backend.api.routes_decision import router as decision_router
 from backend.api.routes_health import router as health_router
 from backend.core.logging import configure_logging
 from backend.core.settings import Settings, load_settings
+from backend.core.version import app_version
 
 STARTUP_DB_TIMEOUT_S = 5.0
 
@@ -47,6 +48,7 @@ def create_app(
     configure_logging(settings.log_level, settings.masking_salt)
     app = FastAPI(title="Fee Refund Agent", lifespan=lifespan)
     app.state.settings = settings
+    app.state.version = app_version(settings)
     app.state.resources_factory = resources
     app.add_middleware(RequestIdMiddleware)
     install_error_handlers(app)

@@ -13,7 +13,11 @@ def make_settings(app_database_url: str) -> Settings:
         app_database_url=app_database_url,
         agent_database_url="postgresql+psycopg://agent_reader:test-password@127.0.0.1:5432/fees",
         masking_salt="test-salt",
+        app_version="abc1234",
     )
+
+
+MODES = {"jev": "replay", "openai": "replay"}  # no keys in these settings
 
 
 UNUSED_DATABASE = "postgresql+psycopg://app_writer:test-password@127.0.0.1:5432/fees"
@@ -27,7 +31,12 @@ def test_health_is_ok_when_the_database_answers() -> None:
         response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "database": "ok"}
+    assert response.json() == {
+        "status": "ok",
+        "database": "ok",
+        "provider_mode": MODES,
+        "version": "abc1234",
+    }
 
 
 def test_health_is_503_when_the_database_does_not_answer() -> None:
@@ -38,7 +47,12 @@ def test_health_is_503_when_the_database_does_not_answer() -> None:
         response = client.get("/health")
 
     assert response.status_code == 503
-    assert response.json() == {"status": "unavailable", "database": "unavailable"}
+    assert response.json() == {
+        "status": "unavailable",
+        "database": "unavailable",
+        "provider_mode": MODES,
+        "version": "abc1234",
+    }
 
 
 def test_health_echoes_the_request_id() -> None:
@@ -65,4 +79,9 @@ def test_health_is_503_without_a_trace_when_no_server_listens() -> None:
         response = client.get("/health")
 
     assert response.status_code == 503
-    assert response.json() == {"status": "unavailable", "database": "unavailable"}
+    assert response.json() == {
+        "status": "unavailable",
+        "database": "unavailable",
+        "provider_mode": MODES,
+        "version": "abc1234",
+    }

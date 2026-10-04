@@ -48,6 +48,7 @@ class Stub:
         state: Mapping[str, str],
         questions: Sequence[Question],
         *,
+        prompt_version: str | None = None,  # part of the replay key
         deadline: float | None = None,
     ) -> Classification:
         self.deadlines.append(deadline)

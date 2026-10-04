@@ -33,12 +33,18 @@ class Settings(BaseSettings):
     owner_database_url: SecretStr | None = None  # bootstrap only; compose gives it to migrate
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     masking_salt: SecretStr  # HMAC key for member ids in logs
+    app_version: str | None = None  # the git sha /health reports; see backend/core/version.py
     staff_id: str = Field(default="S07", pattern=r"^[A-Z][A-Z0-9]{1,15}$")  # who uses the UI
     host: str = "127.0.0.1"
     port: int = 8000
 
     @field_validator(
-        "jev_api_key", "openai_api_key", "owner_database_url", "masking_salt", mode="before"
+        "jev_api_key",
+        "openai_api_key",
+        "owner_database_url",
+        "masking_salt",
+        "app_version",
+        mode="before",
     )
     @classmethod
     def _blank_is_missing(cls, value: object) -> object:

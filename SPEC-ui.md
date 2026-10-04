@@ -153,6 +153,8 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 | Conversation · N messages | The full thread, with the member on the left and staff on the right |
 | How this was prepared · {duration} · {cost} | Each step with a plain label and its time. "Checked with our backup system" when Luna answered. "Model answers are recorded (Replay mode)" when in replay. The time it was checked. |
 
+**As built (T29).** The header reads `/health` once (`["health"]`, never stale, not retried). When either provider is in replay mode, it shows "Replay mode" on the right, after a small Terracotta dot, with the tooltip "Model answers are recorded, not live." (also given to screen readers as its description). Nothing shows when both are live or when the health check fails.
+
 **As built (T26).** Each step shows its own time in milliseconds below a second ("261 ms"), so the real Jev latency is visible next to the fast rule steps; the section header keeps the run's total ("0.5 s").
 
 **Member header.**

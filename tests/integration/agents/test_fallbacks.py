@@ -27,7 +27,14 @@ MEMBER_TEXT = ("paycheck came the same day", "Can you refund this", "Overdraft f
 class FakeLuna:
     """Answers like the backup would: labels only, no calibrated numbers."""
 
-    async def classify(self, state: Any, questions: Any, *, deadline: float | None = None) -> Any:
+    async def classify(
+        self,
+        state: Any,
+        questions: Any,
+        *,
+        prompt_version: str | None = None,
+        deadline: float | None = None,
+    ) -> Any:
         return Classification(
             answers={
                 "intent": ChoiceAnswer(choice="fee_refund_request"),

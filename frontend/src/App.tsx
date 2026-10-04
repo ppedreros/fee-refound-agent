@@ -1,3 +1,4 @@
+import { Header } from "./components/Header";
 import { copy } from "./copy/en";
 import { CasePane } from "./features/case/CasePane";
 import { Queue } from "./features/queue/Queue";
@@ -8,9 +9,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex h-14 items-center border-b border-grey-200 bg-white px-6">
-        <h1 className="font-serif text-lg">{copy.app.title}</h1>
-      </header>
+      <Header />
       {/* Two panes from 1024 px; below that, one pane: the queue, or the case it opened. */}
       <div className="flex flex-1 flex-col lg:flex-row">
         <nav

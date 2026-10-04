@@ -14,6 +14,12 @@ vi.mock("./api/client", async (importOriginal) => {
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
   vi.mocked(api.listCases).mockResolvedValue({ items: [], next_cursor: null });
+  vi.mocked(api.health).mockResolvedValue({
+    status: "ok",
+    database: "ok",
+    provider_mode: { jev: "live", openai: "live" },
+    version: "dev",
+  });
 });
 
 function render(ui: Parameters<typeof renderWithClient>[0]) {

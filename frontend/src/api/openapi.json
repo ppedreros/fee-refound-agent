@@ -744,6 +744,9 @@
             "title": "Database",
             "type": "string"
           },
+          "provider_mode": {
+            "$ref": "#/components/schemas/ProviderModes"
+          },
           "status": {
             "enum": [
               "ok",
@@ -751,11 +754,17 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
           }
         },
         "required": [
           "status",
-          "database"
+          "database",
+          "provider_mode",
+          "version"
         ],
         "title": "HealthResponse",
         "type": "object"
@@ -779,6 +788,32 @@
           "accounts"
         ],
         "title": "MemberView",
+        "type": "object"
+      },
+      "ProviderModes": {
+        "properties": {
+          "jev": {
+            "enum": [
+              "live",
+              "replay"
+            ],
+            "title": "Jev",
+            "type": "string"
+          },
+          "openai": {
+            "enum": [
+              "live",
+              "replay"
+            ],
+            "title": "Openai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "jev",
+          "openai"
+        ],
+        "title": "ProviderModes",
         "type": "object"
       },
       "QueueItem": {

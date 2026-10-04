@@ -62,6 +62,7 @@ class JevClassifier:
         state: Mapping[str, str],
         questions: Sequence[Question],
         *,
+        prompt_version: str | None = None,  # part of the replay key
         deadline: float | None = None,
     ) -> Classification:
         jev_questions = {question.key: _to_jev(question) for question in questions}
