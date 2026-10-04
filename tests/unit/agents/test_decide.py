@@ -187,6 +187,21 @@ def test_a_fee_question_gets_no_recommendation_but_keeps_the_fee() -> None:
     assert decision.recommendation.fee_txn_id == 88002
 
 
+def test_a_fee_question_lists_no_decline_reason_even_when_a_rule_fails() -> None:
+    """The checks stay visible as evidence, but nobody asked for a refund to decline (D-agent-1)."""
+    decision = decide(
+        triage=triage(topic="fee_question", reasons=(R.FEE_QUESTION,)),
+        fee=fee(),
+        fee_source="rule",
+        checks=checks(verify_posting_order=R.DEPOSIT_NOT_SAME_DAY),
+        reasons=(),
+    )
+
+    assert decision.reasons == (R.FEE_QUESTION,)
+    assert decision.recommendation.action == "none"
+    assert decision.decisive_rule is None
+
+
 def test_no_fee_means_no_recommendation() -> None:
     decision = decide(
         triage=triage(), fee=None, fee_source=None, checks=[], reasons=(R.FEE_NOT_FOUND,)

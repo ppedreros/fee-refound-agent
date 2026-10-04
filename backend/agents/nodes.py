@@ -381,9 +381,14 @@ async def find_policy(state: GraphState, deps: AgentDeps) -> tuple[Update, StepR
     if clause_id is None:
         return {}, StepReport(kind="tool", output={"clause_id": None})
 
+    asks_why = ReasonCode.FEE_QUESTION in decision.reasons  # the fee schedule explains it
     rules = [decision.decisive_rule] if decision.decisive_rule else []
     rules += [check.rule for check in state.checks if check.rule not in rules]
-    query = build_policy_query(fee_type=fee.fee_type if fee else None, rules=rules)
+    query = build_policy_query(
+        fee_type=fee.fee_type if fee else None,
+        rules=[] if asks_why else rules,
+        refund=not asks_why,
+    )
     try:
         found = await run_tool(deps, lambda s: search_clauses(s, query))
     except ToolError:

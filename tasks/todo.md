@@ -405,14 +405,14 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `backend/db/seed/scenarios.py`, `backend/agents/prompts/fee-choice-v1.yaml`, `backend/agents/nodes.py`, `deps.py` (`chooser`, was `ranker`), `backend/tools/descriptions.py` (`payee`), `backend/policy/reasons.py`, `backend/api/view_model.py`, `resources.py`, `routes_cases.py`, `backend/providers/factory.py`, `frontend/src/features/case/FeePicker.tsx` (+ test), tests for the graph, the API runs, reasons and descriptions
 **Scope:** M
 
-### - [ ] T33: Routing scenarios (2, 3, 4) and the fee question (5)
+### - [x] T33: Routing scenarios (2, 3, 4) and the fee question (5)
 **Description:** Seed the transactions scenario 5 needs. Add the early exit to `not_about_fee` with the topic label, and the `fee_question` path: recommendation `none`, the fee-schedule clause, no draft, and the `reply_only` and `reject` (refund anyway) actions.
 **Acceptance criteria:**
-- [ ] Scenarios 2, 3 and 4 give `not_about_fee` through the graph, with no balances loaded (no `load_accounts` step).
-- [ ] Scenario 5 gives `needs_your_call` with `fee_question`, the `fee-schedule#4` clause and no draft. The actions are `reply_only` and `reject`.
+- [x] Scenarios 2, 3 and 4 give `not_about_fee` through the graph, with no balances loaded (no `load_accounts` step).
+- [x] Scenario 5 gives `needs_your_call` with `fee_question`, the `fee-schedule#4` clause and no draft. The actions are `reply_only` and `reject`.
 **Verification:** `uv run python -m pytest tests/integration/agents -k "routing or fee_question" tests/api`
 **Dependencies:** T30
-**Files:** `backend/db/seed/scenarios.py`, `backend/agents/nodes.py`, `backend/api/view_model.py`, `tests/integration/agents/test_graph_scenarios.py`
+**Files:** `backend/db/seed/scenarios.py`, `backend/agents/decide.py`, `backend/agents/nodes.py`, `backend/policy/search.py`, `tests/integration/agents/test_graph_scenarios.py`, `tests/unit/agents/test_decide.py`, `tests/unit/policy/test_policy_query.py`, `tests/integration/policy/test_search.py`, `tests/api/test_decision_rules.py`, `tests/unit/tools/test_classify_description.py`
 **Scope:** S–M
 
 ### - [ ] T34: Injection, Spanish and multiple requests (12, 13, 14)

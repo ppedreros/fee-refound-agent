@@ -69,6 +69,10 @@ def decide(
     decisive: RuleResult | None = None
     if fee is None or not triage.about_fee or NO_USABLE_DATA & set(codes):
         action: RecommendationAction = "none"
+    elif ReasonCode.FEE_QUESTION in codes:
+        # We don't recommend refunding what wasn't asked for, and there is no refund to decline:
+        # the checks stay visible as evidence, and the fee schedule explains the fee (D-agent-1).
+        action = "none"
     else:
         failed = [by_rule[r] for r in DECLINE_ORDER if r in by_rule and not by_rule[r].passed]
         if failed:
@@ -81,8 +85,6 @@ def decide(
             if limit is not None and not limit.passed:
                 codes.append(_reason(limit))
                 decisive = limit
-        if ReasonCode.FEE_QUESTION in codes:
-            action = "none"  # we don't recommend refunding what wasn't asked for
 
     status = case_status(codes, action, about_fee=triage.about_fee)
     recommendation = Recommendation(

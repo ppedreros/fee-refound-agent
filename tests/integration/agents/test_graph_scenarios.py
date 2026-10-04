@@ -101,13 +101,19 @@ async def test_no_step_input_holds_a_name_or_an_account_number(
     ]
 
 
+@pytest.mark.parametrize(
+    ("case_id", "topic"),
+    [(5011, "card_issue"), (5010, "account_update"), (5009, "statement_question")],
+)
 async def test_a_message_that_is_not_about_a_fee_loads_no_balances(
-    reader: async_sessionmaker[AsyncSession],
+    reader: async_sessionmaker[AsyncSession], case_id: int, topic: str
 ) -> None:
-    final, records = await run(5011, FakeClassifier(jev_answers("card_issue")), reader)
+    """SPEC-data scenarios 2, 3 and 4."""
+    final, records = await run(case_id, FakeClassifier(jev_answers(topic)), reader)
 
     assert final["result"]["status"] == "not_about_fee"
-    assert final["result"]["topic"] == "card_issue"
+    assert final["result"]["topic"] == topic
+    assert final["result"]["reasons"] == ["not_fee_request"]  # routing: the page shows no banner
     assert [r.node for r in records] == ["load_conversation", "triage", "finalize"]
 
 
@@ -351,3 +357,32 @@ async def test_the_ambiguous_fee_reason_has_the_day_the_fees_share(
     final, _ = await run(5109, FakeClassifier(jev_answers()), reader)
 
     assert final["result"]["facts"] == {"candidate_count": 2, "fee_date": "2026-09-14"}
+
+
+async def test_a_question_about_a_fee_gets_the_evidence_and_the_schedule_but_no_draft(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    """SPEC-data scenario 5 (5008); SPEC-agent AC1 and D-agent-1."""
+    classifier = FakeClassifier(jev_answers("fee_question"))
+    chooser = FakeChooser(clause="fee-schedule#4")
+
+    final, records = await run(5008, classifier, reader, chooser)
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["fee_question"]
+    assert result["recommendation"] == {"action": "none", "amount": None, "fee_txn_id": 90501}
+    assert (result["fee"]["id"], result["fee"]["fee_type"]) == (90501, "Savings below minimum")
+    assert (result["clause"]["id"], result["clause"]["found_by"]) == (
+        "fee-schedule#4",
+        "search_confirmed",
+    )
+    assert result["draft"] is None
+    assert "draft" not in [record.node for record in records]
+    assert [check["rule"] for check in result["checks"]] == [  # every rule, as evidence
+        "verify_posting_order",
+        "check_not_already_refunded",
+        "check_yearly_limit",
+        "check_good_standing",
+        "check_approval_limit",
+    ]

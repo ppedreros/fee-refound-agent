@@ -42,3 +42,13 @@ async def test_anas_facts_find_the_refund_limit_and_the_same_day_clauses(
 
 async def test_nothing_matching_gives_nothing(reader: AsyncSession) -> None:
     assert await search_clauses(reader, "zebra OR xylophone") == []
+
+
+async def test_a_question_about_the_savings_fee_finds_its_schedule_clause(
+    reader: AsyncSession,
+) -> None:
+    query = build_policy_query(fee_type="Savings below minimum", rules=[], refund=False)
+
+    found = await search_clauses(reader, query)
+
+    assert found[0].id == "fee-schedule#4"

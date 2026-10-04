@@ -508,8 +508,30 @@ SCENARIO_15 = member_scenario(
     ],
 )
 
+# Scenario 5 is the brief's conversation 5008 ("Why was I charged $5 on my savings?"). The brief
+# has no transaction for it, so the fee is added on Daniel's Primary Savings (1255), whose balance
+# it already left at $1,040.
+SCENARIO_5 = Scenario(
+    number=5,
+    title="A question about a $5 savings fee, not a refund request: needs your call",
+    rows={
+        "transactions": [
+            {
+                "id": 90501,
+                "sub_account_id": 1255,
+                "date": dt.date(2026, 9, 1),
+                "description": "Fee Withdrawal ; Savings Below Minimum Balance fee",
+                "amount": Decimal("-5.00"),
+                "balance_after": Decimal("1040.00"),
+                "posting_ref": "20260901-0003",
+            }
+        ]
+    },
+)
+
 SCENARIOS = [
     BRIEF,
+    SCENARIO_5,
     SCENARIO_6,
     SCENARIO_7,
     SCENARIO_8,

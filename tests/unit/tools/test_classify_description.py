@@ -22,6 +22,9 @@ SEEDED = {
     "Fee Withdrawal ; Extended Overdraft fee": TransactionKind(
         kind="fee", fee_type="Extended overdraft"
     ),
+    "Fee Withdrawal ; Savings Below Minimum Balance fee": TransactionKind(
+        kind="fee", fee_type="Savings below minimum"
+    ),
 }
 
 

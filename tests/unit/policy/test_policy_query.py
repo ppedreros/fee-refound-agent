@@ -18,3 +18,9 @@ def test_words_are_joined_with_or_so_one_clause_need_not_hold_them_all() -> None
     query = build_policy_query(fee_type=None, rules=["check_good_standing"])
 
     assert query == "fee OR refund OR good OR standing OR unpaid OR balance"
+
+
+def test_a_question_about_a_fee_searches_for_the_fee_not_a_refund() -> None:
+    query = build_policy_query(fee_type="Savings below minimum", rules=[], refund=False)
+
+    assert query == "savings OR below OR minimum OR fee"

@@ -14,6 +14,7 @@ from sqlalchemy import Engine, text
 
 from backend.api.resources import AppResources
 from tests.api.conftest import wait_for_runs
+from tests.integration.agents.fakes import FakeClassifier, jev_answers
 
 REPLY = "Hi Ana, we've looked at your account and refunded the $35 fee."
 
@@ -306,3 +307,26 @@ async def test_a_decline_sends_the_reply_and_refund_anyway_refunds(
 
     result = response.json()
     assert (result["refunded"], result["amount"]) == (True, "35.00")
+
+
+async def test_a_question_about_a_fee_is_answered_or_refunded_anyway(
+    client: httpx.AsyncClient, app: FastAPI, classifier: FakeClassifier
+) -> None:
+    classifier.answers = jev_answers("fee_question")
+    case = await checked(client, app, 5008)
+
+    assert (case["status"], case["actions"]) == ("needs_your_call", ["reply_only", "reject"])
+    assert case["recommendation"] == {"action": "none", "amount": None}
+    assert case["clause"]["section"] == "4. Savings below minimum balance"
+    assert case["draft"] is None
+    response = await decide(
+        client,
+        body(
+            case,
+            "reject",
+            reply_text="Hi Daniel, we've refunded the $5.",
+            reason="First time; goodwill.",
+        ),
+        case_id=5008,
+    )
+    assert (response.json()["refunded"], response.json()["amount"]) == (True, "5.00")

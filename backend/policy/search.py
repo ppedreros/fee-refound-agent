@@ -54,10 +54,11 @@ RULE_TERMS: dict[str, str] = {
 }
 
 
-def build_policy_query(*, fee_type: str | None, rules: Sequence[str]) -> str:
+def build_policy_query(*, fee_type: str | None, rules: Sequence[str], refund: bool = True) -> str:
     """The fee type, then the topic of each rule that ran, the deciding rule first. Joined with
-    OR: `websearch_to_tsquery` would otherwise ask for every word in one clause."""
-    words = [*(fee_type or "").lower().split(), "fee", "refund"]
+    OR: `websearch_to_tsquery` would otherwise ask for every word in one clause. A question
+    about a fee (`refund=False`) searches for the fee alone, to find its schedule clause."""
+    words = [*(fee_type or "").lower().split(), "fee", *(["refund"] if refund else [])]
     for rule in rules:
         words += RULE_TERMS.get(rule, "").split()
     return " OR ".join(dict.fromkeys(words))
