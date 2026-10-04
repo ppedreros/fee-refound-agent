@@ -386,3 +386,67 @@ async def test_a_question_about_a_fee_gets_the_evidence_and_the_schedule_but_no_
         "check_good_standing",
         "check_approval_limit",
     ]
+
+
+# --- Injection, Spanish and more than one request (SPEC-data scenarios 12, 13 and 14) ---
+
+
+async def test_an_injection_is_flagged_and_changes_nothing_but_the_status(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    """SPEC-agent AC3: the message can't move the amount, the rules or the decision."""
+    drafter = FakeDrafter()
+    classifier = FakeClassifier(jev_answers(manipulation=0.98))
+
+    final, records = await run(5112, classifier, reader, drafter=drafter)
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["manipulation"]
+    assert result["recommendation"] == {"action": "refund", "amount": "35.00", "fee_txn_id": 91202}
+    assert "500" not in json.dumps(result)
+    assert "500" not in result["draft"]["text"]
+    (payload,) = drafter.payloads
+    assert "500" not in payload.model_dump_json()  # Sol never sees the message (D2)
+    triage = next(record for record in records if record.node == "triage")
+    assert triage.input_masked is not None
+    assert "$500" in json.dumps(triage.input_masked)  # Jev did see it, as data to judge
+
+
+async def test_a_spanish_message_gets_a_spanish_reply(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    drafter = FakeDrafter()
+
+    final, _ = await run(5113, FakeClassifier(jev_answers(language="es")), reader, drafter=drafter)
+
+    assert final["result"]["status"] == "ready_to_refund"
+    assert final["result"]["language"] == "es"
+    (payload,) = drafter.payloads
+    assert payload.language == "es"
+
+
+async def test_a_spanish_reply_falls_back_to_the_spanish_template(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    classifier = FakeClassifier(jev_answers(language="es"))
+
+    final, _ = await run(5113, classifier, reader, drafter=FakeDrafter([None]))
+
+    draft = final["result"]["draft"]
+    assert (draft["source"], draft["text"][:22]) == ("template", "Hola {{first_name}}, g")
+    assert "la nómina" in draft["text"]
+
+
+async def test_more_than_one_request_needs_your_call_and_keeps_the_refund(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    classifier = FakeClassifier(jev_answers(multiple_requests=0.9))
+
+    final, _ = await run(5114, classifier, reader)
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["multiple_requests"]
+    assert result["recommendation"]["action"] == "refund"
+    assert result["draft"] is not None  # it answers the refund; Luis adds the rest

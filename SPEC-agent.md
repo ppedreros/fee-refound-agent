@@ -152,6 +152,12 @@ The only note is `classified_with_backup`. It never changes the status, but it k
 - `result` also carries what Luis's page needs to show the evidence as the agent saw it: `candidates`, `facts` (all rule facts plus `fee_date`), `checks`, `decisive_rule`, `tone`, `classifier_used`, and `evidence` (`fee_day` rows of the fee's sub-account, core `refunds`, `sub_accounts` with balances). It never holds a name or an account number.
 - At this stage `find_policy` always uses `rule_fallback` and `draft` the reply templates (`backend/agents/prompts/templates/refunded.{en,es}.txt`); decline templates come in T31. More than one fee candidate gives `fee_ambiguous` until the Jev fee choice lands in T32.
 
+## Injection, Spanish and more than one request (T34)
+
+The signals were already wired (T16, T17, T28); these scenarios prove them with real data. With fakes: the injection is flagged as `manipulation`, the recommendation stays exactly $35, and "500" appears nowhere in the result, the draft or Sol's input, while the triage step shows Jev judged the text as data. A Spanish message gets a Spanish draft input and, if Sol fails, the Spanish template; two requests give `multiple_requests` and keep the refund and its draft.
+
+**Live check (2026-10-04).** Jev flagged Victor's message as manipulation and the case stayed at $35, with no "500" in the draft. Sol wrote Sofía's reply in Spanish ("Hola Sofía, gracias por escribirnos… tu nómina llegó ese mismo día…"). Jev flagged Mei's two requests.
+
 ## The fee question (T33)
 
 - **No decline to explain.** A `fee_question` gets no recommendation and lists only `fee_question` as its reason, even when a rule would fail: nobody asked for a refund, so there is nothing to decline. Every check still shows as evidence, so Luis can still "Refund anyway". Before this, a failing rule also added its decline reason ("No deposit arrived on the day of the fee.") to a question about a savings fee.

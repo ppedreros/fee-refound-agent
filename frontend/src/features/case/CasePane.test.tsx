@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError, api, type CaseView } from "../../api/client";
 import { copy } from "../../copy/en";
-import { anaReady, checking } from "../../test/caseFixtures";
+import { anaReady, checking, spanish } from "../../test/caseFixtures";
 import { renderWithClient } from "../../test/render";
 import { CasePane } from "./CasePane";
 
@@ -107,6 +107,21 @@ describe("Case pane", () => {
     expect(
       screen.getByText("Primary Savings, Everyday Checking ••4210 · Vacation Savings ••4211"),
     ).toBeInTheDocument();
+  });
+
+  it("tags a reply written in Spanish, and only that one", async () => {
+    getCase.mockResolvedValueOnce(spanish);
+    renderPane();
+
+    expect(await screen.findByText(copy.reply.spanish)).toBeInTheDocument();
+  });
+
+  it("doesn't tag a reply in English", async () => {
+    getCase.mockResolvedValue(anaReady);
+    renderPane();
+
+    await screen.findByRole("heading", { name: copy.status.ready_to_refund });
+    expect(screen.queryByText(copy.reply.spanish)).toBeNull();
   });
 
   it("opens an evidence section on request", async () => {

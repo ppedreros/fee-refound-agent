@@ -415,14 +415,14 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `backend/db/seed/scenarios.py`, `backend/agents/decide.py`, `backend/agents/nodes.py`, `backend/policy/search.py`, `tests/integration/agents/test_graph_scenarios.py`, `tests/unit/agents/test_decide.py`, `tests/unit/policy/test_policy_query.py`, `tests/integration/policy/test_search.py`, `tests/api/test_decision_rules.py`, `tests/unit/tools/test_classify_description.py`
 **Scope:** S–M
 
-### - [ ] T34: Injection, Spanish and multiple requests (12, 13, 14)
+### - [x] T34: Injection, Spanish and multiple requests (12, 13, 14)
 **Description:** Seed scenarios 12, 13 and 14. Wire the manipulation and multiple-requests Noul signals, the language fallback (`get_last_known_language`), the Spanish templates and Sol language handling, and the "Reply in Spanish" tag in the UI.
 **Acceptance criteria:**
-- [ ] Scenario 12 gives `needs_your_call` with `manipulation`, a recommendation of exactly $35, and no "$500" anywhere in the result or the draft (SPEC-agent AC3).
-- [ ] Scenario 13 gives `ready_to_refund` with a Spanish draft. Scenario 14 gives `multiple_requests`.
+- [x] Scenario 12 gives `needs_your_call` with `manipulation`, a recommendation of exactly $35, and no "$500" anywhere in the result or the draft (SPEC-agent AC3).
+- [x] Scenario 13 gives `ready_to_refund` with a Spanish draft. Scenario 14 gives `multiple_requests`.
 **Verification:** `uv run python -m pytest tests/integration/agents -k "injection or spanish or multiple"`
 **Dependencies:** T30
-**Files:** `backend/db/seed/scenarios.py`, `backend/agents/nodes.py`, `backend/agents/prompts/templates/`, `tests/integration/agents/test_graph_scenarios.py`, `frontend/src/features/case/ReplyEditor.tsx`
+**Files:** `backend/db/seed/scenarios.py`, `tests/integration/agents/test_graph_scenarios.py`, `frontend/src/features/case/CasePane.test.tsx` (the "Reply in Spanish" tag; the code was already there)
 **Scope:** M
 
 ### - [ ] T35: Robustness: data mismatch (16), missing recording (18), deadlines, interrupted runs
