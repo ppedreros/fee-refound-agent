@@ -179,6 +179,12 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 - **API types.** Generated from OpenAPI (`frontend/src/api/schema.d.ts`), never edited by hand.
 - **Health.** `GET /health` is read once, to show "Replay mode" in the header with the tooltip "Model answers are recorded, not live."
 
+**As built (T23).**
+- **API types.** `npm --prefix frontend run gen:api` writes the backend's schema to `frontend/src/api/openapi.json` (`python -m backend.api.openapi`, no server needed) and turns it into `schema.d.ts` with openapi-typescript. openapi-typescript 7 declares TypeScript 5 as a peer and the app is on TypeScript 6, so the script runs a pinned `npx --yes openapi-typescript@7.13.0` (it brings its own TypeScript) instead of adding it to `devDependencies`. Both files are committed and skipped by Prettier; a backend unit test fails when the committed schema no longer matches the API. Statuses, topics, actions, authors and sources are closed sets (`Literal`) in the schema, so the copy maps are checked for completeness (`satisfies Record<CaseStatus, string>`).
+- **Client.** `src/api/client.ts` is a thin `fetch` wrapper typed by the schema (no extra library), with one function per endpoint under `/api`. Every failure is an `ApiError` carrying the API's `message` (or the calm network and generic messages from the copy file), its `code`, and the active `run_id` on a 409. Queries are not retried on a 4xx, and at most twice on a network error or a 5xx. In development, Vite proxies `/api` to the local backend, as nginx does in the container.
+- **URL state** has no router: `useSyncExternalStore` over `location.search`, and `pushState` on change (`?view=open&case=5012`). Switching tabs clears the selected case.
+- **Queue.** The status dot is decorative (the status label is text): success for "Ready to refund" and "Done", Terracotta for "Needs your call" and "Needs supervisor approval", navy for "We recommend not refunding", grey for the rest (hollow when not checked, pulsing while checking, still with reduced motion). The second line is the topic once the case is checked, otherwise the subject. Only the first page (50 conversations) is shown; paging further is left for later, since the demo has five.
+
 ## Errors, loading, empty
 
 | Situation | What Luis sees |

@@ -1,7 +1,9 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./App";
+import { createQueryClient } from "./api/hooks";
 import { copy } from "./copy/en";
 import "./index.css";
 
@@ -14,6 +16,8 @@ document.title = copy.app.title;
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={createQueryClient()}>
+      <App />
+    </QueryClientProvider>
   </StrictMode>,
 );

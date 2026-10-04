@@ -276,14 +276,14 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/api/routes_decision.py`, `backend/api/decision_service.py`, `backend/api/schemas.py`, `backend/api/actions.py` (`actions_for`, shared with the view), `backend/api/resources.py` (policy numbers, clock), `backend/core/settings.py` (`STAFF_ID`), `docker-compose.yml`, `tests/api/test_happy_path.py`, `tests/api/test_decision_rules.py`
 **Scope:** M
 
-### - [ ] T23: UI: queue pane
+### - [x] T23: UI: queue pane
 **Description:** Generate the API types from OpenAPI (`gen:api`), add an API client and TanStack Query hooks, and build the queue pane: items, Open and Done tabs, selection with URL state, and the empty state.
 **Acceptance criteria:**
-- [ ] The queue shows the seeded open conversations, with first name and last initial, subject, status and time. Selecting one sets `?case=`.
-- [ ] Refreshing restores the selection. "You're all caught up." shows when the list is empty.
+- [x] The queue shows the seeded open conversations, with first name and last initial, subject, status and time. Selecting one sets `?case=`.
+- [x] Refreshing restores the selection. "You're all caught up." shows when the list is empty.
 **Verification:** `npm --prefix frontend test -- Queue` · manual check in compose
 **Dependencies:** T2, T19
-**Files:** `frontend/src/api/` (`schema.d.ts`, `client.ts`, `hooks.ts`), `frontend/src/features/queue/Queue.tsx`, `frontend/src/features/queue/Queue.test.tsx`
+**Files:** `frontend/src/api/` (`openapi.json`, `schema.d.ts`, `client.ts`, `hooks.ts`), `frontend/src/features/queue/Queue.tsx` (+ test), `frontend/src/lib/` (`useUrlState.ts`, `format.ts`), `frontend/src/test/` (`fixtures.ts`, `render.tsx`), `frontend/src/copy/en.ts`, `frontend/src/App.tsx` (+ test), `frontend/src/main.tsx`, `frontend/vite.config.ts`, `frontend/package.json`, `backend/api/openapi.py`, `backend/api/schemas.py` (closed sets), `tests/unit/api/test_openapi.py`
 **Scope:** M
 
 ### - [ ] T24: UI: case pane (decision card, reply, evidence), check with polling

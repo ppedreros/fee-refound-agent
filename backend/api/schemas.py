@@ -7,14 +7,36 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
+from backend.api.actions import Action
+
+# The UI maps each of these to its own words, so they are closed sets in the schema.
+type CaseStatus = Literal[
+    "not_checked",
+    "checking",
+    "ready_to_refund",
+    "recommend_no_refund",
+    "needs_supervisor",
+    "needs_your_call",
+    "not_about_fee",
+    "done",
+]
+type Topic = Literal[
+    "fee_refund_request",
+    "fee_question",
+    "card_issue",
+    "account_update",
+    "statement_question",
+    "other",
+]
+
 
 class QueueItem(BaseModel):
     id: int
     member_name: str  # first name and last initial: "Ana T."
     subject: str
     received_at: dt.datetime  # the oldest unanswered member message
-    status: str
-    topic: str | None
+    status: CaseStatus
+    topic: Topic | None
     amount: Decimal | None  # the recommended refund, if there is one
     checked_at: dt.datetime | None
 
@@ -38,7 +60,7 @@ class RunStarted(BaseModel):
 
 
 class ConversationMessage(BaseModel):
-    author: str  # "member" or "staff"
+    author: Literal["member", "staff"]
     author_name: str
     body: str
     created_at: dt.datetime
@@ -74,7 +96,7 @@ class ReasonView(BaseModel):
 
 
 class RecommendationView(BaseModel):
-    action: str  # refund, no_refund or none
+    action: Literal["refund", "no_refund", "none"]
     amount: Decimal | None
 
 
@@ -85,7 +107,7 @@ class FeeView(BaseModel):
     fee_type: str | None
     description: str
     sub_account_name: str
-    source: str | None  # rule, jev or staff
+    source: Literal["rule", "jev", "staff"] | None  # how the fee was chosen
 
 
 class CandidateView(BaseModel):
@@ -155,12 +177,12 @@ class ClauseView(BaseModel):
 
 class DraftView(BaseModel):
     text: str
-    source: str  # model or template
+    source: Literal["model", "template"]
 
 
 class StepView(BaseModel):
     node: str  # the UI maps node names to plain labels
-    state: str
+    state: Literal["finished", "failed"]
     latency_ms: int
 
 
@@ -176,7 +198,7 @@ class RunView(BaseModel):
 class DecisionView(BaseModel):
     by: str
     at: dt.datetime
-    action: str
+    action: Action
     refunded: bool
     amount: Decimal | None
     reply: str | None
@@ -186,8 +208,8 @@ class CaseView(BaseModel):
     id: int
     conversation: ConversationView
     member: MemberView
-    status: str
-    topic: str | None
+    status: CaseStatus
+    topic: Topic | None
     language: str | None
     summary: str | None
     reasons: list[ReasonView]
@@ -200,7 +222,7 @@ class CaseView(BaseModel):
     draft: DraftView | None
     run: RunView | None
     decision: DecisionView | None
-    actions: list[str]
+    actions: list[Action]
     can_run: bool
     can_pick_fee: bool
 
@@ -215,7 +237,7 @@ class DecisionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     run_id: UUID
-    action: Literal["approve", "edit", "reject", "reply_only"]
+    action: Action
     reply_text: str = Field(max_length=20_000)
     reason: str | None = Field(default=None, max_length=5_000)
 
@@ -224,4 +246,4 @@ class DecisionResult(BaseModel):
     decision_id: UUID
     refunded: bool
     amount: Decimal | None  # what this decision refunded
-    case_status: str
+    case_status: CaseStatus

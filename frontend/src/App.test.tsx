@@ -1,8 +1,24 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./App";
+import { api } from "./api/client";
 import { copy } from "./copy/en";
+import { renderWithClient } from "./test/render";
+
+vi.mock("./api/client", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./api/client")>();
+  return { ...original, api: { listCases: vi.fn(), getCase: vi.fn(), health: vi.fn() } };
+});
+
+beforeEach(() => {
+  window.history.replaceState(null, "", "/");
+  vi.mocked(api.listCases).mockResolvedValue({ items: [], next_cursor: null });
+});
+
+function render(ui: Parameters<typeof renderWithClient>[0]) {
+  return renderWithClient(ui);
+}
 
 function allCopyStrings(value: unknown): string[] {
   if (typeof value === "string") return [value];
@@ -41,8 +57,9 @@ describe("App shell", () => {
     expect(screen.getByText(copy.case.empty)).toBeInTheDocument();
   });
 
-  it("only shows text that comes from the copy file", () => {
+  it("only shows text that comes from the copy file", async () => {
     const { container } = render(<App />);
+    await screen.findByText(copy.queue.empty);
     const allowed = new Set(allCopyStrings(copy));
 
     for (const text of visibleTexts(container)) {
