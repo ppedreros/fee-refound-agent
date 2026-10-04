@@ -60,10 +60,10 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 **Files:** `backend/core/logging.py`, `backend/api/middleware.py`, `backend/core/clock.py`, `backend/core/settings.py` (`LOG_LEVEL`, `MASKING_SALT`), `backend/api/main.py` + `__main__.py`, `docker-compose.yml`, `tests/unit/core/test_logging.py` + `test_clock.py`
 **Scope:** S
 
-### - [ ] T5: CI workflow
+### - [x] T5: CI workflow
 **Description:** GitHub Actions jobs `lint`, `backend` (with a Postgres 16 service), `frontend` and `docker`. The `evals` and `e2e` jobs are added in T38 and T42.
 **Acceptance criteria:**
-- [ ] The workflow runs on push and pull request, and every job is green on the skeleton.
+- [x] The workflow runs on push and pull request, and every job is green on the skeleton.
 **Verification:** push to `origin/main`; the Actions run is green
 **Dependencies:** T1–T4
 **Files:** `.github/workflows/ci.yml`
@@ -81,8 +81,8 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 **Scope:** S. High risk, so it runs early.
 
 ### Checkpoint 1: Foundation
-- [ ] `docker compose up` serves the shell, and `/api/health` returns 200
-- [ ] `uv run python -m pre_commit run --all-files` is green, and CI is green (if the remote exists)
+- [x] `docker compose up` serves the shell, and `/api/health` returns 200
+- [x] `uv run python -m pre_commit run --all-files` is green, and CI is green (if the remote exists)
 - [ ] The Jev request and response shape is confirmed, and any difference from SPEC-providers has been noted in the spec
 
 ---
