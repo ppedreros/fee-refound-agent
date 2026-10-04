@@ -1,9 +1,10 @@
-import { useId, useState, type ReactNode, type Ref } from "react";
+import { useId, type ReactNode, type Ref } from "react";
 
 import type { Action, CaseView } from "../../api/client";
 import { copy } from "../../copy/en";
 import { formatDateTime, formatMoney } from "../../lib/format";
 import { cardButtons, type CardButton } from "./cardButtons";
+import { FeePicker } from "./FeePicker";
 import { StatusDot } from "../queue/Queue";
 
 export interface CardProps {
@@ -192,51 +193,4 @@ function CardBody({ view }: { view: CaseView }) {
       return <p>{copy.card.decidedBy(what, decision.by, formatDateTime(decision.at))}</p>;
     }
   }
-}
-
-function FeePicker({
-  view,
-  disabled,
-  onRun,
-}: {
-  view: CaseView;
-  disabled: boolean;
-  onRun: (feeTxnId?: number) => void;
-}) {
-  const [picked, setPicked] = useState<number | null>(null);
-  const name = useId();
-  return (
-    <div className="mt-4 space-y-3">
-      <div role="radiogroup" aria-label={copy.card.pickFee} className="space-y-1">
-        {view.candidates.map((candidate) => (
-          <label
-            key={candidate.fee_txn_id}
-            className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 hover:bg-grey-50"
-          >
-            <input
-              type="radio"
-              name={name}
-              value={candidate.fee_txn_id}
-              checked={picked === candidate.fee_txn_id}
-              onChange={() => {
-                setPicked(candidate.fee_txn_id);
-              }}
-              className="accent-navy"
-            />
-            <span className="tabular-nums">{candidate.label}</span>
-          </label>
-        ))}
-      </div>
-      <button
-        type="button"
-        disabled={picked === null || disabled}
-        onClick={() => {
-          if (picked !== null) onRun(picked);
-        }}
-        className={PRIMARY}
-      >
-        {copy.actions.checkWithFee}
-      </button>
-    </div>
-  );
 }

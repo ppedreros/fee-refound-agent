@@ -248,11 +248,16 @@ def _fee(fee: Json) -> FeeView:
 
 
 def _candidate_label(txn: Json) -> str:
-    """Sep 14 · -$35.00 · Courtesy Pay fee, with a real minus sign."""
+    """Sep 14 · -$35.00 · Courtesy Pay fee · after CITY POWER & LIGHT -$60.00, with real minus
+    signs: the payment that caused each fee tells two same-day fees apart."""
     amount = abs(Decimal(txn["amount"]))
     what = f"{txn['fee_type']} fee" if txn.get("fee_type") else txn["description"]
     day = format_date(dt.date.fromisoformat(txn["date"]), LANG)
-    return f"{day} · {MINUS}${amount:,.2f} · {what}"
+    label = f"{day} · {MINUS}${amount:,.2f} · {what}"
+    after = txn.get("after")
+    if after:
+        label += f" · after {after['payee']} {MINUS}${abs(Decimal(after['amount'])):,.2f}"
+    return label
 
 
 def _draft(result: Json, first_name: str) -> DraftView | None:

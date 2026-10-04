@@ -222,14 +222,24 @@ async def test_sol_sees_facts_only_never_the_members_message(
 async def test_a_tool_timeout_is_data_timeout_and_luis_decides(
     reader: async_sessionmaker[AsyncSession], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    @queries.read_tool
-    async def stuck(
+    @queries.read_tool  # the real timeout path...
+    async def slow(
         session: AsyncSession, member_id: int, start: dt.date, end: dt.date
     ) -> list[Transaction]:
         await asyncio.sleep(1)
         return []
 
-    monkeypatch.setattr(queries, "TOOL_TIMEOUT_S", 0.05)  # the real timeout path, just shorter
+    async def stuck(
+        session: AsyncSession, member_id: int, start: dt.date, end: dt.date
+    ) -> list[Transaction]:
+        # ...made shorter for this one read only, so the other reads keep their own timeout
+        normal = queries.TOOL_TIMEOUT_S
+        monkeypatch.setattr(queries, "TOOL_TIMEOUT_S", 0.05)
+        try:
+            return await slow(session, member_id, start, end)
+        finally:
+            monkeypatch.setattr(queries, "TOOL_TIMEOUT_S", normal)
+
     monkeypatch.setattr(queries, "list_transactions", stuck)
 
     final, records = await run(5012, FakeClassifier(jev_answers()), reader)

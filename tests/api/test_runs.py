@@ -151,6 +151,28 @@ async def test_a_pinned_fee_must_be_one_of_the_candidates(
     }
 
 
+async def test_luis_picks_one_of_two_fees_and_the_check_runs_again_with_it(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    await client.post("/cases/5109/run")  # scenario 9: two fees, a vague message
+    await wait_for_runs(app)
+    case = (await client.get("/cases/5109")).json()
+    assert (case["status"], case["can_pick_fee"]) == ("needs_your_call", True)
+    minus = chr(0x2212)  # labels use a real minus sign, as on a statement
+    assert [c["label"] for c in case["candidates"]] == [
+        f"Sep 14 · {minus}$35.00 · Courtesy Pay fee · after CITY POWER & LIGHT {minus}$60.00",
+        f"Sep 14 · {minus}$35.00 · Courtesy Pay fee · after STREAMFLIX {minus}$15.99",
+    ]
+
+    started = await client.post("/cases/5109/run", json={"fee_txn_id": 90904})
+    await wait_for_runs(app)
+    picked = (await client.get("/cases/5109")).json()
+
+    assert started.status_code == 202
+    assert (picked["fee"]["fee_txn_id"], picked["fee"]["source"]) == (90904, "staff")
+    assert (picked["status"], picked["can_pick_fee"]) == ("ready_to_refund", False)
+
+
 async def test_startup_interrupts_runs_left_running(
     with_clauses: Engine, test_database_url: URL, classifier: FakeClassifier
 ) -> None:

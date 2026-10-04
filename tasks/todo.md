@@ -394,15 +394,15 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `backend/db/seed/scenarios.py`, `backend/core/config/descriptions.yaml`, `backend/agents/prompts/templates/` (declines, "refunded" in Spanish), `backend/agents/nodes.py`, `tests/integration/agents/test_graph_scenarios.py` + `test_fallbacks.py` + `fakes.py`, `tests/unit/agents/test_reply_templates.py`, `tests/unit/tools/test_classify_description.py`, `tests/api/test_decision_rules.py` + `test_runs.py`, `frontend/src/test/caseFixtures.ts`
 **Scope:** M
 
-### - [ ] T32: Fee identification scenarios (9, 10, 15) and "Pick the fee"
+### - [x] T32: Fee identification scenarios (9, 10, 15) and "Pick the fee"
 **Description:** Seed scenarios 9 (two fees, unclear message), 10 (two fees, the message names the bill) and 15 (no fee). Add the `fee-choice-v1` prompt and Jev fee choice, and the pinned-fee re-run (`POST /run {fee_txn_id}`, validated against the candidates, `fee_source = staff`) with the UI fee picker.
 **Acceptance criteria:**
-- [ ] Scenario 9 gives `fee_ambiguous` with candidates. Scenario 10 picks the right fee with Jev (`fee_source = jev`). Scenario 15 gives `fee_not_found`.
-- [ ] Re-running 9 with a candidate gives `fee_source = staff`. A non-candidate gives 422 `invalid_fee` (SPEC-agent AC5).
-- [ ] The UI shows the radio rows and "Check again with this fee" only when `can_pick_fee` is true.
+- [x] Scenario 9 gives `fee_ambiguous` with candidates. Scenario 10 picks the right fee with Jev (`fee_source = jev`). Scenario 15 gives `fee_not_found`.
+- [x] Re-running 9 with a candidate gives `fee_source = staff`. A non-candidate gives 422 `invalid_fee` (SPEC-agent AC5).
+- [x] The UI shows the radio rows and "Check again with this fee" only when `can_pick_fee` is true.
 **Verification:** `uv run python -m pytest tests/integration/agents -k "fee" tests/api/test_runs.py`; `npm --prefix frontend test -- FeePicker`
 **Dependencies:** T30
-**Files:** `backend/db/seed/scenarios.py`, `backend/agents/prompts/fee-choice-v1.yaml`, `backend/agents/nodes.py`, `backend/api/routes_cases.py`, `frontend/src/features/case/FeePicker.tsx`
+**Files:** `backend/db/seed/scenarios.py`, `backend/agents/prompts/fee-choice-v1.yaml`, `backend/agents/nodes.py`, `deps.py` (`chooser`, was `ranker`), `backend/tools/descriptions.py` (`payee`), `backend/policy/reasons.py`, `backend/api/view_model.py`, `resources.py`, `routes_cases.py`, `backend/providers/factory.py`, `frontend/src/features/case/FeePicker.tsx` (+ test), tests for the graph, the API runs, reasons and descriptions
 **Scope:** M
 
 ### - [ ] T33: Routing scenarios (2, 3, 4) and the fee question (5)

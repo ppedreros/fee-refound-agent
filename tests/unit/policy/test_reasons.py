@@ -220,3 +220,19 @@ def test_other_statuses_have_no_summary(status: str) -> None:
 
 def test_no_counterfactual_without_a_same_day_deposit() -> None:
     assert render_counterfactual({"fee_date": FEE_DAY}, "en") is None
+
+
+@pytest.mark.parametrize(
+    ("lang", "expected"),
+    [
+        ("en", "Ben has 2 recent fees and the message doesn't say which one."),
+        ("es", "Ben tiene 2 cargos recientes y el mensaje no dice cuál."),
+    ],
+)
+def test_fees_on_different_days_are_named_without_a_date(lang: Language, expected: str) -> None:
+    rendered = render_reason(
+        ReasonCode.FEE_AMBIGUOUS, {"candidate_count": 2}, lang, first_name="Ben"
+    )
+
+    assert rendered.message == expected
+    assert rendered.next_step in ("Pick the fee", "Elige el cargo")

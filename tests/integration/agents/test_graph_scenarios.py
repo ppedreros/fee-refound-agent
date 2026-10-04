@@ -14,7 +14,7 @@ from backend.agents.graph import build_graph
 from backend.agents.state import GraphState
 from backend.agents.steps import StepRecord
 from backend.providers.types import Classifier
-from tests.integration.agents.fakes import FakeClassifier, FakeDrafter, FakeRanker, jev_answers
+from tests.integration.agents.fakes import FakeChooser, FakeClassifier, FakeDrafter, jev_answers
 
 SEEDED_SECRETS = ("Ana", "Torres", "884210", "884211")
 
@@ -23,19 +23,20 @@ async def run(
     case_id: int,
     classifier: FakeClassifier,
     reader: async_sessionmaker[AsyncSession],
-    ranker: Classifier | None = None,
+    chooser: Classifier | None = None,
     drafter: FakeDrafter | None = None,
+    pinned: int | None = None,
 ) -> tuple[dict[str, Any], list[StepRecord]]:
     graph = build_graph()
     final: dict[str, Any] = {}
     records: list[StepRecord] = []
     async for mode, chunk in graph.astream(
-        GraphState(case_id=case_id, run_id=uuid4()),
+        GraphState(case_id=case_id, run_id=uuid4(), pinned_fee_txn_id=pinned),
         context=AgentDeps(
             reader=reader,
             classifier=classifier,
             drafter=drafter or FakeDrafter(),
-            ranker=ranker,
+            chooser=chooser,
         ),
         stream_mode=["values", "custom"],
     ):
@@ -132,15 +133,15 @@ def policy_step(records: list[StepRecord]) -> StepRecord:
 async def test_ana_quotes_the_clause_search_found_and_jev_confirmed(
     reader: async_sessionmaker[AsyncSession],
 ) -> None:
-    ranker = FakeRanker("fee-refund-policy#4")
+    chooser = FakeChooser(clause="fee-refund-policy#4")
 
-    final, records = await run(5012, FakeClassifier(jev_answers()), reader, ranker)
+    final, records = await run(5012, FakeClassifier(jev_answers()), reader, chooser)
 
     clause = final["result"]["clause"]
     assert (clause["id"], clause["found_by"]) == ("fee-refund-policy#4", "search_confirmed")
-    (options,) = ranker.options
+    options = chooser.options["clause"]
     assert {"fee-refund-policy#2", "fee-refund-policy#4"} <= set(options)
-    (state,) = ranker.states
+    (state,) = chooser.states
     assert state == {
         "decision": "Refund the $35 Courtesy Pay fee.",
         "facts": "The paycheck arrived the same day and the bill posted before it.",
@@ -154,10 +155,10 @@ async def test_ana_quotes_the_clause_search_found_and_jev_confirmed(
 async def test_ana_with_a_mismatched_choice_quotes_the_rules_clause_and_logs_it(
     reader: async_sessionmaker[AsyncSession],
 ) -> None:
-    ranker = FakeRanker("fee-refund-policy#2")
+    chooser = FakeChooser(clause="fee-refund-policy#2")
 
     with structlog.testing.capture_logs() as logs:
-        final, records = await run(5012, FakeClassifier(jev_answers()), reader, ranker)
+        final, records = await run(5012, FakeClassifier(jev_answers()), reader, chooser)
 
     clause = final["result"]["clause"]
     assert (clause["id"], clause["found_by"]) == ("fee-refund-policy#4", "rule_fallback")
@@ -173,9 +174,9 @@ async def test_ana_with_a_mismatched_choice_quotes_the_rules_clause_and_logs_it(
 async def test_ana_with_a_low_confidence_choice_quotes_the_rules_clause(
     reader: async_sessionmaker[AsyncSession],
 ) -> None:
-    ranker = FakeRanker("fee-refund-policy#4", confidence=0.5)
+    chooser = FakeChooser(clause="fee-refund-policy#4", confidence=0.5)
 
-    final, _ = await run(5012, FakeClassifier(jev_answers()), reader, ranker)
+    final, _ = await run(5012, FakeClassifier(jev_answers()), reader, chooser)
 
     assert final["result"]["clause"]["found_by"] == "rule_fallback"
     assert final["result"]["status"] == "ready_to_refund"  # the quote never changes the outcome
@@ -184,7 +185,7 @@ async def test_ana_with_a_low_confidence_choice_quotes_the_rules_clause(
 async def test_ana_with_jev_down_for_the_clause_choice_still_quotes_the_rules_clause(
     reader: async_sessionmaker[AsyncSession],
 ) -> None:
-    final, records = await run(5012, FakeClassifier(jev_answers()), reader, FakeRanker(None))
+    final, records = await run(5012, FakeClassifier(jev_answers()), reader, FakeChooser())
 
     clause = final["result"]["clause"]
     assert (clause["id"], clause["found_by"]) == ("fee-refund-policy#4", "rule_fallback")
@@ -242,17 +243,111 @@ async def test_above_the_limit_nothing_is_drafted_and_jev_hears_about_the_limit(
     reader: async_sessionmaker[AsyncSession],
 ) -> None:
     """Luis can't refund it here (D-api-1), so there is no refund reply to write."""
-    drafter, ranker = FakeDrafter(), FakeRanker("staff-approval-limits#1")
+    drafter, chooser = FakeDrafter(), FakeChooser(clause="staff-approval-limits#1")
 
-    final, records = await run(5117, FakeClassifier(jev_answers()), reader, ranker, drafter)
+    final, records = await run(5117, FakeClassifier(jev_answers()), reader, chooser, drafter)
 
     assert final["result"]["status"] == "needs_supervisor"
     assert final["result"]["draft"] is None
     assert drafter.payloads == []
     assert "draft" not in [record.node for record in records]
-    (state,) = ranker.states
+    (state,) = chooser.states
     assert state == {
         "decision": "Refund the $60 Extended overdraft fee, above the staff approval limit.",
         "facts": "The policy allows this $60 refund, but it is above your $50 limit.",
     }
     assert final["result"]["clause"]["found_by"] == "search_confirmed"
+
+
+# --- Which fee (SPEC-data scenarios 9, 10 and 15; SPEC-agent AC5) ---
+
+ELECTRIC_BILL_FEE, STREAMING_FEE = 90902, 90904  # scenario 9's two $35 fees on Sep 14
+
+
+async def test_two_fees_and_a_vague_message_ask_luis_to_pick_the_fee(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    chooser = FakeChooser()  # Jev can't answer the fee choice
+
+    final, _ = await run(5109, FakeClassifier(jev_answers()), reader, chooser)
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["fee_ambiguous"]
+    assert result["recommendation"]["action"] == "none"
+    assert [c["id"] for c in result["candidates"]] == [ELECTRIC_BILL_FEE, STREAMING_FEE]
+    assert [c["after"] for c in result["candidates"]] == [
+        {"payee": "CITY POWER & LIGHT", "amount": "-60.00"},
+        {"payee": "STREAMFLIX", "amount": "-15.99"},
+    ]
+    assert chooser.options["fee"] == [str(ELECTRIC_BILL_FEE), str(STREAMING_FEE)]
+
+
+async def test_an_unsure_fee_choice_is_still_luis_s_to_make(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    chooser = FakeChooser(fee=str(ELECTRIC_BILL_FEE), confidence=0.6)
+
+    final, _ = await run(5109, FakeClassifier(jev_answers()), reader, chooser)
+
+    assert final["result"]["reasons"] == ["fee_ambiguous"]
+
+
+async def test_jev_picks_the_fee_the_message_names(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    chooser = FakeChooser(fee="91002", clause="fee-refund-policy#4")  # the electric bill's fee
+
+    final, records = await run(5110, FakeClassifier(jev_answers()), reader, chooser)
+    result = final["result"]
+
+    assert result["status"] == "ready_to_refund"
+    assert (result["fee"]["id"], result["fee"]["source"]) == (91002, "jev")
+    assert result["clear"] is False  # Jev chose the fee: Luis still checks
+    state = chooser.states[0]
+    assert set(state) == {"subject", "message"}
+    assert "electric bill" in state["message"]
+    identify = next(record for record in records if record.node == "identify_fee")
+    assert (identify.kind, identify.prompt_version) == ("jev", "fee-choice-v1")
+
+
+async def test_a_refund_request_with_no_fee_in_the_window_is_fee_not_found(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    final, _ = await run(5115, FakeClassifier(jev_answers()), reader)
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["fee_not_found"]
+    assert result["recommendation"]["action"] == "none"
+    assert result["draft"] is None
+
+
+async def test_the_fee_luis_picks_is_checked_as_staff_input(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    final, _ = await run(
+        5109, FakeClassifier(jev_answers()), reader, FakeChooser(), pinned=STREAMING_FEE
+    )
+    result = final["result"]
+
+    assert (result["fee"]["id"], result["fee"]["source"]) == (STREAMING_FEE, "staff")
+    assert "fee_ambiguous" not in result["reasons"]
+    assert result["status"] == "ready_to_refund"
+
+
+async def test_a_pinned_fee_that_is_not_a_candidate_is_refused(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    final, _ = await run(5109, FakeClassifier(jev_answers()), reader, pinned=88002)
+
+    assert final["result"]["reasons"] == ["fee_not_found"]
+    assert final["result"]["fee"] is None
+
+
+async def test_the_ambiguous_fee_reason_has_the_day_the_fees_share(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    final, _ = await run(5109, FakeClassifier(jev_answers()), reader)
+
+    assert final["result"]["facts"] == {"candidate_count": 2, "fee_date": "2026-09-14"}

@@ -94,7 +94,7 @@ def _start_in_background(app: FastAPI, case_id: int, run_id: UUID, fee_txn_id: i
             reader=resources.reader,
             classifier=resources.classifier,
             drafter=resources.drafter,
-            ranker=resources.ranker,
+            chooser=resources.chooser,
         ),
         provider_modes=resources.provider_modes,
     )

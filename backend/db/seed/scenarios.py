@@ -450,4 +450,72 @@ SCENARIO_17 = member_scenario(
     ],
 )
 
-SCENARIOS = [BRIEF, SCENARIO_6, SCENARIO_7, SCENARIO_8, SCENARIO_11, SCENARIO_17]
+
+def two_fees(n: int, day: str) -> list[dict[str, Any]]:
+    """Two bills, two $35 fees, then the paycheck, all on one day: each fee follows its bill."""
+    return [
+        txn(n, 1, 1, day, 0, "Withdrawal Debit Card CITY POWER & LIGHT", "-60.00", "-40.00"),
+        txn(n, 2, 1, day, 5, COURTESY_PAY, "-35.00", "-75.00"),
+        txn(n, 3, 1, day, 8, "Withdrawal Debit Card STREAMFLIX", "-15.99", "-90.99"),
+        txn(n, 4, 1, day, 9, COURTESY_PAY, "-35.00", "-125.99"),
+        txn(n, 5, 1, day, 10, "Deposit ACH NORTHWIND FOODS*PAYROLL", "1250.00", "1124.01"),
+    ]
+
+
+SCENARIO_9 = member_scenario(
+    9,
+    "Two fees on the same day, and the message doesn't say which: needs your call",
+    name=("Ben", "Carter"),
+    subject="Overdraft fees",
+    messages=["I got hit with overdraft fees again. Can you refund the fee?"],
+    sub_accounts=[checking(9, "1124.01")],
+    transactions=two_fees(9, "2026-09-14"),
+)
+
+SCENARIO_10 = member_scenario(
+    10,
+    "Two fees on the same day; the message names the electric bill: ready to refund",
+    name=("Hannah", "Weiss"),
+    subject="Fee after my electric bill",
+    messages=[
+        "My electric bill payment pushed me into overdraft and I got a fee for it, even though "
+        "my paycheck came the same day. Can you refund that one?"
+    ],
+    sub_accounts=[checking(10, "1124.01")],
+    transactions=two_fees(10, "2026-09-14"),
+)
+
+SCENARIO_15 = member_scenario(
+    15,
+    "A refund request with no fee in the last 30 days: needs your call",
+    name=("Isabel", "Ruiz"),
+    subject="Overdraft fee",
+    messages=["Can you refund the overdraft fee I was charged?"],
+    sub_accounts=[checking(15, "425.00")],
+    transactions=[
+        txn(
+            15,
+            1,
+            1,
+            "2026-07-20",
+            0,
+            "Withdrawal Debit Card CITY POWER & LIGHT",
+            "-50.00",
+            "-40.00",
+        ),
+        txn(15, 2, 1, "2026-07-20", 5, COURTESY_PAY, "-35.00", "-75.00"),
+        txn(15, 3, 1, "2026-09-10", 2, "Deposit Mobile Check", "500.00", "425.00"),
+    ],
+)
+
+SCENARIOS = [
+    BRIEF,
+    SCENARIO_6,
+    SCENARIO_7,
+    SCENARIO_8,
+    SCENARIO_9,
+    SCENARIO_10,
+    SCENARIO_11,
+    SCENARIO_15,
+    SCENARIO_17,
+]

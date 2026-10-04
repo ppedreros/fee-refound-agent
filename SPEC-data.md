@@ -186,6 +186,7 @@ Only the `api` decision handler calls this. The interface is what a real core in
 
 **Scenarios as built (Phase 5).** `member_scenario(n, …)` in `backend/db/seed/scenarios.py` builds each one with a single id scheme, so ids never collide with the brief's: conversation 5100+n, member 400+n, account 7000+10n+k, sub-account 1400+10n+k, transaction 90000+100n+k, message 9200+10n+k, and account numbers "77" + n + k. Fee days are around Sep 14, 2026, and each day's balances add up, except where a scenario says otherwise. The fee types named after the fee schedule ("Extended overdraft", "Savings below minimum", "Paper statement") join "Courtesy Pay" and "Out of Network" in `descriptions.yaml`, so every fee finds its schedule clause.
 
+- **T32.** 9: Ben Carter and 10: Hannah Weiss, the same day twice: a $60 CITY POWER & LIGHT payment and a $15.99 STREAMFLIX payment, each followed by a $35 Courtesy Pay fee, then the paycheck; Ben's message is vague, Hannah's names the electric bill. 15: Isabel Ruiz, whose only fee is from July 20, outside the 30-day window.
 - **T31.** 6: Grace Kim, three Courtesy Pay refunds (Nov 10, Feb 3, Jun 20) before a same-day-paycheck fee. 7: Omar Haddad, fee on Sep 12, paycheck on Sep 14. 8: Lucia Moreno, a same-day case plus an Auto Loan with `available` −150. 11: Ethan Brooks, a same-day fee on Sep 10 refunded by the core on Sep 11. 17: Nora Fischer, a $60 Extended overdraft fee with a same-day paycheck.
 
 ## Acceptance criteria

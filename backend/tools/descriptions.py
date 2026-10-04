@@ -55,3 +55,13 @@ def classify_description(description: str) -> TransactionKind:
     if kind in KINDS_WITH_A_FEE_TYPE:
         fee_type = next((name for name, pattern in fee_types if pattern.search(text)), None)
     return TransactionKind(kind=kind, fee_type=fee_type)
+
+
+_PAYEE_PREFIX = re.compile(
+    r"^(?:Withdrawal(?: Debit Card| ACH)?|Deposit(?: ACH)?)\s+", re.IGNORECASE
+)
+
+
+def payee(description: str) -> str:
+    """Who a payment went to, as the member knows it: "CITY POWER & LIGHT"."""
+    return _PAYEE_PREFIX.sub("", " ".join(description.split()))

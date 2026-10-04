@@ -572,6 +572,14 @@ one is tracked in the open-questions table in [SPEC.md](../SPEC.md).
 
 ## 8. Changes after the spec
 
+- **2026-10-04 — Fee choice (T32; SPEC-agent "How `identify_fee` chooses between fees").** Two fees
+  on one day share a date, amount and type, so §6's option description ("Sep 14 · −$35.00 ·
+  Courtesy Pay fee") can't tell them apart. Each candidate is now described with the payment that
+  caused it ("· after CITY POWER & LIGHT −$60.00"). The fee choice asks Jev only and needs its
+  confidence; when Jev is unsure or down, Luis picks. Luna is not asked, because it gives no
+  confidence (this narrows the §5 row "fee choice → Luna"). The clause choice works the same way
+  (T30).
+
 - **2026-10-04 — Model provider switched to OpenAI (user decision).** There are OpenAI credits and
   no Anthropic credits. Claude Sonnet becomes GPT-6.1 Sol (`gpt-6.1-sol`, reasoning effort `low`)
   for drafting. Claude Haiku becomes GPT-6 Luna (`gpt-6-luna`, reasoning effort `none`) as the

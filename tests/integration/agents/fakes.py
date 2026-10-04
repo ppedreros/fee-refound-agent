@@ -114,15 +114,16 @@ class FakeDrafter:
         )
 
 
-class FakeRanker:
-    """Answers the clause choice like Jev would: `choose` (a clause id, one of the options) with
-    `confidence`, or fails like a provider that is down when `choose` is None."""
+class FakeChooser:
+    """Answers the fee and clause choices like Jev would: each keyword names the option to pick
+    for that question (`fee`, `clause`), with `confidence`. A question it has no answer for
+    fails like a provider that is down."""
 
-    def __init__(self, choose: str | None, confidence: float = 0.95) -> None:
-        self.choose = choose
+    def __init__(self, *, confidence: float = 0.95, **choices: str) -> None:
+        self.choices = choices
         self.confidence = confidence
         self.states: list[Mapping[str, str]] = []
-        self.options: list[list[str]] = []
+        self.options: dict[str, list[str]] = {}
 
     async def classify(
         self,
@@ -135,14 +136,15 @@ class FakeRanker:
         (question,) = questions
         assert isinstance(question, ChoiceQuestion)
         self.states.append(state)
-        self.options.append([option.key for option in question.options])
-        if self.choose is None:
+        self.options[question.key] = [option.key for option in question.options]
+        choice = self.choices.get(question.key)
+        if choice is None:
             raise ProviderUnavailable("timeout")
         return Classification(
             answers={
                 question.key: ChoiceAnswer(
-                    choice=self.choose,
-                    probabilities={self.choose: self.confidence},
+                    choice=choice,
+                    probabilities={choice: self.confidence},
                     confidence=self.confidence,
                 )
             },

@@ -224,6 +224,11 @@ def render_reason(
     if code is ReasonCode.DEPOSIT_NOT_SAME_DAY:
         return RenderedReason(code, _deposit_not_same_day(facts, lang), _DECLINE_NEXT[lang])
     message, next_step = _TEMPLATES[code][lang]
+    if code is ReasonCode.FEE_AMBIGUOUS and "fee_date" not in facts:  # fees on different days
+        message = {
+            "en": "{name} has {candidate_count} recent fees and the message doesn't say which one.",
+            "es": "{name} tiene {candidate_count} cargos recientes y el mensaje no dice cuál.",
+        }[lang]
     values = {key: _show(value, lang) for key, value in facts.items()}
     values["name"] = first_name
     return RenderedReason(

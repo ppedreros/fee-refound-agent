@@ -271,8 +271,14 @@ export const feeAmbiguous: CaseView = {
   recommendation: { action: "none", amount: null },
   fee: null,
   candidates: [
-    { fee_txn_id: 88002, label: "Sep 14 · −$35.00 · Courtesy Pay fee" },
-    { fee_txn_id: 88004, label: "Sep 14 · −$35.00 · Overdraft fee" },
+    {
+      fee_txn_id: 90902,
+      label: "Sep 14 · −$35.00 · Courtesy Pay fee · after CITY POWER & LIGHT −$60.00",
+    },
+    {
+      fee_txn_id: 90904,
+      label: "Sep 14 · −$35.00 · Courtesy Pay fee · after STREAMFLIX −$15.99",
+    },
   ],
   evidence: { ...anaReady.evidence, fee_day: null, refunds_in_window: null },
   clause: null,

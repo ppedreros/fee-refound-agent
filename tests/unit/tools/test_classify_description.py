@@ -3,7 +3,7 @@
 import pytest
 
 from backend.db.seed.scenarios import SCENARIOS
-from backend.tools.descriptions import TransactionKind, classify_description
+from backend.tools.descriptions import TransactionKind, classify_description, payee
 
 # Every description in the seed, and what it must be classified as.
 SEEDED = {
@@ -17,6 +17,8 @@ SEEDED = {
         kind="fee_refund", fee_type="Out of Network"
     ),
     "Deposit ACH NORTHWIND FOODS*PAYROLL": TransactionKind(kind="payroll_deposit"),
+    "Withdrawal Debit Card STREAMFLIX": TransactionKind(kind="card_payment"),
+    "Deposit Mobile Check": TransactionKind(kind="deposit"),
     "Fee Withdrawal ; Extended Overdraft fee": TransactionKind(
         kind="fee", fee_type="Extended overdraft"
     ),
@@ -66,3 +68,16 @@ def test_a_fee_refund_is_never_mistaken_for_a_fee_or_a_plain_deposit() -> None:
 
 def test_only_fees_and_fee_refunds_carry_a_fee_type() -> None:
     assert classify_description("Withdrawal Debit Card Courtesy Pay Store").fee_type is None
+
+
+@pytest.mark.parametrize(
+    ("description", "expected"),
+    [
+        ("Withdrawal Debit Card CITY POWER & LIGHT", "CITY POWER & LIGHT"),
+        ("Withdrawal ATM 5TH AVE", "ATM 5TH AVE"),
+        ("Deposit ACH NORTHWIND FOODS*PAYROLL", "NORTHWIND FOODS*PAYROLL"),
+        ("Withdrawal  Debit Card   STREAMFLIX", "STREAMFLIX"),
+    ],
+)
+def test_the_payee_is_who_the_member_knows(description: str, expected: str) -> None:
+    assert payee(description) == expected

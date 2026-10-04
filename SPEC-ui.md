@@ -114,6 +114,8 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 - **Evidence.** Sections open with CSS grid rows and are `inert` while closed. "How this was prepared" puts the three parallel reads on one line ("Looking at accounts and transactions") with the slowest time, shows costs with two significant digits ("$0.000032"), and adds the replay note only when Jev answered from recordings. Rule facts are not shown: the sections already present them in words.
 - Tests run with `TZ=UTC`, so dates read the same on every machine. Phone widths are checked at 520 px with headless Chrome for now; Chrome on Windows won't open a narrower window, and Playwright's device emulation comes in T42.
 
+**As built (T32).** The fee picker is its own component (`FeePicker.tsx`). Its rows use the API's labels, which name the payment that caused each fee ("Sep 14 · −$35.00 · Courtesy Pay fee · after CITY POWER & LIGHT −$60.00"), so two same-day fees can be told apart.
+
 **`needs_your_call` specifics**
 
 - **`fee_ambiguous`.** Shows the candidates as radio rows ("Sep 14 · −$35.00 · Courtesy Pay fee"). The action is "Check again with this fee", which runs `POST /run` with that `fee_txn_id`.

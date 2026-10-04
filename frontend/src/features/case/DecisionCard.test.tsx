@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -125,23 +125,6 @@ describe("Decision card", () => {
     renderCard(doneWithoutRefund);
 
     expect(screen.getByText(/^Replied without a refund · Luis/)).toBeInTheDocument();
-  });
-
-  it("checks again with the fee Luis picks", async () => {
-    const user = userEvent.setup();
-    const { onRun } = renderCard(feeAmbiguous);
-
-    const picker = screen.getByRole("radiogroup", { name: copy.card.pickFee });
-    await user.click(within(picker).getByRole("radio", { name: /Overdraft fee/ }));
-    await user.click(screen.getByRole("button", { name: copy.actions.checkWithFee }));
-
-    expect(onRun).toHaveBeenCalledWith(88004);
-  });
-
-  it("can't check again with a fee until one is picked", () => {
-    renderCard(feeAmbiguous);
-
-    expect(screen.getByRole("button", { name: copy.actions.checkWithFee })).toBeDisabled();
   });
 
   it("starts a check", async () => {

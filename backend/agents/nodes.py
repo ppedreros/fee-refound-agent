@@ -6,6 +6,7 @@ At this stage more than one fee candidate gives `fee_ambiguous` until the Jev fe
 """
 
 import datetime as dt
+from collections.abc import Sequence
 from typing import Any
 
 import structlog
@@ -56,11 +57,14 @@ from backend.providers.types import (
     ProviderUnavailable,
 )
 from backend.tools import queries
+from backend.tools.descriptions import payee
 from backend.tools.errors import ToolError
 from backend.tools.models import Message, Transaction
 
 TRIAGE_PROMPT = "triage-v1"
 DRAFT_PROMPT = "draft-v1"
+FEE_PROMPT = "fee-choice-v1"
+MINUS = chr(0x2212)  # a real minus sign, as on a statement
 CLAUSE_PROMPT = "clause-choice-v1"
 DRAFT_TRIES = 2  # a reply that fails the post-check is asked for once more (§6)
 DECLINE_TEMPLATES = frozenset(
@@ -239,11 +243,87 @@ async def identify_fee(state: GraphState, deps: AgentDeps) -> tuple[Update, Step
         fee = candidates[0]
         found = {"fee": fee, "fee_source": "rule", "candidates": candidates}
         return found, StepReport(kind="rule", input_masked=asked, output=_fee_output(fee, "rule"))
-    code = ReasonCode.FEE_NOT_FOUND if not candidates else ReasonCode.FEE_AMBIGUOUS
-    output = {"reason": code.value}
-    return {"candidates": candidates, "reasons": [code]}, StepReport(
-        kind="rule", input_masked=asked, output=output
+    if not candidates:
+        output = {"reason": ReasonCode.FEE_NOT_FOUND.value}
+        return {"candidates": candidates, "reasons": [ReasonCode.FEE_NOT_FOUND]}, StepReport(
+            kind="rule", input_masked=asked, output=output
+        )
+    return await _choose_fee(state, deps, candidates, asked)
+
+
+async def _choose_fee(
+    state: GraphState, deps: AgentDeps, candidates: list[Transaction], asked: dict[str, Any]
+) -> tuple[Update, StepReport]:
+    """More than one fee: Jev picks one only when it is sure (fee-choice-v1); otherwise Luis
+    picks ("Pick the fee"). Never a guess."""
+    ambiguous: Update = {"candidates": candidates, "reasons": [ReasonCode.FEE_AMBIGUOUS]}
+    output: dict[str, Any] = {"reason": ReasonCode.FEE_AMBIGUOUS.value}
+    if deps.chooser is None:
+        return ambiguous, StepReport(kind="rule", input_masked=asked, output=output)
+
+    prompt = load_choice_prompt(FEE_PROMPT)
+    question = ChoiceQuestion(
+        key="fee",
+        prompt=prompt.prompt,
+        options=[
+            Option(key=str(fee.id), description=fee_label(fee, state.transactions))
+            for fee in candidates
+        ],
     )
+    jev_state = {"subject": state.masked_subject or "", "message": state.masked_message or ""}
+    asked = asked | {"state": jev_state, "options": [o.description for o in question.options]}
+    try:
+        answer = await deps.chooser.classify(
+            jev_state, [question], prompt_version=prompt.version, deadline=deps.deadline
+        )
+    except ProviderUnavailable as error:
+        output["choice_error"] = error.reason
+        return ambiguous, StepReport(kind="rule", input_masked=asked, output=output)
+
+    pick = answer.answers.get("fee")
+    choice = pick.choice if isinstance(pick, ChoiceAnswer) else None
+    confidence = pick.confidence if isinstance(pick, ChoiceAnswer) else None
+    fee = next((c for c in candidates if str(c.id) == choice), None)
+    trace = {"chosen": fee.id if fee else None, "confidence": confidence}
+    sure = confidence is not None and confidence >= deps.thresholds.fee_choice_min_confidence
+    if fee is not None and sure:
+        update: Update = {"fee": fee, "fee_source": "jev", "candidates": candidates}
+        output = _fee_output(fee, "jev") | trace
+    else:
+        update, output = ambiguous, output | trace
+    return update, StepReport(
+        kind="jev",
+        input_masked=asked,
+        output=output,
+        meta=answer.meta,
+        prompt_version=prompt.version,
+    )
+
+
+def fee_label(fee: Transaction, transactions: Sequence[Transaction]) -> str:
+    """How one fee is told apart from another on the same day: "Sep 14 · -$35.00 · Courtesy Pay
+    fee · after CITY POWER & LIGHT -$60.00", with real minus signs. No account number, no
+    balance."""
+    label = f"{format_date(fee.date, 'en')} · {MINUS}${-fee.amount:,.2f} · "
+    label += f"{fee.fee_type or 'Service'} fee"
+    cause = fee_cause(fee, transactions)
+    if cause is not None:
+        label += f" · after {payee(cause.description)} {MINUS}${-cause.amount:,.2f}"
+    return label
+
+
+def fee_cause(fee: Transaction, transactions: Sequence[Transaction]) -> Transaction | None:
+    """The payment that took the balance below zero: the last debit before the fee that day."""
+    earlier = [
+        t
+        for t in transactions
+        if t.sub_account_id == fee.sub_account_id
+        and t.date == fee.date
+        and t.posting_ref < fee.posting_ref
+        and t.amount < 0
+        and t.kind != "fee"
+    ]
+    return max(earlier, key=lambda t: t.posting_ref, default=None)
 
 
 async def run_checks(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]:
@@ -316,7 +396,7 @@ async def find_policy(state: GraphState, deps: AgentDeps) -> tuple[Update, StepR
     output: dict[str, Any] = {"search": [c.id for c in found], "clause_id": clause_id}
 
     meta, chosen, confidence = None, None, None
-    if found and deps.ranker is not None:
+    if found and deps.chooser is not None:
         prompt = load_choice_prompt(CLAUSE_PROMPT)
         question = ChoiceQuestion(
             key="clause",
@@ -324,7 +404,7 @@ async def find_policy(state: GraphState, deps: AgentDeps) -> tuple[Update, StepR
             options=[Option(key=clause.id, description=clause.text) for clause in found],
         )
         try:
-            answer = await deps.ranker.classify(
+            answer = await deps.chooser.classify(
                 summary, [question], prompt_version=prompt.version, deadline=deps.deadline
             )
         except ProviderUnavailable as error:
@@ -591,6 +671,9 @@ def _merged_facts(state: GraphState) -> dict[str, Fact]:
         facts["fee_date"] = state.fee.date
     if len(state.candidates) > 1:
         facts["candidate_count"] = len(state.candidates)
+        days = {candidate.date for candidate in state.candidates}
+        if state.fee is None and len(days) == 1:  # "Ben has 2 fees on Sep 14"
+            facts["fee_date"] = days.pop()
     return facts
 
 
@@ -621,7 +704,9 @@ def _result(state: GraphState, status: str, codes: list[ReasonCode]) -> dict[str
         "classifier_used": triage_.classifier_used if triage_ else None,
         "recommendation": recommendation,
         "fee": _txn_json(fee) | {"source": state.fee_source} if fee else None,
-        "candidates": [_txn_json(c) for c in state.candidates],
+        "candidates": [
+            _txn_json(c) | {"after": _after_json(c, state.transactions)} for c in state.candidates
+        ],
         "facts": _FACTS.dump_python(_merged_facts(state), mode="json"),
         "checks": [
             {
@@ -648,6 +733,13 @@ def _result(state: GraphState, status: str, codes: list[ReasonCode]) -> dict[str
             ],
         },
     }
+
+
+def _after_json(fee: Transaction, transactions: Sequence[Transaction]) -> dict[str, str] | None:
+    cause = fee_cause(fee, transactions)
+    if cause is None:
+        return None
+    return {"payee": payee(cause.description), "amount": f"{cause.amount:.2f}"}
 
 
 def _txn_json(txn: Transaction) -> dict[str, Any]:

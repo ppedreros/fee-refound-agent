@@ -1,0 +1,10 @@
+# Jev fee choice (SPEC-agent, identify_fee; outline in docs/agent-design.md §6). Asked only when
+# more than one fee could be the one the member means. The options are added at run time: the fee's
+# transaction id as the key, and "Sep 14 · −$35.00 · Courtesy Pay fee · after CITY POWER & LIGHT
+# −$60.00" as the description (no account numbers, no balances). The state is the masked
+# {subject, message}, as in triage. Changing the wording means a new version.
+
+version: fee-choice-v1
+
+prompt: >-
+  Which of these fees is the member asking about in the `message`?
