@@ -259,11 +259,11 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 ### - [x] T21: Core-banking adapter
 **Description:** `CoreBanking.post_fee_refund`, as one transaction: insert into `refunds` with `ON CONFLICT`, lock the sub-account, insert the refund transaction with the next `posting_ref`, and update the balance.
 **Acceptance criteria:**
-- [ ] Two calls on 88002, sequential or concurrent, produce one refund transaction and add $35 once. The second call reports `already_done` (SPEC-data AC6).
-- [ ] After a refund, a restart keeps it, and `bootstrap --reset` restores the original state (AC3).
+- [x] Two calls on 88002, sequential or concurrent, produce one refund transaction and add $35 once. The second call reports `already_done` (SPEC-data AC6).
+- [x] After a refund, a restart keeps it, and `bootstrap --reset` restores the original state (AC3).
 **Verification:** `uv run python -m pytest tests/integration/db/test_core_banking.py`
 **Dependencies:** T9 (can run in parallel with T11–T20)
-**Files:** `backend/db/core_banking.py`, `tests/integration/db/test_core_banking.py`
+**Files:** `backend/db/core_banking.py`, `tests/integration/db/test_core_banking.py`, `SPEC-data.md` (as built)
 **Scope:** S
 
 ### - [x] T22: API: decision endpoint and the required API test
