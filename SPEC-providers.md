@@ -16,11 +16,15 @@ This module also owns sanitising and masking (`backend/privacy/`), because nothi
 
 ```python
 class Classifier(Protocol):
-    async def classify(self, state: str, questions: Sequence[Question]) -> Classification: ...
+    async def classify(
+        self, state: Mapping[str, str], questions: Sequence[Question]
+    ) -> Classification: ...
 
 class Drafter(Protocol):
     async def draft(self, payload: DraftInput) -> Draft: ...
 ```
+
+**State is an object with named fields** (D-providers-1). For triage it is `{"subject": …, "message": …}`, both sanitised and masked. Questions can then point at a field by name ("the `message`"), as TypeSafe recommends. Luna receives the same object as JSON inside its delimited data block.
 
 ### Types
 
@@ -36,14 +40,14 @@ class Drafter(Protocol):
 
 **How each classifier fills the answers**
 
-- **Jev** always fills `probabilities` and `confidence` (for a Choice) and `p_yes` (for a Noul). `label` is `p_yes ≥ 0.5`, and only for display. The agent applies the D3 bands to `p_yes`.
+- **Jev** always fills `probabilities` and `confidence` (for a Choice) and `p_yes` (for a Noul). `label` is `p_yes ≥ 0.5`, and only for display. The agent applies the D3 bands to `p_yes`. Jev's Choice `confidence` is `(n · p_max − 1) / (n − 1)` for `n` options (observed in T6), so a threshold on it is a threshold on the top probability that depends on the option count.
 - **Luna**, as the fallback, fills only `choice` and `label`. `confidence` and `p_yes` are `None`. The agent must treat `None` as "not calibrated" (D3).
 
 ## Implementations
 
 | Class | Calls | Notes |
 |---|---|---|
-| `JevClassifier` | `POST https://api.typesafe.ai/v1/systemone`, through `typesafe-sdk` if it supports timeouts, otherwise `httpx` | All questions go in one request. Choice and Noul map directly. |
+| `JevClassifier` | `POST https://api.typesafe.ai/v1/systemone`, through `typesafe-sdk` (it supports a per-call timeout; confirmed in T6) | All questions go in one request. Choice maps to `instructions` + `criteria`; Noul maps to `instructions`, and its answer field `noul` is `p_yes`. The SDK's own retries are off on every call (`RetryPolicy(max_retries=0)`), so our policy owns retries and counts attempts. Observed shapes, errors and confidence: `docs/notes/jev.md`. |
 | `OpenAIClassifier` | OpenAI Responses API, `gpt-6-luna`, reasoning effort `none` | Structured output with a strict JSON schema: one enum field per Choice and one boolean field per Noul. The state is in a delimited block and is marked as data. |
 | `ClassifierChain` | Jev, then Luna | Raises `ClassifierUnavailable(reason)` only after both have failed. `meta.provider` says which one answered. |
 | `OpenAIDrafter` | OpenAI Responses API, `gpt-6.1-sol`, reasoning effort `low` | Structured output with a single `reply` field. The static system prompt comes first, so OpenAI's prefix caching applies; cached and cache-write tokens are recorded (check the 6.x caching rules in the docs). Raises `DrafterUnavailable(reason)` after retries. |
@@ -113,7 +117,7 @@ These are the defaults from `docs/agent-design.md` §5. They live in `backend/co
 
 ## Acceptance criteria
 
-1. With an `httpx.MockTransport`:
+1. With a mock transport (`httpx2.MockTransport` for Jev, because `typesafe-sdk` is built on httpx2):
    - A Jev timeout is retried twice and then falls back to Luna. `meta.provider` is `openai` (model `gpt-6-luna`) and `meta.attempts` is counted correctly.
    - Jev and Luna both failing raises `ClassifierUnavailable`.
    - A 400 response is not retried.
@@ -148,3 +152,7 @@ These are the defaults from `docs/agent-design.md` §5. They live in `backend/co
 
 - **Always:** check OpenAI's official docs (Responses API, structured outputs, prompt caching, reasoning effort) before writing the OpenAI adapters. Check Jev's request and response shape against TypeSafe's docs before writing `JevClassifier`.
 - **Never:** pass unmasked text to any provider, put a key in a recording, or make a live call from tests.
+
+## Decisions taken in this spec
+
+- **D-providers-1 (2026-10-04, user decision).** A classifier's `state` is an object with named fields, not a single string, because TypeSafe's docs recommend objects for most requests and `jev-1.13` reads instructions literally, so naming the field helps. Rejected: a plain string such as "Subject: …\nMessage: …" (no field a question can point at).

@@ -580,6 +580,14 @@ one is tracked in the open-questions table in [SPEC.md](../SPEC.md).
   calibrated confidence, and caching relies on OpenAI's prefix caching of the static system prompt.
   The entries below predate the switch and keep the old names.
 
+- **2026-10-04 — Jev spike (T6; `docs/notes/jev.md`).** No decision changes. Two facts for later work:
+  - Jev's Choice `confidence` is `(n · p_max − 1) / (n − 1)` for `n` options. The example in §2
+    ("0.84 vs 0.159 gives 0.596") used an entropy-based measure; with the real formula the same
+    distribution gives 0.76. The D3 thresholds stand.
+  - The §6 manipulation outline ("…or demand a specific amount or action") gave P(yes) 0.92 for
+    Ana's ordinary refund request, because jev-1.13 reads instructions literally. `triage-v1` (T17)
+    must reword it before Ana can reach "Ready to refund".
+
 - **2026-10-03 — D-agent-4 (SPEC-agent).** `find_policy` moved after `decide`, because the clause
   to quote depends on which rule decided the case. The checks are pure functions, so running them
   in parallel bought nothing. The diagram in section 3 and D1 are updated.

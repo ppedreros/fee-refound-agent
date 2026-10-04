@@ -69,21 +69,21 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 **Files:** `.github/workflows/ci.yml`
 **Scope:** S
 
-### - [ ] T6: Jev spike: one real call, shape documented
+### - [x] T6: Jev spike: one real call, shape documented
 **Description:** Read TypeSafe's docs (source-driven). Write the minimal `providers/types.py` and a `JevClassifier` that sends the D-agent triage questions (intent Choice, language, tone, manipulation Noul, multiple-requests Noul) for Ana's message, already masked by hand. Make **one live call**, record the real request and response shape, the latency and the error format in `docs/notes/jev.md`, and reproduce that response in a MockTransport test.
 **Acceptance criteria:**
-- [ ] One live call succeeds with `JEV_API_KEY`. The response maps to `ChoiceAnswer` and `NoulAnswer` with no guessing.
-- [ ] `docs/notes/jev.md` documents the request, the response, the `confidence` semantics as observed, and the errors (401, 422, timeout).
-- [ ] The MockTransport test passes offline.
+- [x] One live call succeeds with `JEV_API_KEY`. The response maps to `ChoiceAnswer` and `NoulAnswer` with no guessing.
+- [x] `docs/notes/jev.md` documents the request, the response, the `confidence` semantics as observed, and the errors (401, 422, timeout). The invalid request came back as 400, not 422; both are documented.
+- [x] The MockTransport test passes offline.
 **Verification:** `uv run python -m pytest tests/unit/providers/test_jev.py` · the live call output, shown once
 **Dependencies:** T1
-**Files:** `backend/providers/types.py`, `backend/providers/jev.py`, `tests/unit/providers/test_jev.py`, `docs/notes/jev.md`
+**Files:** `backend/providers/types.py`, `backend/providers/jev.py`, `tests/unit/providers/test_jev.py` + `fixtures/jev_triage_ana.json`, `docs/notes/jev.md`
 **Scope:** S. High risk, so it runs early.
 
 ### Checkpoint 1: Foundation
 - [x] `docker compose up` serves the shell, and `/api/health` returns 200
 - [x] `uv run python -m pre_commit run --all-files` is green, and CI is green (if the remote exists)
-- [ ] The Jev request and response shape is confirmed, and any difference from SPEC-providers has been noted in the spec
+- [x] The Jev request and response shape is confirmed, and any difference from SPEC-providers has been noted in the spec
 
 ---
 
@@ -213,6 +213,8 @@ A test fixture creates the `fees_test` database.
 - `draft` uses the template only (Sol comes in T28)
 
 The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The test injects in-process fake providers.
+
+**From the T6 spike:** the outline's manipulation wording gave Ana P(yes) 0.92, so `triage-v1` must reword it (and add Noul `criteria`) so that an ordinary refund request is a clear "no". Check it live on Ana and scenario 12 before the prompts freeze (`docs/notes/jev.md`, finding 1).
 **Acceptance criteria:**
 - [ ] Ana (scenario 1) reaches `ready_to_refund` with $35 on 88002, `clear = true` and clause `fee-refund-policy#4`. The draft contains `{{first_name}}` and "$35".
 - [ ] No masked step input contains a seeded name or account number.

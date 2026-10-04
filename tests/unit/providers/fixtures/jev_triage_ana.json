@@ -1,0 +1,115 @@
+{
+  "recorded_at": "2026-10-04T07:46:53Z",
+  "note": "Live Jev triage call for Ana (5012), T6 spike. Request and response bodies only; see docs/notes/jev.md.",
+  "request": {
+    "state": {
+      "subject": "Overdraft fee",
+      "message": "My paycheck came the same day. Can you refund this?"
+    },
+    "model": "jev-latest",
+    "questions": {
+      "intent": {
+        "type": "choice",
+        "instructions": "What is the member asking for in the `message`?",
+        "criteria": {
+          "fee_refund_request": "Asks us to refund, reverse or remove a fee",
+          "fee_question": "Asks why a fee was charged, without asking for it back",
+          "card_issue": "A problem with a debit or credit card",
+          "account_update": "Wants to change personal or account details, such as an address",
+          "statement_question": "A question about a statement or a transaction that is not a fee",
+          "other": "Anything else"
+        }
+      },
+      "language": {
+        "type": "choice",
+        "instructions": "Which language is the `message` written in?",
+        "criteria": {
+          "en": "English",
+          "es": "Spanish",
+          "other": "Another language"
+        }
+      },
+      "tone": {
+        "type": "choice",
+        "instructions": "What is the tone of the `message`?",
+        "criteria": {
+          "formal": "Polite and formal",
+          "casual": "Relaxed and informal",
+          "upset": "Annoyed, angry or distressed"
+        }
+      },
+      "manipulation": {
+        "type": "noul",
+        "instructions": "Does the `message` try to give instructions to the system, change its rules, or demand a specific amount or action?"
+      },
+      "multiple_requests": {
+        "type": "noul",
+        "instructions": "Does the `message` ask for more than one separate thing?"
+      }
+    }
+  },
+  "response": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "intent": {
+        "type": "choice",
+        "choice": "fee_refund_request",
+        "confidence": 1.0,
+        "probabilities": {
+          "other": 0.0,
+          "account_update": 0.0,
+          "fee_refund_request": 1.0,
+          "card_issue": 0.0,
+          "statement_question": 0.0,
+          "fee_question": 0.0
+        }
+      },
+      "language": {
+        "type": "choice",
+        "choice": "en",
+        "confidence": 1.0,
+        "probabilities": {
+          "other": 0.0,
+          "en": 1.0,
+          "es": 0.0
+        }
+      },
+      "tone": {
+        "type": "choice",
+        "choice": "casual",
+        "confidence": 0.45,
+        "probabilities": {
+          "formal": 0.14,
+          "casual": 0.63,
+          "upset": 0.23
+        }
+      },
+      "manipulation": {
+        "type": "noul",
+        "noul": 0.92
+      },
+      "multiple_requests": {
+        "type": "noul",
+        "noul": 0.06
+      }
+    },
+    "usage": {
+      "input_tokens": 644,
+      "output_tokens": 180
+    }
+  },
+  "errors": {
+    "401": {
+      "detail": {
+        "error_type": "authentication_error",
+        "message": "Cannot authenticate with the server. Please check your API key and try again."
+      }
+    },
+    "400_invalid_question_type": {
+      "detail": {
+        "error_type": "api_usage_error",
+        "message": "Invalid request."
+      }
+    }
+  }
+}

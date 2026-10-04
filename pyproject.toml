@@ -10,6 +10,7 @@ dependencies = [
     "pydantic-settings>=2.6",
     "sqlalchemy[asyncio]>=2.0",
     "structlog>=24.4",
+    "typesafe-sdk>=0.7.2",
     "uvicorn[standard]>=0.32",
 ]
 
@@ -19,6 +20,7 @@ dev = [
     "mypy>=1.13",
     "pre-commit>=4.0",
     "pytest>=8.3",
+    "pytest-asyncio>=1.0",
     "pytest-cov>=6.0",
     "ruff>=0.8",
 ]
@@ -44,6 +46,8 @@ files = ["backend", "tests"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra --strict-markers --import-mode=importlib"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.uv]
 # Smart App Control on the dev machine blocks mypy's compiled (mypyc) extension; the pure-Python build is equivalent, only slower.
