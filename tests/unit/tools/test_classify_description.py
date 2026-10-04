@@ -1,9 +1,9 @@
 """Transaction kinds from the core system's free-text descriptions (SPEC-data AC9)."""
 
 import pytest
-from backend.tools.descriptions import TransactionKind, classify_description
 
 from backend.db.seed.scenarios import SCENARIOS
+from backend.tools.descriptions import TransactionKind, classify_description
 
 # Every description in the seed, and what it must be classified as.
 SEEDED = {
