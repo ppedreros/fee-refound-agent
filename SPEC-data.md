@@ -57,6 +57,15 @@ The approval limit is not stored here. It is a policy parameter (see `SPEC-polic
 | `audit_events` | `id` bigserial, `at`, `actor` (staff id or `system`), `action`, `case_id`, `run_id`, `request_id`, `details` jsonb | Append-only: a trigger rejects `UPDATE` and `DELETE`. No personal data in `details`. |
 | `eval_candidates` | `id`, `case_id`, `run_id`, `decision_id`, `kind` (`edit`, `reject`, `reply_only`, the same names as the decision actions in `SPEC-api.md`), `masked_input` jsonb, `expected` jsonb, `created_at`, `exported_at` | Feedback loop, consumed by `evals` |
 
+### How the tables are built (T7)
+
+- **Models and migration.** `backend/db/models.py` defines every table. The first migration (`backend/db/alembic/versions/0001_initial_schema.py`) was generated from it, and a test fails if the two drift apart. Constraint and index names follow one naming convention (`ck_<table>_<name>`, `ix_<table>_<columns>`, …).
+- **Ids.** The brief's tables, `member_profiles` and `cases` take explicit ids (the seed's). `messages` and `transactions`, where the app adds rows (replies, refund transactions), have identity ids that start at 1,000,000, so they never collide with the seeded ids. Log-like tables (`agent_steps`, `refunds`, `audit_events`, `eval_candidates`) use identity ids, and `agent_runs` and `decisions` use `gen_random_uuid()`.
+- **Enumerations (CHECK).** `cases.topic` uses the six intent labels (D-agent-3). `agent_runs.outcome` uses the case statuses a run can produce. `agent_steps.status` is `finished` or `failed`, as in the stream events (SPEC-agent). `decisions.idempotency_key` is a `uuid`.
+- **`refunds.amount > 0`.**
+- **`audit_events` has no foreign keys**, so the log never depends on the rows it describes. The append-only trigger is `audit_events_append_only` (function `reject_audit_change`). `TRUNCATE` is not blocked, so `--reset` still works as the owner.
+- **`policy_clauses.search`** is `setweight(title + section, 'A') || setweight(text, 'B')` with the `english` configuration.
+
 ## Database roles
 
 | Role | Used by | Grants |

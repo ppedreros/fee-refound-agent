@@ -89,7 +89,7 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 
 ## Phase 2: Data (`data`)
 
-### - [ ] T7: Schema and migrations
+### - [x] T7: Schema and migrations
 **Description:** SQLAlchemy models and the initial Alembic migration, covering:
 - the five tables from the brief, with their columns unchanged and the constraints from SPEC-data
 - the extension tables `member_profiles` and `staff`
@@ -98,12 +98,12 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 
 A test fixture creates the `fees_test` database.
 **Acceptance criteria:**
-- [ ] `alembic upgrade head` and `downgrade base` both work on an empty database (SPEC-data AC1).
-- [ ] The brief's tables match its column lists exactly, checked through `information_schema` (AC2).
-- [ ] `UPDATE` and `DELETE` on `audit_events` are rejected (AC7).
+- [x] `alembic upgrade head` and `downgrade base` both work on an empty database (SPEC-data AC1).
+- [x] The brief's tables match its column lists exactly, checked through `information_schema` (AC2).
+- [x] `UPDATE` and `DELETE` on `audit_events` are rejected (AC7).
 **Verification:** `uv run python -m pytest tests/integration/db/test_schema.py`
 **Dependencies:** T3
-**Files:** `backend/db/models.py`, `backend/db/alembic/env.py` + `alembic.ini`, `backend/db/alembic/versions/0001_initial.py`, `tests/integration/conftest.py`, `tests/integration/db/test_schema.py`
+**Files:** `backend/db/models.py`, `backend/db/alembic.ini` + `alembic/env.py` + `script.py.mako`, `backend/db/alembic/versions/0001_initial_schema.py`, `tests/integration/conftest.py` + `migrations.py`, `tests/integration/db/test_schema.py`, `docker-compose.yml` (db on 127.0.0.1, D-platform-2), `.github/workflows/ci.yml` (`TEST_DATABASE_URL`)
 **Scope:** M
 
 ### - [ ] T8: Database roles and bootstrap

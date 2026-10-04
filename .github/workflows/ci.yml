@@ -47,7 +47,7 @@ jobs:
     name: backend (pytest + coverage)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Integration tests (from T7) use this database; unit and API tests don't need it.
+    # Integration tests create and migrate their own fees_test database on this server.
     services:
       postgres:
         image: postgres:16
@@ -70,6 +70,8 @@ jobs:
           enable-cache: true
       - run: uv sync --locked
       - run: uv run python -m pytest --cov=backend --cov-report=term-missing
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://fees:ci-only@127.0.0.1:5432/fees
 
   frontend:
     name: frontend (vitest + tsc)

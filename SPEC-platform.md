@@ -34,6 +34,7 @@ Start order: `db` (healthy) → `migrate` (completed successfully) → `backend`
 
 **Ports**
 - `8080` is the app. Port 8000 is also exposed so the API and its OpenAPI docs can be reached directly.
+- `db` is published on `127.0.0.1:${DB_HOST_PORT:-5432}` only, so integration tests on the host can reach it and it is not visible from the network (D-platform-2).
 - Through nginx, the backend's routes match the brief exactly (`/health`, `/cases`, …) under `/api`.
 
 **Rules**
@@ -63,6 +64,8 @@ Settings use `pydantic-settings` and load from the environment. Startup fails wi
 | `RATE_LIMIT` | `60/minute` | Per client, on the API |
 | `LOG_LEVEL` | `INFO` | |
 | `MASKING_SALT` | `change-me` | HMAC salt for hashing member ids in logs |
+| `DB_HOST_PORT` | commented out (`5432`) | Compose only: the host port `db` is published on, bound to 127.0.0.1 |
+| `TEST_DATABASE_URL` | commented out | Tests only: the owner URL of the server the integration tests use. They create and migrate their own `fees_test` database. Default `postgresql+psycopg://fees:change-me@127.0.0.1:5432/fees`: an IP, not `localhost`, because on Windows `localhost` tries IPv6 first and each connection then waits about 10 s; CI sets it for its Postgres service. |
 | `EVAL_DATABASE_NAME` | `fees_eval` | Separate database for evals, on the same server and with the same roles. The eval runner derives both role URLs by swapping the database name. |
 
 Thresholds, timeouts and prices live in versioned config files under `backend/core/config/`, not in environment variables. Changing them is an "ask first" change.
@@ -125,3 +128,4 @@ Thresholds, timeouts and prices live in versioned config files under `backend/co
 ## Decisions taken in this spec
 
 - **D-platform-1 (2026-10-04, user decision).** The `app_writer` and `agent_reader` login roles are created from the first compose task (T3), not from T8, because `/health` checks the database as `app_writer`. Bootstrap connects as the owner through `OWNER_DATABASE_URL`, which compose builds from `POSTGRES_*` for `migrate` only. Each role's password comes from its own URL. T8 adds the grants, the read-only default and the statement timeout. Rejected: the owner in `APP_DATABASE_URL` until T8 (the API would hold owner rights, and every `.env` would need a manual edit later); accepting a 503 until T8 (breaks the start order and AC1).
+- **D-platform-2 (2026-10-04, user decision).** Compose publishes `db` on `127.0.0.1:${DB_HOST_PORT:-5432}` so integration tests run on the host against the compose Postgres, exactly as CI runs them against its service container. Rejected: a separate test override file (an extra step every time); running the tests in a container (another service and image, and a slower loop).
