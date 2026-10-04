@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/source-serif-4";
+
+@theme {
+  /* Only Blossom colours, neutral greys and two status colours exist in this app. */
+  --color-*: initial;
+
+  --color-navy: #001d3d;
+  --color-clay: #efeeed;
+  /* Terracotta is an accent for non-text elements only: it is about 3.5:1 against white. */
+  --color-terracotta: #dc634b;
+  --color-white: #ffffff;
+
+  /* Warm neutrals. Secondary text uses grey-600 or darker (6.7:1 on white). */
+  --color-grey-50: #f7f7f6;
+  --color-grey-100: #efeeed;
+  --color-grey-200: #e2e0de;
+  --color-grey-300: #cfccc9;
+  --color-grey-400: #a8a49f;
+  --color-grey-500: #7d7973;
+  --color-grey-600: #5f5b56;
+  --color-grey-700: #46433f;
+  --color-grey-800: #2f2d2a;
+  --color-grey-900: #1c1b19;
+
+  --color-success: #1f7a4d;
+  --color-error: #b42318;
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
+}
+
+@layer base {
+  body {
+    @apply bg-clay font-sans text-[15px] text-navy antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-terracotta);
+    outline-offset: 2px;
+  }
+}

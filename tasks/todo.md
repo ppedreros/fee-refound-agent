@@ -27,12 +27,12 @@ The plan and its rationale are in [plan.md](plan.md). Specs: [SPEC.md](../SPEC.m
 **Files:** `pyproject.toml`, `.pre-commit-config.yaml`, `.gitignore` + `.gitattributes`, `backend/core/settings.py`, `backend/api/main.py`, `tests/unit/core/test_settings.py`
 **Scope:** M. Config-heavy, so slightly over 5 files; all of them are scaffolding.
 
-### - [ ] T2: Frontend skeleton with Blossom tokens
+### - [x] T2: Frontend skeleton with Blossom tokens
 **Description:** Vite, React and TypeScript (strict). Tailwind 4 with the colour tokens from SPEC-ui, the self-hosted fonts, ESLint, Prettier and Vitest. An app shell with a header and two empty panes, and `copy/en.ts`. The JavaScript pre-commit hooks are added too.
 **Acceptance criteria:**
-- [ ] `npm --prefix frontend run build` and `npm --prefix frontend test` pass.
-- [ ] Tokens `navy`, `clay`, `terracotta`, `white`, the greys, `success` and `error` exist. Terracotta is not used for text anywhere.
-- [ ] Every string in the shell comes from `copy/en.ts`.
+- [x] `npm --prefix frontend run build` and `npm --prefix frontend test` pass.
+- [x] Tokens `navy`, `clay`, `terracotta`, `white`, the greys, `success` and `error` exist. Terracotta is not used for text anywhere.
+- [x] Every string in the shell comes from `copy/en.ts`.
 **Verification:** `npm --prefix frontend run build && npm --prefix frontend test` · `uv run python -m pre_commit run --all-files`
 **Dependencies:** T1
 **Files:** `frontend/package.json`, `frontend/vite.config.ts`, `frontend/src/index.css`, `frontend/src/App.tsx` + `App.test.tsx`, `frontend/src/copy/en.ts` (plus generated config)
