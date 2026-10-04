@@ -225,12 +225,12 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/agents/state.py`, `backend/agents/graph.py`, `backend/agents/nodes.py`, `backend/agents/prompts/` (`triage-v1.yaml`, `templates/`), `tests/integration/agents/test_graph_scenarios.py`
 **Scope:** M
 
-### - [ ] T18: Runner and recorder: persistence and read-only sessions
+### - [x] T18: Runner and recorder: persistence and read-only sessions
 **Description:** `run_case` creates the run, sets the case to `checking`, applies the 45-second timeout with deadline propagation, records one `agent_steps` row per node (meta, masked input, output) from outside node code, totals latency, tokens and cost, and resets interrupted runs at startup.
 **Acceptance criteria:**
-- [ ] One `agent_runs` row and one step row per executed node, with latency. Totals add up (SPEC-agent AC7).
-- [ ] A node attempting an `INSERT` fails with a permission error, and the recorder still writes (AC6).
-- [ ] A run left `running` becomes `interrupted` at startup, and its case goes back to `not_checked`.
+- [x] One `agent_runs` row and one step row per executed node, with latency. Totals add up (SPEC-agent AC7).
+- [x] A node attempting an `INSERT` fails with a permission error, and the recorder still writes (AC6).
+- [x] A run left `running` becomes `interrupted` at startup, and its case goes back to `not_checked`.
 **Verification:** `uv run python -m pytest tests/integration/agents/test_runner.py`
 **Dependencies:** T17
 **Files:** `backend/agents/runner.py`, `backend/agents/recorder.py`, `backend/agents/deps.py`, `tests/integration/agents/test_runner.py`

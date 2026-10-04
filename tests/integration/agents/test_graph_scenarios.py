@@ -2,90 +2,18 @@
 replay files or live models). Each scenario asserts the status and what Luis would see."""
 
 import json
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
-from decimal import Decimal
 from typing import Any
 from uuid import uuid4
 
-import pytest
-from sqlalchemy import Engine
-from sqlalchemy.engine import URL
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.agents.deps import AgentDeps
 from backend.agents.graph import build_graph
 from backend.agents.state import GraphState
 from backend.agents.steps import StepRecord
-from backend.policy.loader import load_clauses
-from backend.providers.types import (
-    CallMeta,
-    ChoiceAnswer,
-    Classification,
-    NoulAnswer,
-    ProviderUnavailable,
-    Question,
-)
-from tests.integration.roles import TEST_AGENT_ROLE, role_url
+from tests.integration.agents.fakes import FakeClassifier, jev_answers
 
 SEEDED_SECRETS = ("Ana", "Torres", "884210", "884211")
-
-
-class FakeClassifier:
-    """Answers like Jev would, or fails like a provider that is down."""
-
-    def __init__(self, answers: Mapping[str, ChoiceAnswer | NoulAnswer] | None) -> None:
-        self.answers = answers
-        self.states: list[Mapping[str, str]] = []
-
-    async def classify(
-        self,
-        state: Mapping[str, str],
-        questions: Sequence[Question],
-        *,
-        deadline: float | None = None,
-    ) -> Classification:
-        self.states.append(state)
-        if self.answers is None:
-            raise ProviderUnavailable("timeout")
-        return Classification(
-            answers=dict(self.answers),
-            meta=CallMeta(
-                provider="jev",
-                model="jev-1.13.0",
-                mode="live",
-                latency_ms=200,
-                tokens_in=760,
-                tokens_out=0,
-                cost_usd=Decimal("0.000032"),
-                attempts=1,
-            ),
-        )
-
-
-def jev_answers(intent: str = "fee_refund_request") -> dict[str, ChoiceAnswer | NoulAnswer]:
-    return {
-        "intent": ChoiceAnswer(choice=intent, probabilities={intent: 1.0}, confidence=1.0),
-        "language": ChoiceAnswer(choice="en", probabilities={"en": 1.0}, confidence=1.0),
-        "tone": ChoiceAnswer(choice="casual", probabilities={"casual": 0.9}, confidence=0.85),
-        "manipulation": NoulAnswer(p_yes=0.04, label=False),
-        "multiple_requests": NoulAnswer(p_yes=0.05, label=False),
-    }
-
-
-@pytest.fixture
-def with_clauses(seeded: Engine, granted_roles: None) -> Iterator[Engine]:
-    with seeded.begin() as connection:
-        load_clauses(connection)
-    yield seeded
-
-
-@pytest.fixture
-async def reader(
-    with_clauses: Engine, test_database_url: URL
-) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-    engine = create_async_engine(role_url(test_database_url, TEST_AGENT_ROLE))
-    yield async_sessionmaker(engine, expire_on_commit=False)
-    await engine.dispose()
 
 
 async def run(

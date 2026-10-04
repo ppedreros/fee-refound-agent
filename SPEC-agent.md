@@ -160,6 +160,14 @@ The runner sets `checking` when a run starts and `not_checked` when it resets an
 - **Totals.** Latency, tokens and cost are summed into `agent_runs`, along with `policy_version`, `prompt_versions` and `provider_mode`.
 - **Interrupted runs.** At startup, runs still marked `running` become `interrupted`, and their case goes back to `not_checked`, so "Check again" is offered.
 
+**How it is built (T18).** `backend/agents/runner.py` and `recorder.py`. Details fixed while building:
+
+- `run_case` creates the case row when it is missing and the run in one transaction; the partial unique index turns a second concurrent run into `RunInProgress(run_id)`.
+- Each step row is written as soon as its node finishes (one short `app_writer` transaction), so a crash still leaves the trace up to that point. Stream events reach the UI without the step record.
+- The run timeout (45 s) lives in `backend/core/config/runs.yaml`. When it fires, the result is `needs_your_call` with `classifier_down` for triage, `drafter_down` for draft and `data_timeout` otherwise; the full mapping, including the template fallback during `draft`, is finished in T35.
+- An unexpected exception marks the run `failed` and puts the case back to `not_checked`, so "Check again" is offered.
+- `total_latency_ms` is the run's wall time; tokens and cost are the sums of the steps' `CallMeta`; `prompt_versions` maps each node to the prompt it used.
+
 **Result shape** (`agent_runs.result`, served by the API with names and account numbers filled back in):
 
 ```json

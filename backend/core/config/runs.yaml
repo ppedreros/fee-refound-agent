@@ -1,0 +1,3 @@
+# The whole agent run (docs/agent-design.md §5). Changing it is an "ask first" change.
+# Every model and tool call inside the run gets the remaining time as its deadline (D-agent-6).
+timeout_s: 45
