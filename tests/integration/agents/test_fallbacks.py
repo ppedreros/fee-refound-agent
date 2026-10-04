@@ -3,8 +3,10 @@ replay files or live models). Falling back is never a guess: the case says what 
 
 import asyncio
 import datetime as dt
+import time
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -14,10 +16,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from backend.agents.deps import AgentDeps
 from backend.agents.draft_postcheck import check_draft
 from backend.agents.graph import build_graph
-from backend.agents.runner import RunnerDeps, run_case
+from backend.agents.runner import RunnerDeps, run_case, timeout_reason
 from backend.agents.state import GraphState
 from backend.agents.steps import StepRecord
 from backend.providers.chain import ClassifierChain
+from backend.providers.replay import ReplayClassifier, ReplayDrafter, ReplayStore
 from backend.providers.types import (
     CallMeta,
     ChoiceAnswer,
@@ -267,20 +270,92 @@ class HangingClassifier:
         raise AssertionError("the run timeout should have fired")
 
 
-async def test_the_run_timeout_gives_the_reason_of_the_step_that_stalled(
-    reader: async_sessionmaker[AsyncSession], writer: async_sessionmaker[AsyncSession]
-) -> None:
-    deps = RunnerDeps(
+class HangingDrafter:
+    """A Sol that never answers and ignores the deadline it is given."""
+
+    async def draft(
+        self,
+        payload: Any,
+        *,
+        instructions: str,
+        prompt_version: str | None = None,
+        deadline: float | None = None,
+    ) -> Any:
+        await asyncio.sleep(60)
+        raise AssertionError("the deadline should have cut this call")
+
+
+def runner_deps(
+    reader: async_sessionmaker[AsyncSession],
+    writer: async_sessionmaker[AsyncSession],
+    *,
+    classifier: Classifier | None = None,
+    drafter: Any = None,
+    timeout_s: float = 3.0,
+    reserve_s: float = 2.0,
+) -> RunnerDeps:
+    return RunnerDeps(
         writer=writer,
-        agent=AgentDeps(reader=reader, classifier=HangingClassifier(), drafter=FakeDrafter()),
+        agent=AgentDeps(
+            reader=reader,
+            classifier=classifier or FakeClassifier(jev_answers()),
+            drafter=drafter or FakeDrafter(),
+        ),
         provider_modes={"jev": "live", "openai": "live"},
-        timeout_s=0.5,  # 45 s in the shipped config
+        timeout_s=timeout_s,  # 45 s in the shipped config
+        reserve_s=reserve_s,  # 3 s in the shipped config
     )
 
-    result = await run_case(5012, deps)
+
+async def test_a_hanging_classifier_is_cut_at_the_deadline_and_the_case_is_still_prepared(
+    reader: async_sessionmaker[AsyncSession], writer: async_sessionmaker[AsyncSession]
+) -> None:
+    started = time.monotonic()
+
+    result = await run_case(5012, runner_deps(reader, writer, classifier=HangingClassifier()))
+
+    assert time.monotonic() - started < 3.0  # inside the run timeout, not at it
+    assert result.status == "needs_your_call"
+    assert result.result["reasons"] == ["classifier_down"]
+    assert result.result["recommendation"]["action"] == "refund"
+    assert result.result["evidence"]["fee_day"]  # the evidence is still there
+
+
+async def test_a_hanging_sol_falls_back_to_the_template_inside_the_run(
+    reader: async_sessionmaker[AsyncSession], writer: async_sessionmaker[AsyncSession]
+) -> None:
+    started = time.monotonic()
+
+    result = await run_case(5012, runner_deps(reader, writer, drafter=HangingDrafter()))
+
+    assert time.monotonic() - started < 3.0
+    assert result.result["reasons"] == ["drafter_down"]
+    assert result.result["draft"]["source"] == "template"
+    assert result.result["recommendation"]["action"] == "refund"  # Luis can still approve
+
+
+async def test_the_run_timeout_is_the_backstop_with_the_stalled_steps_reason(
+    reader: async_sessionmaker[AsyncSession],
+    writer: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def stuck(session: AsyncSession, conversation_id: int) -> Any:
+        await asyncio.sleep(60)  # a read that ignores every timeout
+
+    monkeypatch.setattr(queries, "get_conversation", stuck)
+
+    result = await run_case(5012, runner_deps(reader, writer, timeout_s=0.5, reserve_s=0.1))
 
     assert result.status == "needs_your_call"
-    assert result.result["reasons"] == ["classifier_down"]  # triage was running
+    assert result.result["reasons"] == ["data_timeout"]  # it stalled in a read
+
+
+@pytest.mark.parametrize(
+    ("node", "reason"),
+    [("triage", "classifier_down"), ("draft", "drafter_down"), ("load_accounts", "data_timeout")],
+)
+def test_each_stalled_step_has_its_own_reason(node: str, reason: str) -> None:
+    assert timeout_reason(node) == reason
 
 
 @pytest.mark.parametrize(
@@ -310,3 +385,42 @@ async def test_sol_down_on_a_decline_gives_the_decline_template_in_the_members_l
     assert draft["text"].startswith(opening)
     assert reason_words in draft["text"]
     assert check_draft(draft["text"], amount=Decimal("35.00")) == []
+
+
+# --- Data that doesn't add up, and a replay with nothing recorded (scenarios 16 and 18) ---
+
+
+async def test_balances_that_dont_add_up_are_data_mismatch_and_no_recommendation(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    final, _ = await run(5116, FakeClassifier(jev_answers()), reader)
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["data_mismatch"]
+    assert result["recommendation"]["action"] == "none"
+
+
+async def test_in_replay_with_nothing_recorded_the_case_falls_back_with_its_evidence(
+    reader: async_sessionmaker[AsyncSession], tmp_path: Path
+) -> None:
+    store = ReplayStore(tmp_path)  # scenario 18 is never recorded
+    chain = ClassifierChain(
+        ReplayClassifier(store, provider="jev", model="jev-1.13.0"),
+        ReplayClassifier(store, provider="openai", model="gpt-6-luna"),
+    )
+    deps = AgentDeps(
+        reader=reader,
+        classifier=chain,
+        drafter=ReplayDrafter(store, model="gpt-6.1-sol"),
+        chooser=chain.primary,
+    )
+
+    final = await build_graph().ainvoke(GraphState(case_id=5118, run_id=uuid4()), context=deps)
+    result = final["result"]
+
+    assert result["status"] == "needs_your_call"
+    assert result["reasons"] == ["classifier_down", "drafter_down"]
+    assert result["evidence"]["fee_day"]
+    assert result["recommendation"]["action"] == "refund"
+    assert result["draft"]["source"] == "template"

@@ -41,7 +41,9 @@ __all__ = [
 ]
 
 CONFIG_FILE = Path(__file__).resolve().parents[1] / "core" / "config" / "runs.yaml"
-RUN_TIMEOUT_S = float(yaml.safe_load(CONFIG_FILE.read_text(encoding="utf-8"))["timeout_s"])
+_CONFIG = yaml.safe_load(CONFIG_FILE.read_text(encoding="utf-8"))
+RUN_TIMEOUT_S = float(_CONFIG["timeout_s"])
+FALLBACK_RESERVE_S = float(_CONFIG["fallback_reserve_s"])
 
 # When the run timeout fires, the reason belongs to the node that was running.
 TIMEOUT_REASON = {"triage": ReasonCode.CLASSIFIER_DOWN, "draft": ReasonCode.DRAFTER_DOWN}
@@ -58,6 +60,7 @@ class RunnerDeps:
     provider_modes: dict[str, str]
     on_event: EventSink | None = None  # live steps for the UI (SSE, T36)
     timeout_s: float = RUN_TIMEOUT_S
+    reserve_s: float = FALLBACK_RESERVE_S  # kept back from every call's deadline
 
 
 @dataclass(frozen=True)
@@ -86,7 +89,8 @@ async def run_case(
         run_id = await start_run(deps.writer, case_id)
     log.info("run_started", run_id=str(run_id), case_id=case_id)
     started = deps.agent.clock()
-    agent = replace(deps.agent, deadline=started + deps.timeout_s)
+    # Model calls end early enough for their fallback; the run timeout below is the backstop.
+    agent = replace(deps.agent, deadline=started + deps.timeout_s, reserve_s=deps.reserve_s)
     records: list[StepRecord] = []
     result: dict[str, Any] | None = None
     running_node: str | None = None
@@ -109,7 +113,7 @@ async def run_case(
                 elif mode == "updates" and "finalize" in chunk:
                     result = (chunk["finalize"] or {}).get("result")
     except TimeoutError:
-        reason = TIMEOUT_REASON.get(running_node or "", ReasonCode.DATA_TIMEOUT)
+        reason = timeout_reason(running_node)
         log.warning("run_timed_out", run_id=str(run_id), node=running_node)
         result = _incomplete(reason)
     except Exception:
@@ -124,6 +128,11 @@ async def run_case(
     log.info("run_finished", run_id=str(run_id), status=result["status"])
     await _emit(deps, {"event": "done", "status": result["status"]})
     return RunResult(run_id=run_id, status=result["status"], result=result)
+
+
+def timeout_reason(node: str | None) -> ReasonCode:
+    """When the run timeout fires, the reason is the stalled step's (SPEC-agent, "Runner")."""
+    return TIMEOUT_REASON.get(node or "", ReasonCode.DATA_TIMEOUT)
 
 
 def _totals(records: list[StepRecord], deps: RunnerDeps, latency_ms: int) -> dict[str, Any]:

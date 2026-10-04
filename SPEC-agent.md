@@ -202,6 +202,12 @@ The runner sets `checking` when a run starts and `not_checked` when it resets an
 - An unexpected exception marks the run `failed` and puts the case back to `not_checked`, so "Check again" is offered.
 - `total_latency_ms` is the run's wall time; tokens and cost are the sums of the steps' `CallMeta`; `prompt_versions` maps each node to the prompt it used.
 
+**How it is built (T35).**
+- **A reserve for the fallback.** `runs.yaml` keeps back `fallback_reserve_s: 3` from every model call: `AgentDeps.model_deadline` is the run's deadline minus the reserve, while reads keep the whole run. So when a model hangs, its fallback (the template, `classifier_down`) and the rest of the graph still finish inside the 45 seconds, with the evidence. Before, a model call could use the whole run, and the reads after it found the deadline already passed.
+- **Every model call is bounded** by `bounded(deps, call)` (`steps.py`), even when the provider ignores the deadline it is given: past it, the call is `ProviderUnavailable("timeout")` and the node's fallback follows. The real adapters already stop retrying at the deadline; this also covers one that hangs.
+- **The run timeout is the backstop.** It fires only when something ignores every bound, such as a read stuck in the driver, and `timeout_reason(node)` gives the stalled step's reason (`classifier_down` for triage, `drafter_down` for draft, `data_timeout` otherwise). That result has no evidence: the run never reached `finalize`.
+- **Live check (2026-10-04).** Aisha's case (16) says "Balances for that day don't add up." with no recommendation. Liam's case (18) behaves like Ana's when live; in replay, with nothing recorded, it ends in `classifier_down` and `drafter_down` with its evidence and the template (tested with an empty replay store).
+
 **Result shape** (`agent_runs.result`, served by the API with names and account numbers filled back in):
 
 ```json

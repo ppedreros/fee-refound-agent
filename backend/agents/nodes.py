@@ -22,7 +22,7 @@ from backend.agents.prompts import (
     render_template,
 )
 from backend.agents.state import ClauseRef, DraftReply, GraphState
-from backend.agents.steps import StepReport, run_tool
+from backend.agents.steps import StepReport, bounded, run_tool
 from backend.agents.triage_rules import Triage, apply_triage_rules, triage_unavailable
 from backend.policy.facts import Fact
 from backend.policy.loader import fee_schedule_clause
@@ -183,11 +183,14 @@ async def triage(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport
     jev_state = {"subject": state.masked_subject or "", "message": state.masked_message or ""}
     asked = {"state": jev_state}
     try:
-        classification = await deps.classifier.classify(
-            jev_state,
-            questions.questions,
-            prompt_version=questions.version,
-            deadline=deps.deadline,
+        classification = await bounded(
+            deps,
+            deps.classifier.classify(
+                jev_state,
+                questions.questions,
+                prompt_version=questions.version,
+                deadline=deps.model_deadline,
+            ),
         )
     except ProviderUnavailable as error:
         result = triage_unavailable(last_known_language=state.last_known_language)
@@ -273,8 +276,11 @@ async def _choose_fee(
     jev_state = {"subject": state.masked_subject or "", "message": state.masked_message or ""}
     asked = asked | {"state": jev_state, "options": [o.description for o in question.options]}
     try:
-        answer = await deps.chooser.classify(
-            jev_state, [question], prompt_version=prompt.version, deadline=deps.deadline
+        answer = await bounded(
+            deps,
+            deps.chooser.classify(
+                jev_state, [question], prompt_version=prompt.version, deadline=deps.model_deadline
+            ),
         )
     except ProviderUnavailable as error:
         output["choice_error"] = error.reason
@@ -409,8 +415,11 @@ async def find_policy(state: GraphState, deps: AgentDeps) -> tuple[Update, StepR
             options=[Option(key=clause.id, description=clause.text) for clause in found],
         )
         try:
-            answer = await deps.chooser.classify(
-                summary, [question], prompt_version=prompt.version, deadline=deps.deadline
+            answer = await bounded(
+                deps,
+                deps.chooser.classify(
+                    summary, [question], prompt_version=prompt.version, deadline=deps.model_deadline
+                ),
             )
         except ProviderUnavailable as error:
             output["rerank_error"] = error.reason
@@ -500,11 +509,14 @@ async def draft(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]
     failure: str | None = None
     for _ in range(DRAFT_TRIES):
         try:
-            drafted = await deps.drafter.draft(
-                payload,
-                instructions=load_prompt(DRAFT_PROMPT),
-                prompt_version=DRAFT_PROMPT,
-                deadline=deps.deadline,
+            drafted = await bounded(
+                deps,
+                deps.drafter.draft(
+                    payload,
+                    instructions=load_prompt(DRAFT_PROMPT),
+                    prompt_version=DRAFT_PROMPT,
+                    deadline=deps.model_deadline,
+                ),
             )
         except ProviderUnavailable as error:
             failure = error.reason

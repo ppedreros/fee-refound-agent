@@ -22,4 +22,11 @@ class AgentDeps:
     policy: Policy = field(default_factory=current_policy)
     thresholds: Thresholds = THRESHOLDS
     deadline: float | None = None  # monotonic seconds; the runner sets it from the run timeout
+    reserve_s: float = 0.0  # kept back from model calls, so their fallback finishes in the run
     clock: Callable[[], float] = time.monotonic
+
+    @property
+    def model_deadline(self) -> float | None:
+        """When a model call must end: the run's deadline less the reserve. Reads keep the
+        whole run, so a slow model never costs the evidence."""
+        return None if self.deadline is None else self.deadline - self.reserve_s

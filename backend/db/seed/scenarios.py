@@ -565,6 +565,44 @@ SCENARIO_14 = member_scenario(
     transactions=same_day_paycheck(14, "2026-09-14"),
 )
 
+SCENARIO_16 = member_scenario(
+    16,
+    "The fee day's balances don't add up: needs your call, no recommendation",
+    name=("Aisha", "Rahman"),
+    subject="Overdraft fee",
+    messages=["My paycheck came the same day as the overdraft fee. Can you refund it?"],
+    sub_accounts=[checking(16, "1170.00")],
+    transactions=[
+        txn(
+            16,
+            1,
+            1,
+            "2026-09-14",
+            0,
+            "Withdrawal Debit Card CITY POWER & LIGHT",
+            "-60.00",
+            "-40.00",
+        ),
+        # -40 - 35 is -75, not -80: the core's data is inconsistent, so nothing is recommended.
+        txn(16, 2, 1, "2026-09-14", 5, COURTESY_PAY, "-35.00", "-80.00"),
+        txn(
+            16, 3, 1, "2026-09-14", 10, "Deposit ACH NORTHWIND FOODS*PAYROLL", "1250.00", "1170.00"
+        ),
+    ],
+)
+
+# Ana's case for another member. Its model answers are deliberately never recorded, so in replay
+# mode it shows the fallback: the classifier is down and Luis decides from the evidence.
+SCENARIO_18 = member_scenario(
+    18,
+    "Like Ana's case, with no recorded model answers: the fallback in replay mode",
+    name=("Liam", "Novak"),
+    subject="Overdraft fee",
+    messages=["My paycheck arrived the same day as this fee. Could you refund it, please?"],
+    sub_accounts=[checking(18)],
+    transactions=same_day_paycheck(18, "2026-09-14"),
+)
+
 SCENARIOS = [
     BRIEF,
     SCENARIO_5,
@@ -578,5 +616,7 @@ SCENARIOS = [
     SCENARIO_13,
     SCENARIO_14,
     SCENARIO_15,
+    SCENARIO_16,
     SCENARIO_17,
+    SCENARIO_18,
 ]

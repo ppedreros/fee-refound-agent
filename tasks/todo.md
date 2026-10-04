@@ -425,14 +425,14 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `backend/db/seed/scenarios.py`, `tests/integration/agents/test_graph_scenarios.py`, `frontend/src/features/case/CasePane.test.tsx` (the "Reply in Spanish" tag; the code was already there)
 **Scope:** M
 
-### - [ ] T35: Robustness: data mismatch (16), missing recording (18), deadlines, interrupted runs
+### - [x] T35: Robustness: data mismatch (16), missing recording (18), deadlines, interrupted runs
 **Description:** Seed scenarios 16 and 18. Add the run-timeout reason mapping, end-to-end deadline propagation, and a tool timeout leading to `data_timeout`.
 **Acceptance criteria:**
-- [ ] Scenario 16 gives `data_mismatch`. Scenario 18 in replay gives `classifier_down`, with the evidence present.
-- [ ] A hanging Sol (fake) falls back to the template before 45 s. A hanging tool gives `data_timeout`. The run timeout maps to the reason of the stalled node.
+- [x] Scenario 16 gives `data_mismatch`. Scenario 18 in replay gives `classifier_down`, with the evidence present.
+- [x] A hanging Sol (fake) falls back to the template before 45 s. A hanging tool gives `data_timeout`. The run timeout maps to the reason of the stalled node.
 **Verification:** `uv run python -m pytest tests/integration/agents/test_fallbacks.py tests/integration/agents/test_runner.py`
 **Dependencies:** T30
-**Files:** `backend/db/seed/scenarios.py`, `backend/agents/runner.py`, `tests/integration/agents/test_fallbacks.py`, `tests/integration/agents/test_runner.py`
+**Files:** `backend/db/seed/scenarios.py`, `backend/agents/runner.py`, `deps.py` (`reserve_s`, `model_deadline`), `steps.py` (`bounded`), `nodes.py`, `backend/core/config/runs.yaml`, `tests/integration/agents/test_fallbacks.py` (interrupted runs were already covered in `test_runner.py` and `tests/api/test_runs.py`)
 **Scope:** S–M
 
 ### - [ ] T36: Live steps over SSE (API, nginx, UI)

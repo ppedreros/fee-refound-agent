@@ -6,6 +6,7 @@ custom stream events, `started` and then `finished` or `failed`; the second carr
 UI. The wrapper also gives read tools their one retry (core/config/tools.yaml).
 """
 
+import asyncio
 import datetime as dt
 import time
 from collections.abc import Awaitable, Callable
@@ -17,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.deps import AgentDeps
 from backend.agents.state import GraphState
-from backend.providers.types import CallMeta
+from backend.providers.types import CallMeta, ProviderUnavailable
 from backend.tools.errors import ToolError, ToolTimeout
 from backend.tools.queries import TOOL_RETRIES
 
@@ -83,6 +84,19 @@ def as_node(name: str, node: NodeFn) -> GraphNode:
         return update
 
     return run
+
+
+async def bounded[T](deps: AgentDeps, call: Awaitable[T]) -> T:
+    """A model call cut at the run's deadline, even when the provider doesn't watch it, so the
+    node's fallback still runs inside the run (D-agent-6). The real adapters stop retrying at the
+    deadline on their own; this also covers one that hangs."""
+    if deps.model_deadline is None:
+        return await call
+    try:
+        async with asyncio.timeout_at(deps.model_deadline):  # the loop's clock is monotonic
+            return await call
+    except TimeoutError:
+        raise ProviderUnavailable("timeout") from None
 
 
 async def run_tool[T](deps: AgentDeps, call: Callable[[AsyncSession], Awaitable[T]]) -> T:
