@@ -143,9 +143,9 @@ Only the `api` decision handler calls this. The interface is what a real core in
 - **Idempotent.** Rows are inserted with `ON CONFLICT DO NOTHING`. A restart never overwrites state that Luis changed (refunds, balances, statuses).
 - **Reset.** `--reset` truncates **every** table, the given ones included, and re-seeds. A refund also changed `transactions`, `sub_accounts`, `messages` and `conversations`, so resetting only the app tables would leave Ana already refunded. Reset runs as the owner role, through the `migrate` service (see the bootstrap note below).
 - **Rows.**
-  - Every row from the brief, verbatim.
+  - Every row from the brief, verbatim. A cell the PDF wraps onto two lines is one string joined by a space (`Withdrawal Debit Card CITY POWER & LIGHT`), and its spacing and case are kept (`Fee Withdrawal ; Courtesy Pay fee`). The brief's timestamps have no zone and are stored as UTC.
   - Staff: `S07` Luis, `S14` Sam (the brief's messages mention `S14`), and `SYSTEM` ("Automatic approval"). `SYSTEM` is used only if auto-approve is ever switched on (`SPEC-api.md`).
-  - Member profiles for every member.
+  - Member profiles for every member. Ana Torres (301) is the name the specs use; the other names are made up (288 Marcus Reed, 276 Priya Nair, 254 Daniel Okafor).
 - **Policy clauses** are not loaded by this seed. `policy` owns its loader.
 - **Bootstrap.** `backend/bootstrap.py` composes migrations, roles, this seed and the policy loader into one idempotent command, `python -m backend.bootstrap [--reset]`. It is owned by `api`, the composition root, so `data` never imports `policy`.
 - **Scenarios.** Each scenario below is a member with a conversation, accounts and transactions. `evals` reuses them.

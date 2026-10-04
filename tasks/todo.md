@@ -116,14 +116,14 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/db/roles.py`, `backend/db/migrations.py`, `backend/bootstrap.py`, `tests/integration/db/test_roles.py`, `tests/integration/migrations.py` (the exact grants are in SPEC-data)
 **Scope:** S
 
-### - [ ] T9: Seed: the brief's rows, profiles, staff, reset
+### - [x] T9: Seed: the brief's rows, profiles, staff, reset
 **Description:** A scenario registry (scenario 1 = the brief's data and Ana). It loads the brief's rows verbatim, plus member profiles and staff `S07`, `S14` and `SYSTEM`. Seeding is idempotent (`ON CONFLICT DO NOTHING`), and `--reset` truncates every table and re-seeds. Bootstrap calls the seed.
 **Acceptance criteria:**
-- [ ] Seeding twice leaves the same counts. `--reset` restores the demo state (SPEC-data AC3; the refund part is re-checked in T21).
-- [ ] The brief's rows are byte-identical to the PDF tables.
+- [x] Seeding twice leaves the same counts. `--reset` restores the demo state (SPEC-data AC3; the refund part is re-checked in T21).
+- [x] The brief's rows are byte-identical to the PDF tables.
 **Verification:** `uv run python -m pytest tests/integration/db/test_seed.py`
 **Dependencies:** T8
-**Files:** `backend/db/seed/__init__.py` + `__main__.py`, `backend/db/seed/scenarios.py`, `backend/bootstrap.py`, `tests/integration/db/test_seed.py`
+**Files:** `backend/db/seed/__init__.py`, `backend/db/seed/scenarios.py`, `backend/bootstrap.py` (`--reset`), `tests/integration/db/test_seed.py`. No separate seed `__main__`: the entry point is `python -m backend.bootstrap [--reset]`, as in SPEC.md.
 **Scope:** M
 
 ### - [ ] T10: Read-only tools and transaction kinds

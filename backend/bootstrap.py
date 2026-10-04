@@ -1,9 +1,11 @@
-"""Entrypoint: `python -m backend.bootstrap`. Prepares the database as its owner.
+"""Entrypoint: `python -m backend.bootstrap [--reset]`. Prepares the database as its owner.
 
-Idempotent, so the `migrate` job runs it on every start: migrations, then the login roles and
-their grants. The seed (T9) and the policy clauses (T11) are added here.
+Idempotent, so the `migrate` job runs it on every start: migrations, the login roles and their
+grants, then the seed. `--reset` empties every table first, which restores the demo state. The
+policy clauses (T11) are added here.
 """
 
+import argparse
 import sys
 
 import psycopg
@@ -15,11 +17,18 @@ from backend.core.logging import configure_logging
 from backend.core.settings import ROLE_FOR_URL, ConfigError, load_settings
 from backend.db.migrations import upgrade
 from backend.db.roles import ensure_login_roles, grant_privileges, login_roles
+from backend.db.seed import reset, seed
 
 log = structlog.get_logger()
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(prog="python -m backend.bootstrap")
+    parser.add_argument(
+        "--reset", action="store_true", help="empty every table first (restores the demo state)"
+    )
+    args = parser.parse_args(argv)
+
     try:
         settings = load_settings()
         owner_url = settings.owner_database_url
@@ -42,6 +51,13 @@ def main() -> None:
             agent_role=ROLE_FOR_URL["agent_database_url"],
         )
         log.info("bootstrap_step_done", step="roles")
+
+        with engine.begin() as connection:
+            if args.reset:
+                reset(connection)
+                log.info("bootstrap_step_done", step="reset")
+            seed(connection)
+        log.info("bootstrap_step_done", step="seed")
     except OperationalError, psycopg.OperationalError:
         sys.exit("Bootstrap could not reach the database as its owner.")
 
