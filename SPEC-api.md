@@ -63,6 +63,8 @@ The queue.
 - Before a case has been checked, `status` is `not_checked` and `topic` is `null`.
 - `amount` is `null` when there is no recommendation.
 
+**As built (T19).** `received_at` is the first member message after the last staff reply; when there is none, the latest member message; when there are no member messages, the conversation's creation time. The `done` view is newest first. The cursor is an opaque, URL-safe encoding of the last item's `(received_at, id)` (keyset pagination); a malformed cursor gives 422. `amount` is shown for `refund` and `no_refund` recommendations.
+
 ### `GET /cases/{id}`
 
 One case, with its evidence. 404 means "We couldn't find that conversation."
@@ -113,6 +115,8 @@ This is "Pick the fee": the id must be one of the latest run's candidates.
 | 422 `invalid_fee` | The pinned fee is not a candidate | "That fee isn't one of the options for this case." |
 
 The run executes as an `asyncio` task inside the API process, with the run timeout from `SPEC-agent.md`.
+
+**As built (T19).** The handler creates the run itself (`start_run`), so it can answer 202 with the `run_id` or 409 `run_in_progress` ("This case is being checked right now.", plus the active `run_id`); the graph then runs as a background task. On shutdown, running tasks are cancelled and their runs become `interrupted` at the next startup. Startup resets interrupted runs but still starts when the database is not reachable yet (`/health` reports it). The app's database sessions and providers come from one `AppResources` object built at startup; with no live Jev, the classifier answers "unavailable" (`replay_miss`) until the replay store lands in T29, so a check ends in `classifier_down` with the evidence prepared. Request validation errors use the same error envelope.
 
 ### `GET /cases/{id}/runs/{run_id}/events`
 

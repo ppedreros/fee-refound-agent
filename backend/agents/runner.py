@@ -31,7 +31,14 @@ from backend.agents.state import GraphState
 from backend.agents.steps import StepRecord
 from backend.policy.reasons import ReasonCode
 
-__all__ = ["RunInProgress", "RunResult", "RunnerDeps", "reset_interrupted_runs", "run_case"]
+__all__ = [
+    "RunInProgress",
+    "RunResult",
+    "RunnerDeps",
+    "reset_interrupted_runs",
+    "run_case",
+    "start_run",
+]
 
 CONFIG_FILE = Path(__file__).resolve().parents[1] / "core" / "config" / "runs.yaml"
 RUN_TIMEOUT_S = float(yaml.safe_load(CONFIG_FILE.read_text(encoding="utf-8"))["timeout_s"])
@@ -70,9 +77,13 @@ async def run_case(
     deps: RunnerDeps,
     *,
     pinned_fee_txn_id: int | None = None,
+    run_id: UUID | None = None,
     graph: Any = None,
 ) -> RunResult:
-    run_id = await start_run(deps.writer, case_id)
+    """Run the graph for a case. The API passes a `run_id` it already created with
+    `start_run`, so it can answer 202 with it before the run ends."""
+    if run_id is None:
+        run_id = await start_run(deps.writer, case_id)
     log.info("run_started", run_id=str(run_id), case_id=case_id)
     started = deps.agent.clock()
     agent = replace(deps.agent, deadline=started + deps.timeout_s)

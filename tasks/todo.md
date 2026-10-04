@@ -236,14 +236,14 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/agents/runner.py`, `backend/agents/recorder.py`, `backend/agents/deps.py`, `tests/integration/agents/test_runner.py`
 **Scope:** M
 
-### - [ ] T19: API: queue and run
+### - [x] T19: API: queue and run
 **Description:** `GET /cases` (views, ordering, cursor) and `POST /cases/{id}/run`, which starts the run as an asyncio task, returns 202, and returns 409 for `run_in_progress` (with the run id) or `case_not_running`. Startup calls the interrupted-run reset. Error bodies already use the envelope; full hardening is in T37.
 **Acceptance criteria:**
-- [ ] `GET /cases` lists 5012 as `not_checked`. After a run it shows `ready_to_refund`, the topic and $35.
-- [ ] `POST /run` on 5009 (closed) gives 409. A second `POST /run` during a run gives 409 with the active `run_id` (SPEC-api AC4).
+- [x] `GET /cases` lists 5012 as `not_checked`. After a run it shows `ready_to_refund`, the topic and $35.
+- [x] `POST /run` on 5009 (closed) gives 409. A second `POST /run` during a run gives 409 with the active `run_id` (SPEC-api AC4).
 **Verification:** `uv run python -m pytest tests/api/test_runs.py`
 **Dependencies:** T18
-**Files:** `backend/api/routes_cases.py`, `backend/api/schemas.py`, `backend/api/deps.py`, `backend/api/main.py`, `tests/api/test_runs.py`
+**Files:** `backend/api/routes_cases.py`, `backend/api/schemas.py`, `backend/api/queue.py`, `backend/api/resources.py` (in place of `deps.py`), `backend/api/errors.py`, `backend/api/main.py`, `backend/agents/runner.py`, `tests/api/test_runs.py` + `conftest.py`, `tests/unit/api/test_resources.py`; DB fixtures moved to `tests/conftest.py`
 **Scope:** M
 
 ### - [ ] T20: API: case view model
