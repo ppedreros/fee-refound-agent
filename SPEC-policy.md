@@ -74,6 +74,13 @@ All rules are pure functions over typed inputs and return a `RuleResult(passed, 
 
 `balance_if_deposit_first` feeds the counterfactual sentence in `render_summary`.
 
+**How the rules are built (T12).**
+
+- `RuleResult` also carries `rule` (the function name), which the run's `checks` list shows. `ReasonCode` and its groups are in `backend/policy/reasons.py` from T12; T13 adds the templates.
+- `verify_posting_order(fee, same_day_txns, following=())`: only the fee's sub-account counts. The payment that caused the fee is the last non-fee debit before it, so "the debits up to it" are the non-fee debits posted before the fee; later debits don't count. Same-day deposits count wherever they posted, so a deposit posted before the fee must still have covered the payment. When there is no deposit that day, the optional `following` transactions give `next_deposit_date` and `next_deposit_amount` for the decline message. The balance chain is checked first; a break gives `data_mismatch`.
+- `find_fee_candidates` includes fees from the message's own day back to 30 days before it, both ends included.
+- Facts per rule: posting order `deposit_date`, `deposit_amount`, `deposit_posted_after_fee`, `balance_if_deposit_first` (or `next_deposit_*`); yearly limit `refunds_in_window`, `max_refunds`; standing `overdue_accounts`, `overdue_types`; already refunded `refunded_on`; approval limit `amount`, `staff_limit`.
+
 **Worked example: Ana, fee 88002, with these docs**
 
 | Check | Inputs | Result |

@@ -154,15 +154,15 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/policy/docs/*.md` (6 content files), `backend/policy/loader.py`, `backend/bootstrap.py`, `tests/unit/policy/test_docs.py`, `tests/integration/policy/test_loader.py`
 **Scope:** M (mostly content)
 
-### - [ ] T12: Rules (TDD)
+### - [x] T12: Rules (TDD)
 **Description:** Write the failing tests first. Then implement `find_fee_candidates`, `verify_posting_order` (including the `data_mismatch` check and `balance_if_deposit_first`), `check_not_already_refunded`, `check_yearly_limit`, `check_good_standing` and `check_approval_limit`.
 **Acceptance criteria:**
-- [ ] Ana's worked example passes on the seeded transactions (SPEC-policy AC2).
-- [ ] The boundary tests pass: 3 refunds, 364 vs 365 days, deposit before the fee, deposit that doesn't cover, chain off by $0.01 (AC3).
-- [ ] 90% or more coverage on `backend/policy`.
+- [x] Ana's worked example passes on the seeded transactions (SPEC-policy AC2).
+- [x] The boundary tests pass: 3 refunds, 364 vs 365 days, deposit before the fee, deposit that doesn't cover, chain off by $0.01 (AC3).
+- [x] 90% or more coverage on `backend/policy`.
 **Verification:** `uv run python -m pytest tests/unit/policy/test_rules.py --cov=backend/policy`
 **Dependencies:** T10, T11
-**Files:** `backend/policy/rules.py`, `backend/policy/models.py`, `tests/unit/policy/test_rules.py`
+**Files:** `backend/policy/rules.py`, `backend/policy/models.py`, `backend/policy/reasons.py` (`ReasonCode` only), `tests/unit/policy/test_rules.py`
 **Scope:** M
 
 ### - [ ] T13: Reason catalogue and summaries
