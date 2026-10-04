@@ -322,20 +322,20 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 ### Checkpoint 3: Ana end to end (review with the user)
 - [x] All tests pass, and pre-commit is clean
 - [x] Ana's full loop works in the browser with live Jev
-- [ ] The user reviews the slice: UI, copy, evidence. Feedback is folded into the specs before Phase 4.
+- [x] The user reviews the slice: UI, copy, evidence. Feedback is folded into the specs before Phase 4.
 
 ---
 
 ## Phase 4: Real models, fallbacks, replay
 
-### - [ ] T27: Luna classifier and fallback chain
+### - [x] T27: Luna classifier and fallback chain
 **Description:** Check OpenAI's docs first (Responses API, strict structured outputs, reasoning effort). `OpenAIClassifier` (`gpt-6-luna`, effort `none`) uses a strict JSON schema with enum and boolean fields, and returns `None` for confidence. `ClassifierChain` runs Jev, then Luna, then `ClassifierUnavailable`. The graph uses the chain, adds the `classified_with_backup` note, and handles `classifier_down` (the evidence is still loaded).
 **Acceptance criteria:**
-- [ ] Jev timeout → Luna answers, `meta.provider` is `openai` (model `gpt-6-luna`), `clear = false`, and the status is not changed by the note (SPEC-providers AC1 and AC5; SPEC-agent AC4).
-- [ ] Both fail → `classifier_down` → `needs_your_call`, with the evidence and the recommendation present.
+- [x] Jev timeout → Luna answers, `meta.provider` is `openai` (model `gpt-6-luna`), `clear = false`, and the status is not changed by the note (SPEC-providers AC1 and AC5; SPEC-agent AC4).
+- [x] Both fail → `classifier_down` → `needs_your_call`, with the evidence and the recommendation present.
 **Verification:** `uv run python -m pytest tests/unit/providers/test_openai_classifier.py tests/unit/providers/test_chain.py tests/integration/agents/test_fallbacks.py`
 **Dependencies:** T26
-**Files:** `backend/providers/openai_classifier.py`, `backend/providers/chain.py`, `backend/agents/nodes.py`, `tests/unit/providers/test_openai_classifier.py` + `test_chain.py`, `tests/integration/agents/test_fallbacks.py`
+**Files:** `backend/providers/openai_classifier.py`, `openai_common.py`, `chain.py`, `types.py` (`fallback_reason`), `backend/agents/nodes.py`, `backend/api/resources.py`, `pyproject.toml` (`openai`), `tests/unit/providers/test_openai_classifier.py` + `test_chain.py` + `openai_fakes.py`, `tests/unit/api/test_resources.py`, `tests/integration/agents/test_fallbacks.py`
 **Scope:** M
 
 ### - [ ] T28: Sol drafter, post-check and prompt caching

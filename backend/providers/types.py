@@ -60,11 +60,6 @@ class CallMeta(BaseModel, frozen=True):
     attempts: int
 
 
-class Classification(BaseModel, frozen=True):
-    answers: dict[str, ChoiceAnswer | NoulAnswer]
-    meta: CallMeta
-
-
 type UnavailableReason = Literal[
     "auth",
     "invalid_request",
@@ -75,6 +70,12 @@ type UnavailableReason = Literal[
     "bad_response",
     "replay_miss",
 ]
+
+
+class Classification(BaseModel, frozen=True):
+    answers: dict[str, ChoiceAnswer | NoulAnswer]
+    meta: CallMeta
+    fallback_reason: UnavailableReason | None = None  # why the primary classifier did not answer
 
 
 class ProviderUnavailable(Exception):

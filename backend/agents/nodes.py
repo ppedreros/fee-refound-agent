@@ -38,6 +38,7 @@ from backend.policy.rules import (
 from backend.policy.search import get_clause
 from backend.privacy.mask import MaskingDictionary, mask
 from backend.privacy.sanitize import sanitize
+from backend.providers.chain import ClassifierUnavailable
 from backend.providers.types import ProviderUnavailable
 from backend.tools import queries
 from backend.tools.errors import ToolError
@@ -154,10 +155,13 @@ async def triage(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport
         )
     except ProviderUnavailable as error:
         result = triage_unavailable(last_known_language=state.last_known_language)
+        failed: dict[str, Any] = {"reasons": list(result.reasons)}
+        if isinstance(error, ClassifierUnavailable):  # Jev failed, then Luna did too
+            failed["fallback"] = {"from": "jev", "reason": error.primary_reason}
         report = StepReport(
             kind="jev",
             input_masked=asked,
-            output={"reasons": list(result.reasons)},
+            output=failed,
             prompt_version=questions.version,
             error_code=error.reason,
         )
@@ -167,10 +171,13 @@ async def triage(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport
         classification, last_known_language=state.last_known_language, thresholds=deps.thresholds
     )
     answers = {key: a.model_dump(mode="json") for key, a in classification.answers.items()}
+    output: dict[str, Any] = {"answers": answers, "reasons": list(result.reasons)}
+    if classification.fallback_reason is not None:
+        output["fallback"] = {"from": "jev", "reason": classification.fallback_reason}
     report = StepReport(
         kind="jev" if classification.meta.provider == "jev" else "llm",
         input_masked=asked,
-        output={"answers": answers, "reasons": list(result.reasons)},
+        output=output,
         meta=classification.meta,
         prompt_version=questions.version,
     )
