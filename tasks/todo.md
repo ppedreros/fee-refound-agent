@@ -144,14 +144,14 @@ A test fixture creates the `fees_test` database.
 
 ## Phase 3: Ana end to end (thin vertical slice)
 
-### - [ ] T11: Policy documents and loader
+### - [x] T11: Policy documents and loader
 **Description:** The six markdown documents with typed front-matter. `load_clauses(session)` splits them into clauses, upserts them and computes `policy_version`. Bootstrap calls it. `fee_schedule_clause(fee_type)` maps a fee type to its clause.
 **Acceptance criteria:**
-- [ ] All documents load. A malformed front-matter fails the loader, naming the file and field (SPEC-policy AC1).
-- [ ] The params-vs-text test passes, and fails if `max_refunds_in_window` changes without the text (AC6).
+- [x] All documents load. A malformed front-matter fails the loader, naming the file and field (SPEC-policy AC1).
+- [x] The params-vs-text test passes, and fails if `max_refunds_in_window` changes without the text (AC6).
 **Verification:** `uv run python -m pytest tests/unit/policy/test_docs.py`
 **Dependencies:** T10
-**Files:** `backend/policy/docs/*.md` (6 content files), `backend/policy/loader.py`, `backend/bootstrap.py`, `tests/unit/policy/test_docs.py`
+**Files:** `backend/policy/docs/*.md` (6 content files), `backend/policy/loader.py`, `backend/bootstrap.py`, `tests/unit/policy/test_docs.py`, `tests/integration/policy/test_loader.py`
 **Scope:** M (mostly content)
 
 ### - [ ] T12: Rules (TDD)

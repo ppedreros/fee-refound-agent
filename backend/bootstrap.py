@@ -1,8 +1,8 @@
 """Entrypoint: `python -m backend.bootstrap [--reset]`. Prepares the database as its owner.
 
 Idempotent, so the `migrate` job runs it on every start: migrations, the login roles and their
-grants, then the seed. `--reset` empties every table first, which restores the demo state. The
-policy clauses (T11) are added here.
+grants, the seed, then the policy clauses. `--reset` empties every table first, which restores
+the demo state.
 """
 
 import argparse
@@ -18,6 +18,7 @@ from backend.core.settings import ROLE_FOR_URL, ConfigError, load_settings
 from backend.db.migrations import upgrade
 from backend.db.roles import ensure_login_roles, grant_privileges, login_roles
 from backend.db.seed import reset, seed
+from backend.policy.loader import PolicyError, load_clauses
 
 log = structlog.get_logger()
 
@@ -57,9 +58,13 @@ def main(argv: list[str] | None = None) -> None:
                 reset(connection)
                 log.info("bootstrap_step_done", step="reset")
             seed(connection)
+            version = load_clauses(connection)
         log.info("bootstrap_step_done", step="seed")
+        log.info("bootstrap_step_done", step="policy", policy_version=version)
     except OperationalError, psycopg.OperationalError:
         sys.exit("Bootstrap could not reach the database as its owner.")
+    except PolicyError as error:
+        sys.exit(f"Invalid policy documents: {error}")
 
 
 if __name__ == "__main__":

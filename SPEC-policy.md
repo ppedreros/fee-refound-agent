@@ -42,6 +42,7 @@ params:
 - **Typed parameters.** A Pydantic model per document validates the front-matter. Invalid params make the loader (and so the bootstrap) fail with the file and field named.
 - **Policy version.** `policy_version` is a hash of all document contents. Every run stores it.
 - **Text and params agree.** A consistency test asserts that each clause that states a number shows the same value as its param. For example, `fee-refund-policy#2` must say "3" and "12-month".
+- **How it is built (T11).** `backend/policy/loader.py`. A clause's `section` is its heading, for example `4. Same-day deposits`. The fee schedule's params map each fee type to its amount and clause (`fees: {Courtesy Pay: {amount: 35, clause: 1}, …}`), which is what `fee_schedule_clause` reads; fee type names match `backend/core/config/descriptions.yaml`. The consistency check runs inside the loader too, so the bootstrap refuses documents whose text and params disagree. `policy_version` is the first 16 hex characters of a SHA-256 over every document. Loading upserts every clause and deletes clauses no document has any more.
 
 ## Clause store and search
 
