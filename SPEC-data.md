@@ -76,6 +76,23 @@ The approval limit is not stored here. It is a policy parameter (see `SPEC-polic
 
 The runner records `agent_runs` and `agent_steps` through `app_writer`. The graph's nodes and tools only ever hold an `agent_reader` session. That is what "agents only read" means in this codebase.
 
+**Exact grants** (least privilege, applied by `backend/db/roles.py`). Every bootstrap first revokes everything from both roles, then grants exactly this, so the grants never drift:
+
+| Table | `agent_reader` | `app_writer` |
+|---|---|---|
+| `conversations` | `SELECT` | `SELECT`, `UPDATE (status)` |
+| `messages` | `SELECT` | `SELECT`, `INSERT` (the reply) |
+| `accounts`, `member_profiles`, `policy_clauses` | `SELECT` | `SELECT` |
+| `sub_accounts` | `SELECT` | `SELECT`, `UPDATE (balance, available)` (core-banking adapter) |
+| `transactions` | `SELECT` | `SELECT`, `INSERT` (core-banking adapter) |
+| `cases`, `agent_runs` | `SELECT` | `SELECT`, `INSERT`, `UPDATE` |
+| `refunds` | `SELECT` | `SELECT`, `INSERT`, `UPDATE (refund_txn_id)` |
+| `agent_steps`, `decisions`, `audit_events` | — | `SELECT`, `INSERT` |
+| `eval_candidates` | — | `SELECT`, `INSERT`, `UPDATE (exported_at)` |
+| `staff`, `alembic_version` | — | `SELECT` |
+
+Neither role can `DELETE` or `TRUNCATE` anything. `default_transaction_read_only` is defence in depth only, because a session can switch it off; the missing grants are the real boundary, and a test checks both.
+
 The `migrate` job connects as the owner (`OWNER_DATABASE_URL`) and creates the roles idempotently. Each role's password comes from its own URL (`APP_DATABASE_URL`, `AGENT_DATABASE_URL`), whose user must be the role's name. The login roles exist from T3, so `/health` can check the database as `app_writer`; the grants and role settings above come in T8 (D-platform-1 in `SPEC-platform.md`).
 
 ## Read-only tools (`backend/tools/`)

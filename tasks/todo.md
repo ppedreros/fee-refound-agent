@@ -106,14 +106,14 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/db/models.py`, `backend/db/alembic.ini` + `alembic/env.py` + `script.py.mako`, `backend/db/alembic/versions/0001_initial_schema.py`, `tests/integration/conftest.py` + `migrations.py`, `tests/integration/db/test_schema.py`, `docker-compose.yml` (db on 127.0.0.1, D-platform-2), `.github/workflows/ci.yml` (`TEST_DATABASE_URL`)
 **Scope:** M
 
-### - [ ] T8: Database roles and bootstrap
+### - [x] T8: Database roles and bootstrap
 **Description:** `backend/db/roles.py` already creates the `agent_reader` and `app_writer` login roles (T3, D-platform-1). T8 adds their grants from SPEC-data. `agent_reader` gets `default_transaction_read_only` and a 3-second `statement_timeout`. `backend/bootstrap.py` runs migrations and then roles. The seed and the policy loader are added in T9 and T11. The `migrate` service runs it.
 **Acceptance criteria:**
-- [ ] Running bootstrap twice succeeds.
-- [ ] As `agent_reader`, `SELECT` works and `INSERT`, `UPDATE` and `DELETE` on every table fail (SPEC-data AC4).
+- [x] Running bootstrap twice succeeds.
+- [x] As `agent_reader`, `SELECT` works and `INSERT`, `UPDATE` and `DELETE` on every table fail (SPEC-data AC4).
 **Verification:** `uv run python -m pytest tests/integration/db/test_roles.py`; `docker compose up` shows `migrate` exiting 0
 **Dependencies:** T7
-**Files:** `backend/db/roles.py`, `backend/bootstrap.py`, `docker-compose.yml`, `tests/integration/db/test_roles.py`
+**Files:** `backend/db/roles.py`, `backend/db/migrations.py`, `backend/bootstrap.py`, `tests/integration/db/test_roles.py`, `tests/integration/migrations.py` (the exact grants are in SPEC-data)
 **Scope:** S
 
 ### - [ ] T9: Seed: the brief's rows, profiles, staff, reset
