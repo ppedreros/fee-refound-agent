@@ -10,17 +10,23 @@ from typing import Literal
 import pytest
 import sqlalchemy as sa
 from psycopg.errors import InsufficientPrivilege, QueryCanceled, ReadOnlySqlTransaction
-from pydantic import SecretStr
 from sqlalchemy import Connection, Engine, Executable, create_engine, text
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import DBAPIError
 
 from backend.db.models import Base
 from backend.db.roles import LoginRole, ensure_login_roles, grant_privileges
+from tests.integration.roles import (
+    TEST_AGENT_ROLE,
+    TEST_APP_ROLE,
+    TEST_ROLE_PASSWORD,
+    owner_secret,
+    role_url,
+)
 
-APP = "test_app_writer"
-AGENT = "test_agent_reader"
-PASSWORD = "test-role-password"
+APP = TEST_APP_ROLE
+AGENT = TEST_AGENT_ROLE
+PASSWORD = TEST_ROLE_PASSWORD
 
 READER_CAN_READ = [
     "conversations",
@@ -62,20 +68,15 @@ def count_rows(table: str) -> Executable:
 
 
 @pytest.fixture(scope="module")
-def roles(migrated_engine: Engine, test_database_url: URL) -> Iterator[None]:
-    owner = SecretStr(test_database_url.render_as_string(hide_password=False))
+def roles(test_roles: None, test_database_url: URL) -> None:
+    owner = owner_secret(test_database_url)
     for _ in range(2):  # bootstrap runs on every start, so twice in a row must work
         ensure_login_roles(owner, [LoginRole(APP, PASSWORD), LoginRole(AGENT, PASSWORD)])
         grant_privileges(owner, app_role=APP, agent_role=AGENT)
-    yield
-    with migrated_engine.begin() as connection:
-        connection.execute(text(f"DROP OWNED BY {APP}, {AGENT}"))
-        connection.execute(text(f"DROP ROLE {APP}, {AGENT}"))
 
 
 def engine_as(test_database_url: URL, role: str) -> Engine:
-    url = test_database_url.set(username=role, password=PASSWORD)
-    return create_engine(url, isolation_level="AUTOCOMMIT")
+    return create_engine(role_url(test_database_url, role), isolation_level="AUTOCOMMIT")
 
 
 @pytest.fixture

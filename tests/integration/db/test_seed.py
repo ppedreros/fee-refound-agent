@@ -1,7 +1,5 @@
 """The seed (SPEC-data, "Seed"): the brief's rows verbatim, idempotent, and a reset."""
 
-from collections.abc import Iterator
-
 import pytest
 import sqlalchemy as sa
 from sqlalchemy import Connection, Engine, text
@@ -160,17 +158,6 @@ def row_counts(connection: Connection) -> dict[str, int]:
         ).scalar_one()
         for table in COUNTED_TABLES
     }
-
-
-@pytest.fixture
-def seeded(migrated_engine: Engine) -> Iterator[Engine]:
-    """A freshly reset and seeded fees_test."""
-    with migrated_engine.begin() as connection:
-        reset(connection)
-        seed(connection)
-    yield migrated_engine
-    with migrated_engine.begin() as connection:
-        reset(connection)
 
 
 @pytest.mark.parametrize("table", BRIEF_ROWS)

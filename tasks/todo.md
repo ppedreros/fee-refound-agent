@@ -126,19 +126,19 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/db/seed/__init__.py`, `backend/db/seed/scenarios.py`, `backend/bootstrap.py` (`--reset`), `tests/integration/db/test_seed.py`. No separate seed `__main__`: the entry point is `python -m backend.bootstrap [--reset]`, as in SPEC.md.
 **Scope:** M
 
-### - [ ] T10: Read-only tools and transaction kinds
+### - [x] T10: Read-only tools and transaction kinds
 **Description:** `classify_description`, with its patterns in `descriptions.yaml`. Also the tools `get_conversation`, `get_member_profile`, `list_member_accounts`, `list_transactions`, `list_fee_refunds`, `list_our_refunds` and `get_last_known_language`, with typed models, `ToolTimeout` and `ToolError`.
 **Acceptance criteria:**
-- [ ] `list_transactions(301, 2026-09-14, 2026-09-14)` returns 88001, 88002 and 88003, with kinds `card_payment`, `fee` and `payroll_deposit` (SPEC-data AC5).
-- [ ] A slow query raises `ToolTimeout` (AC8). Every seeded description is classified correctly (AC9).
+- [x] `list_transactions(301, 2026-09-14, 2026-09-14)` returns 88001, 88002 and 88003, with kinds `card_payment`, `fee` and `payroll_deposit` (SPEC-data AC5).
+- [x] A slow query raises `ToolTimeout` (AC8). Every seeded description is classified correctly (AC9).
 **Verification:** `uv run python -m pytest tests/unit/tools tests/integration/tools`
 **Dependencies:** T9
-**Files:** `backend/tools/queries.py`, `backend/tools/descriptions.py` + `backend/core/config/descriptions.yaml`, `backend/tools/errors.py`, `tests/unit/tools/test_classify_description.py`, `tests/integration/tools/test_queries.py`
+**Files:** `backend/tools/queries.py` + `models.py`, `backend/tools/descriptions.py` + `backend/core/config/descriptions.yaml`, `backend/core/config/tools.yaml`, `backend/tools/errors.py`, `tests/unit/tools/test_classify_description.py`, `tests/integration/tools/test_queries.py`, `tests/conftest.py` (selector event loop for psycopg on Windows), shared role and seed fixtures in `tests/integration/`
 **Scope:** M
 
 ### Checkpoint 2: Data
-- [ ] A fresh `docker compose up` migrates and seeds. `agent_reader` can't write.
-- [ ] All integration tests pass against compose Postgres.
+- [x] A fresh `docker compose up` migrates and seeds. `agent_reader` can't write.
+- [x] All integration tests pass against compose Postgres.
 
 ---
 
@@ -213,6 +213,8 @@ A test fixture creates the `fees_test` database.
 - `draft` uses the template only (Sol comes in T28)
 
 The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The test injects in-process fake providers.
+
+**From T10:** tools don't retry by themselves. The node wrapper applies the one retry in `backend/core/config/tools.yaml` with the T15 retry policy and the run deadline, and a `ToolTimeout` after that becomes `data_timeout`.
 
 **From the T6 spike:** the outline's manipulation wording gave Ana P(yes) 0.92, so `triage-v1` must reword it (and add Noul `criteria`) so that an ordinary refund request is a clear "no". Check it live on Ana and scenario 12 before the prompts freeze (`docs/notes/jev.md`, finding 1).
 **Acceptance criteria:**

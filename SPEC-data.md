@@ -116,6 +116,12 @@ Every tool:
 
 **Transaction kinds.** `classify_description(description) -> TxnKind` is a deterministic, regex-based function. Its patterns live in `backend/core/config/descriptions.yaml`. The kinds are `fee`, `fee_refund`, `payroll_deposit`, `deposit`, `card_payment`, `withdrawal` and `other`. Each kind also carries a fee type (for example "Courtesy Pay", "Out of Network") when the description states one.
 
+**How the tools are built (T10).**
+
+- They live in `backend/tools/queries.py` and return the frozen models in `backend/tools/models.py`. A message's author is `member` when `author_id` is numeric, otherwise `staff`. `list_our_refunds` returns `fee_txn_id`, `amount` and `refunded_at`.
+- Every tool goes through one wrapper: the timeout from `backend/core/config/tools.yaml` (3 s), and any database failure becomes `ToolTimeout` (client timeout, or the role's `statement_timeout`) or `ToolError` (`not_found`, `database`). The one retry from `docs/agent-design.md` §5 is applied by the graph's node wrapper with the shared retry policy and the run deadline (T15, T17), not inside the tools.
+- Kinds are classified in Python after the query, so the patterns stay in `descriptions.yaml` and in one place.
+
 ## Core-banking adapter (the one write path for money)
 
 `backend/db/core_banking.py` defines a `CoreBanking` protocol with one method:

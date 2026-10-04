@@ -1,0 +1,10 @@
+# The agent's read-only database tools (docs/agent-design.md §5). Changing a value is an
+# "ask first" change.
+
+# Each tool call must finish within this. The agent_reader role also has a 3 s statement timeout
+# (backend/db/roles.py), so the database cancels a slow statement on its side too.
+timeout_s: 3
+
+# Retries after a timeout or a database error. Applied by the graph's node wrapper, with the
+# shared retry policy and the run deadline (T15, T17), not by the tools themselves.
+retries: 1

@@ -1,0 +1,27 @@
+# Transaction kinds from the core banking system's free-text descriptions (SPEC-data,
+# "Transaction kinds"). Rules are tried in order and the first match wins. Patterns are Python
+# regular expressions, matched case-insensitively after runs of whitespace become one space.
+
+kinds:
+  # Before `deposit`: a refund is also a deposit.
+  - kind: fee_refund
+    pattern: '^Deposit Fee Refund\b'
+  - kind: fee
+    pattern: '^Fee Withdrawal\b'
+  # Before `deposit`: a payroll deposit is also a deposit.
+  - kind: payroll_deposit
+    pattern: '^Deposit\b.*\bPAYROLL\b'
+  - kind: deposit
+    pattern: '^Deposit\b'
+  # Before `withdrawal`: a card payment is also a withdrawal.
+  - kind: card_payment
+    pattern: '^Withdrawal Debit Card\b'
+  - kind: withdrawal
+    pattern: '^Withdrawal\b'
+
+# The fee type that a fee or a fee refund names, when it names one.
+fee_types:
+  - fee_type: Courtesy Pay
+    pattern: '\bCourtesy Pay\b'
+  - fee_type: Out of Network
+    pattern: '\bOut of Network\b'

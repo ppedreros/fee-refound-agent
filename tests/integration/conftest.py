@@ -13,7 +13,15 @@ from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.exc import OperationalError
 
+from backend.db.roles import LoginRole, ensure_login_roles, grant_privileges
+from backend.db.seed import reset, seed
 from tests.integration.migrations import migrate
+from tests.integration.roles import (
+    TEST_AGENT_ROLE,
+    TEST_APP_ROLE,
+    TEST_ROLE_PASSWORD,
+    owner_secret,
+)
 
 DEFAULT_TEST_DATABASE_URL = "postgresql+psycopg://fees:change-me@127.0.0.1:5432/fees"
 TEST_DATABASE_NAME = "fees_test"
@@ -45,3 +53,45 @@ def migrated_engine(test_database_url: URL) -> Iterator[Engine]:
     migrate(engine, "head")
     yield engine
     engine.dispose()
+
+
+# --- Roles (see tests/integration/roles.py) ---
+
+
+@pytest.fixture(scope="session")
+def test_roles(migrated_engine: Engine, test_database_url: URL) -> Iterator[None]:
+    """The two test login roles, created once and dropped at the end of the session."""
+    ensure_login_roles(
+        owner_secret(test_database_url),
+        [
+            LoginRole(TEST_APP_ROLE, TEST_ROLE_PASSWORD),
+            LoginRole(TEST_AGENT_ROLE, TEST_ROLE_PASSWORD),
+        ],
+    )
+    yield
+    with migrated_engine.begin() as connection:
+        connection.execute(text(f"DROP OWNED BY {TEST_APP_ROLE}, {TEST_AGENT_ROLE}"))
+        connection.execute(text(f"DROP ROLE {TEST_APP_ROLE}, {TEST_AGENT_ROLE}"))
+
+
+@pytest.fixture
+def granted_roles(test_roles: None, test_database_url: URL) -> None:
+    """Grant the SPEC-data privileges to the test roles. Per test, because a downgrade test drops
+    the tables, and their grants with them."""
+    grant_privileges(
+        owner_secret(test_database_url), app_role=TEST_APP_ROLE, agent_role=TEST_AGENT_ROLE
+    )
+
+
+# --- Data ---
+
+
+@pytest.fixture
+def seeded(migrated_engine: Engine) -> Iterator[Engine]:
+    """A freshly reset and seeded fees_test, emptied again afterwards."""
+    with migrated_engine.begin() as connection:
+        reset(connection)
+        seed(connection)
+    yield migrated_engine
+    with migrated_engine.begin() as connection:
+        reset(connection)
