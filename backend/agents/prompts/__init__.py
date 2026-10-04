@@ -88,7 +88,7 @@ def load_prompt(name: str) -> str:
 
 @cache
 def load_questions(name: str) -> QuestionSet:
-    """Load a question file such as `triage-v1`."""
+    """Load a question file such as `triage-v2`."""
     path = PROMPTS_DIR / f"{name}.yaml"
     # The criteria keys are quoted in the files ("yes", "no"): YAML 1.1 would read bare
     # yes/no as booleans.

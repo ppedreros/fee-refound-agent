@@ -68,7 +68,7 @@ async def test_a_run_writes_one_run_row_and_one_step_row_per_node(
     assert run["classifier_used"] == "jev"
     assert run["would_auto_approve"] is True
     assert run["provider_mode"] == {"jev": "live", "openai": "replay"}
-    assert run["prompt_versions"] == {"triage": "triage-v1", "draft": "draft-v1"}
+    assert run["prompt_versions"] == {"triage": "triage-v2", "draft": "draft-v1"}
     assert run["policy_version"]
     assert run["result"]["recommendation"]["amount"] == "35.00"
     assert len(steps) == 11
@@ -88,7 +88,7 @@ async def test_the_run_totals_add_up_from_its_steps(
     assert (triage["kind"], triage["model"], triage["prompt_version"]) == (
         "jev",
         "jev-1.13.0",
-        "triage-v1",
+        "triage-v2",
     )
     assert (triage["tokens_in"], triage["cost_usd"], triage["attempts"]) == (
         760,

@@ -23,6 +23,9 @@ def test_an_ordinary_message_is_unchanged() -> None:
         ("re\u200bfund", "refund"),  # zero-width space
         ("\ufeffrefund", "refund"),  # byte-order mark
         ("re\u2060fund\u2064", "refund"),  # word joiner and invisible plus
+        ("\u2067refund me\u2069", "refund me"),  # bidi isolates ("Trojan Source")
+        ("re\u2066fund\u2068 me", "refund me"),  # left-to-right and first-strong isolates
+        ("refund\u061c me", "refund me"),  # Arabic letter mark
         ("refund\x00\x07 me", "refund me"),  # control characters
         ("refund\t\t   me", "refund me"),  # runs of spaces and tabs
         ("line one\n\n\n  line two  ", "line one\nline two"),  # blank lines and edges

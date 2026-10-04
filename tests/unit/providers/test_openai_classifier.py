@@ -20,7 +20,7 @@ LUNA = ProviderConfig(
     model="gpt-6-luna",
     policy=CallPolicy(timeout_s=8, retries=2, backoff_base_s=0.5, backoff_cap_s=4),
 )
-QUESTIONS = load_questions("triage-v1").questions
+QUESTIONS = load_questions("triage-v2").questions
 STATE = {
     "subject": "Overdraft fee",
     "message": "My paycheck came the same day. Can you refund this?",

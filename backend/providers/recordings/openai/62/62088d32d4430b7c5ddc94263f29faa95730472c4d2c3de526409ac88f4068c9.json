@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.001288",
+    "latency_ms": 2599,
+    "mode": "live",
+    "model": "gpt-6.1-sol",
+    "provider": "openai",
+    "tokens_cache_write": 136,
+    "tokens_cached": 1520,
+    "tokens_in": 1659,
+    "tokens_out": 79
+  },
+  "model": "gpt-6.1-sol",
+  "prompt_version": "draft-v1",
+  "provider": "openai",
+  "recorded_at": "2026-10-04T21:27:17+00:00",
+  "request": {
+    "masked_input": {
+      "amount": "35.00",
+      "facts": [
+        "This fee was already refunded on Sep 11."
+      ],
+      "fee_date": "2026-09-10",
+      "fee_type": "Courtesy Pay",
+      "first_name": "{{first_name}}",
+      "language": "en",
+      "outcome": "no_refund",
+      "policy_clause": "Each fee can be refunded only once. A fee that was already refunded, in this tool or in the core system, is not refunded again.",
+      "sub_account_name": "Everyday Checking",
+      "tone": "formal"
+    },
+    "questions": null
+  },
+  "response": {
+    "reply": "Hi {{first_name}}, thank you for your message. We reviewed the $35 Courtesy Pay fee charged to Everyday Checking on Sep 10. This fee was already refunded on Sep 11, and each fee can be refunded only once, so we cannot refund it again.\n\nIf you need anything else, please reply to this message."
+  },
+  "sha256": "62088d32d4430b7c5ddc94263f29faa95730472c4d2c3de526409ac88f4068c9"
+}

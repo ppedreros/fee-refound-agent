@@ -24,7 +24,7 @@ from backend.providers.types import (
 )
 from tests.unit.providers.openai_fakes import Recorder, client_for, no_sleep, response_body
 
-QUESTIONS = load_questions("triage-v1").questions
+QUESTIONS = load_questions("triage-v2").questions
 STATE = {"subject": "Overdraft fee", "message": "My paycheck came the same day."}
 
 

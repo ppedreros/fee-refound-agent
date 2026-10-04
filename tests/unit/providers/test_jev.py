@@ -36,7 +36,7 @@ STATE = {
     "message": "My paycheck came the same day. Can you refund this?",
 }
 
-# The questions sent in the spike (draft wording; the final wording is triage-v1, T17).
+# The questions sent in the spike (draft wording; the current wording is triage-v2, T38).
 QUESTIONS: list[Question] = [
     ChoiceQuestion(
         key="intent",

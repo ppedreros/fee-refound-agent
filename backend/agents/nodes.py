@@ -61,7 +61,7 @@ from backend.tools.descriptions import payee
 from backend.tools.errors import ToolError
 from backend.tools.models import Message, Transaction
 
-TRIAGE_PROMPT = "triage-v1"
+TRIAGE_PROMPT = "triage-v2"
 DRAFT_PROMPT = "draft-v1"
 FEE_PROMPT = "fee-choice-v1"
 MINUS = chr(0x2212)  # a real minus sign, as on a statement

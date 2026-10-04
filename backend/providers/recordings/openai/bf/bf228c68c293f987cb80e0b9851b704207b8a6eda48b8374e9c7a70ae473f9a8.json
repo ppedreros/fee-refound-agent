@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.001588",
+    "latency_ms": 3506,
+    "mode": "live",
+    "model": "gpt-6.1-sol",
+    "provider": "openai",
+    "tokens_cache_write": 152,
+    "tokens_cached": 1520,
+    "tokens_in": 1675,
+    "tokens_out": 105
+  },
+  "model": "gpt-6.1-sol",
+  "prompt_version": "draft-v1",
+  "provider": "openai",
+  "recorded_at": "2026-10-04T21:27:05+00:00",
+  "request": {
+    "masked_input": {
+      "amount": "35.00",
+      "facts": [
+        "The paycheck arrived on Sep 14, two days after the fee."
+      ],
+      "fee_date": "2026-09-12",
+      "fee_type": "Courtesy Pay",
+      "first_name": "{{first_name}}",
+      "language": "en",
+      "outcome": "no_refund",
+      "policy_clause": "We refund a Courtesy Pay fee when a deposit that posted the same day would have covered the payment if it had posted first. Refunds and transfers between the member's own accounts don't count as deposits.",
+      "sub_account_name": "Everyday Checking",
+      "tone": "casual"
+    },
+    "questions": null
+  },
+  "response": {
+    "reply": "Hi {{first_name}}, thanks for reaching out. We reviewed the $35 Courtesy Pay fee from Sep 12 on your Everyday Checking account. We can't refund this fee because your paycheck arrived on Sep 14, two days later; a qualifying deposit must arrive on the same day and be enough to cover the payment if it had arrived first. Refunds and transfers between your own accounts don't count as qualifying deposits. If you need anything else, just reply to this message."
+  },
+  "sha256": "bf228c68c293f987cb80e0b9851b704207b8a6eda48b8374e9c7a70ae473f9a8"
+}

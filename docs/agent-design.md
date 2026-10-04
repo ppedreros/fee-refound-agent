@@ -572,6 +572,12 @@ one is tracked in the open-questions table in [SPEC.md](../SPEC.md).
 
 ## 8. Changes after the spec
 
+- **2026-10-04 — `triage-v2` (T38; SPEC-agent "Prompts").** The first eval run sent a terse and an
+  upset refund request to Luis as possible manipulation (P(yes) 0.21 and 0.28, above the D3 line of
+  0.15). The threshold stays; the manipulation criteria now say that a blunt request for the fee
+  back is ordinary and name the attack shapes. All triage answers were recorded again. The same
+  run found that the sanitiser kept the bidi isolates (U+2066–U+2069) and the Arabic letter mark;
+  it now removes them with the other invisible characters.
 - **2026-10-04 — Fee choice (T32; SPEC-agent "How `identify_fee` chooses between fees").** Two fees
   on one day share a date, amount and type, so §6's option description ("Sep 14 · −$35.00 ·
   Courtesy Pay fee") can't tell them apart. Each candidate is now described with the payment that

@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.001440",
+    "latency_ms": 3032,
+    "mode": "live",
+    "model": "gpt-6.1-sol",
+    "provider": "openai",
+    "tokens_cache_write": 153,
+    "tokens_cached": 1520,
+    "tokens_in": 1676,
+    "tokens_out": 90
+  },
+  "model": "gpt-6.1-sol",
+  "prompt_version": "draft-v1",
+  "provider": "openai",
+  "recorded_at": "2026-10-04T21:27:00+00:00",
+  "request": {
+    "masked_input": {
+      "amount": "35.00",
+      "facts": [
+        "The member already had 3 refunds in the last 12 months."
+      ],
+      "fee_date": "2026-09-14",
+      "fee_type": "Courtesy Pay",
+      "first_name": "{{first_name}}",
+      "language": "en",
+      "outcome": "no_refund",
+      "policy_clause": "Members in good standing can receive up to 3 fee refunds in any 12-month period. The 12 months end on the date of the fee being reviewed, and refunds of any fee type count.",
+      "sub_account_name": "Everyday Checking",
+      "tone": "casual"
+    },
+    "questions": null
+  },
+  "response": {
+    "reply": "Hi {{first_name}}, thanks for reaching out. We reviewed the $35 Courtesy Pay fee from Sep 14 on your Everyday Checking account. We can refund up to three fees of any type in the 12 months ending on the fee date. Since you've already received three refunds in that period, we can't refund this fee.\n\nIf you need anything else, just reply to this message."
+  },
+  "sha256": "65fa8309a4c576aef0a8f03bf71c2e08c4fdb9f7ad60234c888ff66731f85d8b"
+}

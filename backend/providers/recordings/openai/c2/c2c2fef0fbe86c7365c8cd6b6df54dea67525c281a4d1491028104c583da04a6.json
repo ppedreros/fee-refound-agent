@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.004961",
+    "latency_ms": 4524,
+    "mode": "live",
+    "model": "gpt-6.1-sol",
+    "provider": "openai",
+    "tokens_cache_write": 1630,
+    "tokens_cached": 0,
+    "tokens_in": 1633,
+    "tokens_out": 88
+  },
+  "model": "gpt-6.1-sol",
+  "prompt_version": "draft-v1",
+  "provider": "openai",
+  "recorded_at": "2026-10-04T21:19:23+00:00",
+  "request": {
+    "masked_input": {
+      "amount": "35.00",
+      "facts": [
+        "The paycheck arrived the same day and the bill posted before it."
+      ],
+      "fee_date": "2026-09-14",
+      "fee_type": "Courtesy Pay",
+      "first_name": "{{first_name}}",
+      "language": "es",
+      "outcome": "refund",
+      "policy_clause": null,
+      "sub_account_name": "Everyday Checking",
+      "tone": "upset"
+    },
+    "questions": null
+  },
+  "response": {
+    "reply": "Hola {{first_name}}, entendemos lo molesto que es ver un cargo así. Revisamos el cargo Courtesy Pay de $35 del 14 de septiembre: tu nómina llegó ese mismo día, pero la factura se cobró antes. Te devolvimos el cargo en tu cuenta Everyday Checking y lo verás allí en breve. Si necesitas algo más, responde a este mensaje."
+  },
+  "sha256": "c2c2fef0fbe86c7365c8cd6b6df54dea67525c281a4d1491028104c583da04a6"
+}

@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "attempts": 1,
+    "cost_usd": "0.001306",
+    "latency_ms": 3861,
+    "mode": "live",
+    "model": "gpt-6.1-sol",
+    "provider": "openai",
+    "tokens_cache_write": 131,
+    "tokens_cached": 1520,
+    "tokens_in": 1654,
+    "tokens_out": 82
+  },
+  "model": "gpt-6.1-sol",
+  "prompt_version": "draft-v1",
+  "provider": "openai",
+  "recorded_at": "2026-10-04T21:27:10+00:00",
+  "request": {
+    "masked_input": {
+      "amount": "35.00",
+      "facts": [
+        "The member has an overdue loan balance."
+      ],
+      "fee_date": "2026-09-14",
+      "fee_type": "Courtesy Pay",
+      "first_name": "{{first_name}}",
+      "language": "en",
+      "outcome": "no_refund",
+      "policy_clause": "A member is in good standing when there is no unpaid balance on any account. The Account Standing policy explains what counts as unpaid.",
+      "sub_account_name": "Everyday Checking",
+      "tone": "formal"
+    },
+    "questions": null
+  },
+  "response": {
+    "reply": "Hi {{first_name}}, thank you for your message. We reviewed the $35 Courtesy Pay fee charged to Everyday Checking on Sep 14. We cannot refund this fee because there is an overdue loan balance, and our policy requires accounts to have no unpaid balance to be in good standing.\n\nIf you need anything else, please reply to this message."
+  },
+  "sha256": "6c07f3161698ca488eff6c82415c9dacbf7c17550a19e7897baf94e91ac1d548"
+}

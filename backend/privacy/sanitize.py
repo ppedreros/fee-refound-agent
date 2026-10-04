@@ -5,8 +5,9 @@ import unicodedata
 from dataclasses import dataclass
 
 MAX_CHARS = 2000
-# Zero-width and bidirectional-override characters, word joiners and the byte-order mark.
-INVISIBLE = re.compile("[​-‏‪-‮⁠-⁤﻿]")
+# Zero-width characters, bidirectional overrides, isolates and marks (the "Trojan Source"
+# characters), word joiners and the byte-order mark.
+INVISIBLE = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2069\u061c\ufeff]")
 
 
 @dataclass(frozen=True)

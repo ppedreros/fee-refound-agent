@@ -31,7 +31,7 @@ class Drafter(Protocol):
 | Type | Shape |
 |---|---|
 | `ChoiceQuestion` | `key`, `prompt`, `options: list[Option(key, description)]` (up to 255) |
-| `NoulQuestion` | `key`, `statement`, `criteria: NoulCriteria(yes, no) \| None` (what a yes and a no mean; Jev reads instructions literally, so `triage-v1` states both) |
+| `NoulQuestion` | `key`, `statement`, `criteria: NoulCriteria(yes, no) \| None` (what a yes and a no mean; Jev reads instructions literally, so the triage questions state both) |
 | `ChoiceAnswer` | `choice`, `probabilities: dict[str, float] \| None`, `confidence: float \| None` |
 | `NoulAnswer` | `p_yes: float \| None`, `label: bool` |
 | `Classification` | `answers: dict[str, ChoiceAnswer \| NoulAnswer]`, `meta: CallMeta` |
@@ -93,11 +93,13 @@ These are the defaults from `docs/agent-design.md` §5. They live in `backend/co
 
 **As built (T29).**
 - **Modes in one place.** `backend/providers/factory.py` builds the classifier chain and the drafter for each process. `replay` serves recordings; `live` uses the real adapter, or an "unavailable" (`auth`) stand-in when the key is missing, so a misconfigured live mode falls back instead of crashing; `record=True` (the evals runner only) wraps the live adapters so every answer is written. Luna and Sol share the `openai` mode and one client.
-- **Keys and files.** Every call now carries its `prompt_version` (`triage-v1`, `draft-v1`), which the key includes. For Sol, the key's input is the `DraftInput` and its questions are `null`. A recording holds the key, provider, model, prompt version, the masked request, the response (`answers`, or `reply`), the recorded `CallMeta` and `recorded_at`. A hit returns the recorded answer with its recorded tokens and cost and `mode = "replay"`; it doesn't wait for the recorded latency.
+- **Keys and files.** Every call now carries its `prompt_version` (`triage-v2`, `draft-v1`), which the key includes. For Sol, the key's input is the `DraftInput` and its questions are `null`. A recording holds the key, provider, model, prompt version, the masked request, the response (`answers`, or `reply`), the recorded `CallMeta` and `recorded_at`. A hit returns the recorded answer with its recorded tokens and cost and `mode = "replay"`; it doesn't wait for the recorded latency.
 - **Scan.** `find_personal_data` looks for the seed's names and account numbers and for the masking patterns (email, phone, card, any other run of six or more digits). The test scans every committed recording; a second test proves it catches each kind.
 - **No recordings yet.** Recording waits until the prompts are final (Phase 5). Until then, replay mode misses on every call, so a check without keys ends in "Needs your call" with `classifier_down` and `drafter_down`, the evidence, the recommendation and the template reply, as the fallback rules promise.
 
 **First recording (Checkpoint 5, 2026-10-04; the user approved it).** `python -m backend.record`, run in the backend container with `backend/providers/recordings` mounted, ran every seed scenario but 18 through the graph with live Jev and Sol, plus both ways of "Pick the fee" for scenario 9: 33 recordings, 26 from Jev (triage, fee choice, clause choice) and 7 from Sol (a reply with the same facts is the same reply, whoever the member is). No Luna answer is recorded: Jev answered every call, and the classifier comparison of the evals (T38–T39) records Luna's. With no keys, replay mode gave every runnable case the same status, clause and draft as the live run, and scenario 18 fell back (`classifier_down`) with its evidence. The scan reads every text of a recording's request and answer, one per line; numbers are left out, because the sha256 key, a cost (0.000032) or a float probability (0.8099999999999999) is a run of digits by design, and joining ids with spaces made them read as a card number.
+
+**Second recording (T38, 2026-10-04).** With `triage-v2`, every triage answer was recorded again through the evals runner (`--mode live --record`, which fills in only what is missing), plus the message variants of the eval cases and Luna's answers for every live case (`--classifier backup`): 87 recordings in all. The 31 `triage-v1` answers no replay reads any more were removed. The replay track then passed 37 of 37 cases with no keys.
 
 ## Cost
 
@@ -111,7 +113,7 @@ These are the defaults from `docs/agent-design.md` §5. They live in `backend/co
 
 1. Unicode NFKC normalisation.
 2. Removes control characters, except newline.
-3. Removes zero-width and bidirectional-override characters: U+200B–U+200F, U+202A–U+202E, U+2060–U+2064 and U+FEFF.
+3. Removes zero-width and bidirectional characters: U+200B–U+200F, U+202A–U+202E, U+2060–U+2064, the bidi isolates U+2066–U+2069 (added in T38, when an eval case hid an order inside them), the Arabic letter mark U+061C and U+FEFF.
 4. Collapses runs of whitespace.
 5. Caps the text at 2,000 characters.
 
