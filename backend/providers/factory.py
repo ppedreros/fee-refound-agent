@@ -80,6 +80,7 @@ class UnavailableDrafter:
 class Providers:
     classifier: Classifier  # Jev, then Luna
     drafter: Drafter  # Sol
+    ranker: Classifier  # Jev alone: the clause choice falls back to the rule's clause, not to Luna
     modes: dict[str, str]
     closers: list[Callable[[], Awaitable[None]]] = field(default_factory=list)
 
@@ -128,6 +129,7 @@ def build_providers(
     return Providers(
         classifier=ClassifierChain(jev, luna),
         drafter=sol,
+        ranker=jev,
         modes={"jev": modes.jev, "openai": modes.openai},
         closers=closers,
     )

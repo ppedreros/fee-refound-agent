@@ -16,6 +16,7 @@ class AgentDeps:
     reader: async_sessionmaker[AsyncSession]  # agent_reader sessions only: nodes never write
     classifier: Classifier  # Jev, then Luna (ClassifierChain)
     drafter: Drafter  # Sol
+    ranker: Classifier | None = None  # Jev alone, for the clause choice; None quotes the rule's
     policy: Policy = field(default_factory=current_policy)
     thresholds: Thresholds = THRESHOLDS
     deadline: float | None = None  # monotonic seconds; the runner sets it from the run timeout

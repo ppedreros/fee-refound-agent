@@ -24,6 +24,7 @@ class AppResources:
     drafter: Drafter  # Sol
     provider_modes: dict[str, str]
     closers: list[Callable[[], Awaitable[None]]] = field(default_factory=list)
+    ranker: Classifier | None = None  # Jev alone, for the clause choice
     policy_params: PolicyParams = field(default_factory=lambda: current_policy().params)
     clock: Clock = field(default_factory=SystemClock)
 
@@ -50,6 +51,7 @@ def default_resources(settings: Settings) -> AppResources:
         ),
         classifier=providers.classifier,
         drafter=providers.drafter,
+        ranker=providers.ranker,
         provider_modes=providers.modes,
         closers=providers.closers,
     )

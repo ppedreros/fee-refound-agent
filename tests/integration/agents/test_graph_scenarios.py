@@ -5,26 +5,33 @@ import json
 from typing import Any
 from uuid import uuid4
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.agents.deps import AgentDeps
 from backend.agents.graph import build_graph
 from backend.agents.state import GraphState
 from backend.agents.steps import StepRecord
-from tests.integration.agents.fakes import FakeClassifier, FakeDrafter, jev_answers
+from backend.providers.types import Classifier
+from tests.integration.agents.fakes import FakeClassifier, FakeDrafter, FakeRanker, jev_answers
 
 SEEDED_SECRETS = ("Ana", "Torres", "884210", "884211")
 
 
 async def run(
-    case_id: int, classifier: FakeClassifier, reader: async_sessionmaker[AsyncSession]
+    case_id: int,
+    classifier: FakeClassifier,
+    reader: async_sessionmaker[AsyncSession],
+    ranker: Classifier | None = None,
 ) -> tuple[dict[str, Any], list[StepRecord]]:
     graph = build_graph()
     final: dict[str, Any] = {}
     records: list[StepRecord] = []
     async for mode, chunk in graph.astream(
         GraphState(case_id=case_id, run_id=uuid4()),
-        context=AgentDeps(reader=reader, classifier=classifier, drafter=FakeDrafter()),
+        context=AgentDeps(
+            reader=reader, classifier=classifier, drafter=FakeDrafter(), ranker=ranker
+        ),
         stream_mode=["values", "custom"],
     ):
         if mode == "values":
@@ -108,3 +115,74 @@ async def test_with_every_classifier_down_the_case_is_still_prepared(
     assert result["reasons"] == ["classifier_down"]
     assert result["recommendation"]["action"] == "refund"
     assert next(r for r in records if r.node == "triage").status == "failed"
+
+
+# --- find_policy: search, Jev's clause choice, and the cross-check with the deciding rule (D7b) ---
+
+
+def policy_step(records: list[StepRecord]) -> StepRecord:
+    return next(record for record in records if record.node == "find_policy")
+
+
+async def test_ana_quotes_the_clause_search_found_and_jev_confirmed(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    ranker = FakeRanker("fee-refund-policy#4")
+
+    final, records = await run(5012, FakeClassifier(jev_answers()), reader, ranker)
+
+    clause = final["result"]["clause"]
+    assert (clause["id"], clause["found_by"]) == ("fee-refund-policy#4", "search_confirmed")
+    (options,) = ranker.options
+    assert {"fee-refund-policy#2", "fee-refund-policy#4"} <= set(options)
+    (state,) = ranker.states
+    assert state == {
+        "decision": "Refund the $35 Courtesy Pay fee.",
+        "facts": "The paycheck arrived the same day and the bill posted before it.",
+    }
+    step = policy_step(records)
+    assert (step.kind, step.status, step.prompt_version) == ("jev", "finished", "clause-choice-v1")
+    assert step.output is not None
+    assert (step.output["chosen"], step.output["mismatch"]) == ("fee-refund-policy#4", False)
+
+
+async def test_ana_with_a_mismatched_choice_quotes_the_rules_clause_and_logs_it(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    ranker = FakeRanker("fee-refund-policy#2")
+
+    with structlog.testing.capture_logs() as logs:
+        final, records = await run(5012, FakeClassifier(jev_answers()), reader, ranker)
+
+    clause = final["result"]["clause"]
+    assert (clause["id"], clause["found_by"]) == ("fee-refund-policy#4", "rule_fallback")
+    mismatch = next(log for log in logs if log["event"] == "clause_mismatch")
+    assert (mismatch["expected"], mismatch["chosen"]) == (
+        "fee-refund-policy#4",
+        "fee-refund-policy#2",
+    )
+    output = policy_step(records).output
+    assert output is not None and output["mismatch"] is True
+
+
+async def test_ana_with_a_low_confidence_choice_quotes_the_rules_clause(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    ranker = FakeRanker("fee-refund-policy#4", confidence=0.5)
+
+    final, _ = await run(5012, FakeClassifier(jev_answers()), reader, ranker)
+
+    assert final["result"]["clause"]["found_by"] == "rule_fallback"
+    assert final["result"]["status"] == "ready_to_refund"  # the quote never changes the outcome
+
+
+async def test_ana_with_jev_down_for_the_clause_choice_still_quotes_the_rules_clause(
+    reader: async_sessionmaker[AsyncSession],
+) -> None:
+    final, records = await run(5012, FakeClassifier(jev_answers()), reader, FakeRanker(None))
+
+    clause = final["result"]["clause"]
+    assert (clause["id"], clause["found_by"]) == ("fee-refund-policy#4", "rule_fallback")
+    step = policy_step(records)
+    assert step.status == "finished"
+    assert step.output is not None and step.output["rerank_error"] == "timeout"

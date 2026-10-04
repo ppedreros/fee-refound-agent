@@ -360,14 +360,14 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/providers/replay.py`, `factory.py` (+ test), `recordings/`, `types.py` + every adapter and fake (`prompt_version`), `backend/core/version.py` (+ test), `settings.py` (`APP_VERSION`), `backend/api/main.py`, `routes_health.py`, `resources.py`, `backend/agents/nodes.py`, `docker-compose.yml`, `.env.example`, `frontend/src/components/Header.tsx` (+ test), `frontend/src/api/` (regenerated types, `useHealth`), `tests/unit/providers/test_replay.py` + `test_recordings_have_no_pii.py`, `tests/api/test_health.py`
 **Scope:** M
 
-### - [ ] T30: Policy search: full-text, Jev clause choice, cross-check
+### - [x] T30: Policy search: full-text, Jev clause choice, cross-check
 **Description:** `build_policy_query`, `search_clauses` (`websearch_to_tsquery`, `ts_rank_cd`), the `clause-choice-v1` prompt, and the `find_policy` node: search, then Jev Choice, then cross-check against the decisive rule, with `rule_fallback` and a logged mismatch.
 **Acceptance criteria:**
-- [ ] For Ana, the top 5 include `fee-refund-policy#2` and `#4` (SPEC-policy AC4), and `found_by = search_confirmed`.
-- [ ] A forced mismatch or low confidence leads to `rule_fallback`, the rule's clause, and a logged mismatch.
+- [x] For Ana, the top 5 include `fee-refund-policy#2` and `#4` (SPEC-policy AC4), and `found_by = search_confirmed`.
+- [x] A forced mismatch or low confidence leads to `rule_fallback`, the rule's clause, and a logged mismatch.
 **Verification:** `uv run python -m pytest tests/integration/policy/test_search.py tests/integration/agents/test_graph_scenarios.py -k ana`
 **Dependencies:** T29
-**Files:** `backend/policy/search.py`, `backend/agents/nodes.py`, `backend/agents/prompts/clause-choice-v1.yaml`, `tests/integration/policy/test_search.py`
+**Files:** `backend/policy/search.py`, `backend/agents/nodes.py`, `deps.py` (`ranker`), `backend/agents/prompts/clause-choice-v1.yaml` (+ `load_choice_prompt`), `backend/providers/factory.py`, `backend/api/resources.py`, `routes_cases.py`, `tests/integration/policy/test_search.py`, `tests/unit/policy/test_policy_query.py`, `tests/integration/agents/test_graph_scenarios.py` + `fakes.py` (`FakeRanker`), `tests/unit/providers/test_factory.py`
 **Scope:** S–M
 
 ### Checkpoint 4: Real models and replay

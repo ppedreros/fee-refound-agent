@@ -146,6 +146,13 @@ The only note is `classified_with_backup`. It never changes the status, but it k
 - `result` also carries what Luis's page needs to show the evidence as the agent saw it: `candidates`, `facts` (all rule facts plus `fee_date`), `checks`, `decisive_rule`, `tone`, `classifier_used`, and `evidence` (`fee_day` rows of the fee's sub-account, core `refunds`, `sub_accounts` with balances). It never holds a name or an account number.
 - At this stage `find_policy` always uses `rule_fallback` and `draft` the reply templates (`backend/agents/prompts/templates/refunded.{en,es}.txt`); decline templates come in T31. More than one fee candidate gives `fee_ambiguous` until the Jev fee choice lands in T32.
 
+## How `find_policy` is built (T30)
+
+- **Jev alone.** The clause choice asks Jev directly (`AgentDeps.ranker`, the Jev link in whatever mode it runs), not the Jev → Luna chain: §5 sends a failed clause choice to the rule's clause, and Luna gives no confidence to compare with 0.85.
+- **The question** (`clause-choice-v1`): "Which of these policy clauses is the rule behind the `decision`, given the `facts`?" The state is `{decision, facts}` in plain words ("Refund the $35 Courtesy Pay fee.", the same fact sentences Sol gets), with no member text. Each option's key is the clause id and its description the verbatim clause text; Jev accepts ids such as `fee-refund-policy#4` as keys (live check).
+- **The cross-check.** The chosen clause is quoted (`search_confirmed`) only when it is the deciding rule's clause and Jev's confidence is at least 0.85. Otherwise the rule's clause is quoted (`rule_fallback`), and a `clause_mismatch` warning logs the expected clause, the chosen one and the confidence, as an eval signal. A failed search or an unavailable Jev also quote the rule's clause; the step still finishes, with `rerank_error` in its output. The step records the query, the clauses found, Jev's choice and confidence, and whether they disagreed.
+- **Live check (2026-10-04).** For Ana, Jev chose `fee-refund-policy#4` with confidence 1.00 in 300 ms ($0.000025): `search_confirmed`.
+
 ## Case status values (contract used by `data` and `api`)
 
 `not_checked` · `checking` · `ready_to_refund` · `recommend_no_refund` · `needs_supervisor` · `needs_your_call` · `not_about_fee` · `done`

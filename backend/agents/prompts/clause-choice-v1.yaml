@@ -1,0 +1,9 @@
+# Jev clause choice (SPEC-agent, find_policy; outline in docs/agent-design.md §6).
+# The options are the top clauses from full-text search, added at run time: the clause id as the
+# key and its verbatim text as the description. The state is a summary of the case facts only.
+# Changing the wording means a new version (clause-choice-v2) and re-recording replays.
+
+version: clause-choice-v1
+
+prompt: >-
+  Which of these policy clauses is the rule behind the `decision`, given the `facts`?

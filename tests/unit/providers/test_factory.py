@@ -49,6 +49,7 @@ async def test_with_both_keys_every_provider_is_live() -> None:
     assert isinstance(chain.primary, JevClassifier)
     assert isinstance(chain.backup, OpenAIClassifier)
     assert isinstance(providers.drafter, OpenAIDrafter)
+    assert providers.ranker is chain.primary  # the clause choice asks Jev alone
     assert providers.modes == {"jev": "live", "openai": "live"}
     await providers.close()
 

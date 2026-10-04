@@ -55,6 +55,31 @@ class QuestionSet:
     questions: tuple[Question, ...]
 
 
+class _ChoicePromptFile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: str
+    prompt: str
+
+
+@dataclass(frozen=True)
+class ChoicePrompt:
+    """A Choice whose options come at run time, such as the clauses search found."""
+
+    version: str
+    prompt: str
+
+
+@cache
+def load_choice_prompt(name: str) -> ChoicePrompt:
+    """Load a Choice prompt such as `clause-choice-v1`."""
+    path = PROMPTS_DIR / f"{name}.yaml"
+    parsed = _ChoicePromptFile.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+    if parsed.version != name:
+        raise ValueError(f"{path.name}: version {parsed.version!r} must match the file name")
+    return ChoicePrompt(version=parsed.version, prompt=parsed.prompt)
+
+
 @cache
 def load_prompt(name: str) -> str:
     """A system prompt such as `draft-v1`, sent exactly as written, so its prefix caches."""

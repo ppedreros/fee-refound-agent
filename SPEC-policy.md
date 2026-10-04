@@ -52,6 +52,8 @@ params:
 - **Query building.** `build_policy_query(facts: CaseFacts) -> str` builds the query from case facts only, never from customer text. For example: "courtesy pay fee refund same day deposit limit 12 month good standing".
 - **Lookup by id.** `get_clause(clause_id) -> Clause` is the fallback when the Jev rerank misses or disagrees (D7b).
 
+**As built (T30).** `build_policy_query(fee_type=…, rules=[…])` takes the fee type's words, "fee refund", and a few words for the topic of each rule that ran, the deciding rule first (`verify_posting_order` → "same day deposit posted covered", `check_yearly_limit` → "refunds 12 month period", and so on). The words are joined with `OR`, because `websearch_to_tsquery` joins plain words with AND, and the example query above would then match no clause at all. Results are ranked by `ts_rank_cd`, ties broken by clause id so the order is stable, and limited to 5. For Ana the top 5 are `fee-refund-policy#4`, `#2`, `courtesy-pay-rules#1`, `staff-approval-limits#1` and `fee-refund-policy#3`.
+
 ## Rules (`backend/policy/rules.py`)
 
 All rules are pure functions over typed inputs and return a `RuleResult(passed, reason, clause_id, facts)`. None of them reads the database or the clock.

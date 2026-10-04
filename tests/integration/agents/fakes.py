@@ -8,6 +8,7 @@ from backend.policy.reasons import format_money
 from backend.providers.types import (
     CallMeta,
     ChoiceAnswer,
+    ChoiceQuestion,
     Classification,
     Draft,
     DrafterUnavailable,
@@ -101,6 +102,51 @@ class FakeDrafter:
                 tokens_out=120,
                 tokens_cached=1100,
                 cost_usd=Decimal("0.001710"),
+                attempts=1,
+            ),
+        )
+
+
+class FakeRanker:
+    """Answers the clause choice like Jev would: `choose` (a clause id, one of the options) with
+    `confidence`, or fails like a provider that is down when `choose` is None."""
+
+    def __init__(self, choose: str | None, confidence: float = 0.95) -> None:
+        self.choose = choose
+        self.confidence = confidence
+        self.states: list[Mapping[str, str]] = []
+        self.options: list[list[str]] = []
+
+    async def classify(
+        self,
+        state: Mapping[str, str],
+        questions: Sequence[Question],
+        *,
+        prompt_version: str | None = None,
+        deadline: float | None = None,
+    ) -> Classification:
+        (question,) = questions
+        assert isinstance(question, ChoiceQuestion)
+        self.states.append(state)
+        self.options.append([option.key for option in question.options])
+        if self.choose is None:
+            raise ProviderUnavailable("timeout")
+        return Classification(
+            answers={
+                question.key: ChoiceAnswer(
+                    choice=self.choose,
+                    probabilities={self.choose: self.confidence},
+                    confidence=self.confidence,
+                )
+            },
+            meta=CallMeta(
+                provider="jev",
+                model="jev-1.13.0",
+                mode="live",
+                latency_ms=250,
+                tokens_in=600,
+                tokens_out=0,
+                cost_usd=Decimal("0.000025"),
                 attempts=1,
             ),
         )

@@ -1,19 +1,25 @@
 """The graph's nodes (SPEC-agent, "Nodes"). Each takes the state and the deps and returns its update
 plus a StepReport for the run trace. Load nodes only read; every decision is plain code.
 
-At this stage `find_policy` uses the deciding rule's clause (`rule_fallback`; search comes in
-T30), and declines have no fallback template yet (T31).
+At this stage declines have no fallback template yet (T31), and more than one fee candidate
+gives `fee_ambiguous` until the Jev fee choice lands (T32).
 """
 
 import datetime as dt
 from typing import Any
 
+import structlog
 from pydantic import TypeAdapter
 
 from backend.agents.decide import Decision, case_status, decide
 from backend.agents.deps import AgentDeps
 from backend.agents.draft_postcheck import Problem, check_draft
-from backend.agents.prompts import load_prompt, load_questions, render_template
+from backend.agents.prompts import (
+    load_choice_prompt,
+    load_prompt,
+    load_questions,
+    render_template,
+)
 from backend.agents.state import ClauseRef, DraftReply, GraphState
 from backend.agents.steps import StepReport, run_tool
 from backend.agents.triage_rules import Triage, apply_triage_rules, triage_unavailable
@@ -37,23 +43,33 @@ from backend.policy.rules import (
     find_fee_candidates,
     verify_posting_order,
 )
-from backend.policy.search import get_clause
+from backend.policy.search import build_policy_query, get_clause, search_clauses
 from backend.privacy.mask import MaskingDictionary, mask
 from backend.privacy.sanitize import sanitize
 from backend.providers.chain import ClassifierUnavailable
-from backend.providers.types import CallMeta, DraftInput, ProviderUnavailable
+from backend.providers.types import (
+    CallMeta,
+    ChoiceAnswer,
+    ChoiceQuestion,
+    DraftInput,
+    Option,
+    ProviderUnavailable,
+)
 from backend.tools import queries
 from backend.tools.errors import ToolError
 from backend.tools.models import Message, Transaction
 
 TRIAGE_PROMPT = "triage-v1"
 DRAFT_PROMPT = "draft-v1"
+CLAUSE_PROMPT = "clause-choice-v1"
 DRAFT_TRIES = 2  # a reply that fails the post-check is asked for once more (§6)
 SOMEONE = "The member"  # how the facts for Sol refer to the member: never by name
 TRANSACTIONS_LOOKBACK_DAYS = 30  # find_fee_candidates looks this far back from the message
 REFUNDS_LOOKBACK_DAYS = 400  # covers the 365-day limit window ending on any candidate fee
 READS = ["load_accounts", "load_transactions", "load_refund_history"]
 _FACTS = TypeAdapter(dict[str, Fact])
+
+log = structlog.get_logger()
 
 type Update = dict[str, Any]
 
@@ -266,21 +282,102 @@ async def decide_case(state: GraphState, deps: AgentDeps) -> tuple[Update, StepR
 
 
 async def find_policy(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]:
-    """The clause of the rule that decided the case. Search and the Jev rerank come in T30."""
-    decision = state.decision
-    clause_id = decision.decisive_clause_id if decision is not None else None
-    if decision is not None and ReasonCode.FEE_QUESTION in decision.reasons and state.fee:
-        clause_id = fee_schedule_clause(state.fee.fee_type or "")
+    """D7b: search the clauses with words from the case's facts (never the member's text), let
+    Jev pick the one behind the decision, and quote it only when it is the deciding rule's clause
+    and Jev is sure. Otherwise, or when anything fails, quote the rule's clause; a disagreement is
+    logged as an eval signal. The quote never changes the outcome."""
+    decision, fee = _decision(state), state.fee
+    clause_id = decision.decisive_clause_id
+    if ReasonCode.FEE_QUESTION in decision.reasons and fee:
+        clause_id = fee_schedule_clause(fee.fee_type or "")
     if clause_id is None:
         return {}, StepReport(kind="tool", output={"clause_id": None})
-    asked = {"clause_id": clause_id}
+
+    rules = [decision.decisive_rule] if decision.decisive_rule else []
+    rules += [check.rule for check in state.checks if check.rule not in rules]
+    query = build_policy_query(fee_type=fee.fee_type if fee else None, rules=rules)
     try:
-        clause = await run_tool(deps, lambda s: get_clause(s, clause_id))
-    except ToolError as error:
-        return {}, StepReport(kind="tool", input_masked=asked, error_code=error.reason)
-    ref = ClauseRef(**clause.model_dump(), found_by="rule_fallback")
-    output = {"clause_id": ref.id, "found_by": ref.found_by}
-    return {"clause": ref}, StepReport(kind="tool", input_masked=asked, output=output)
+        found = await run_tool(deps, lambda s: search_clauses(s, query))
+    except ToolError:
+        found = []
+    summary = {
+        "decision": _decision_sentence(decision, fee),
+        "facts": " ".join(_draft_facts(state, decision)),
+    }
+    asked: dict[str, Any] = {"query": query, "state": summary, "options": [c.id for c in found]}
+    output: dict[str, Any] = {"search": [c.id for c in found], "clause_id": clause_id}
+
+    meta, chosen, confidence = None, None, None
+    if found and deps.ranker is not None:
+        prompt = load_choice_prompt(CLAUSE_PROMPT)
+        question = ChoiceQuestion(
+            key="clause",
+            prompt=prompt.prompt,
+            options=[Option(key=clause.id, description=clause.text) for clause in found],
+        )
+        try:
+            answer = await deps.ranker.classify(
+                summary, [question], prompt_version=prompt.version, deadline=deps.deadline
+            )
+        except ProviderUnavailable as error:
+            output["rerank_error"] = error.reason
+        else:
+            meta = answer.meta
+            pick = answer.answers.get("clause")
+            if isinstance(pick, ChoiceAnswer):
+                chosen = next((clause for clause in found if clause.id == pick.choice), None)
+                confidence = pick.confidence
+                output |= {"chosen": pick.choice, "confidence": confidence}
+
+    sure = confidence is not None and confidence >= deps.thresholds.clause_choice_min_confidence
+    if chosen is not None and chosen.id == clause_id and sure:
+        ref = ClauseRef(**chosen.model_dump(), found_by="search_confirmed")
+    else:
+        if "chosen" in output:
+            log.warning(
+                "clause_mismatch",
+                expected=clause_id,
+                chosen=output["chosen"],
+                confidence=confidence,
+            )
+        try:
+            clause = await run_tool(deps, lambda s: get_clause(s, clause_id))
+        except ToolError as error:
+            failed = StepReport(
+                kind="jev" if meta else "tool",
+                input_masked=asked,
+                output=output,
+                meta=meta,
+                prompt_version=CLAUSE_PROMPT if meta else None,
+                error_code=error.reason,
+            )
+            return {}, failed
+        ref = ClauseRef(**clause.model_dump(), found_by="rule_fallback")
+
+    if "chosen" in output:
+        output["mismatch"] = ref.found_by == "rule_fallback"
+    output["found_by"] = ref.found_by
+    return {"clause": ref}, StepReport(
+        kind="jev" if meta else "tool",
+        input_masked=asked,
+        output=output,
+        meta=meta,
+        prompt_version=CLAUSE_PROMPT if meta else None,
+    )
+
+
+def _decision_sentence(decision: Decision, fee: Transaction | None) -> str:
+    """What was decided, in words, for the clause choice."""
+    if fee is None:
+        return "No fee was identified."
+    what = format_money(-fee.amount) + (f" {fee.fee_type} fee" if fee.fee_type else " fee")
+    match decision.recommendation.action:
+        case "refund":
+            return f"Refund the {what}."
+        case "no_refund":
+            return f"Don't refund the {what}."
+        case _:
+            return f"Explain the {what}; no refund was asked for."
 
 
 async def draft(state: GraphState, deps: AgentDeps) -> tuple[Update, StepReport]:
