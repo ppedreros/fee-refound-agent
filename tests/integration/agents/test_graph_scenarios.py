@@ -450,3 +450,54 @@ async def test_more_than_one_request_needs_your_call_and_keeps_the_refund(
     assert result["reasons"] == ["multiple_requests"]
     assert result["recommendation"]["action"] == "refund"
     assert result["draft"] is not None  # it answers the refund; Luis adds the rest
+
+
+# --- The contract: every seed scenario reaches its status (SPEC-data "Seed"; SPEC-agent AC1) ---
+
+# (scenario, case, how Jev answers triage, what Jev picks, expected status, expected reasons)
+CONTRACT: list[tuple[int, int, dict[str, Any], dict[str, str], str, list[str]]] = [
+    (1, 5012, {}, {}, "ready_to_refund", []),
+    (2, 5011, {"intent": "card_issue"}, {}, "not_about_fee", ["not_fee_request"]),
+    (3, 5010, {"intent": "account_update"}, {}, "not_about_fee", ["not_fee_request"]),
+    (4, 5009, {"intent": "statement_question"}, {}, "not_about_fee", ["not_fee_request"]),
+    (5, 5008, {"intent": "fee_question"}, {}, "needs_your_call", ["fee_question"]),
+    (6, 5106, {}, {}, "recommend_no_refund", ["yearly_limit"]),
+    (7, 5107, {}, {}, "recommend_no_refund", ["deposit_not_same_day"]),
+    (8, 5108, {}, {}, "recommend_no_refund", ["not_good_standing"]),
+    (9, 5109, {}, {}, "needs_your_call", ["fee_ambiguous"]),
+    (10, 5110, {}, {"fee": "91002"}, "ready_to_refund", []),
+    (11, 5111, {}, {}, "recommend_no_refund", ["already_refunded"]),
+    (12, 5112, {"manipulation": 0.98}, {}, "needs_your_call", ["manipulation"]),
+    (13, 5113, {"language": "es"}, {}, "ready_to_refund", []),
+    (14, 5114, {"multiple_requests": 0.9}, {}, "needs_your_call", ["multiple_requests"]),
+    (15, 5115, {}, {}, "needs_your_call", ["fee_not_found"]),
+    (16, 5116, {}, {}, "needs_your_call", ["data_mismatch"]),
+    (17, 5117, {}, {}, "needs_supervisor", ["over_limit"]),
+    (18, 5118, {}, {}, "ready_to_refund", []),  # like Ana; it only differs in replay
+]
+
+
+def test_the_contract_covers_all_18_scenarios() -> None:
+    assert [row[0] for row in CONTRACT] == list(range(1, 19))
+
+
+@pytest.mark.parametrize(
+    ("scenario", "case_id", "triage", "picks", "status", "reasons"),
+    CONTRACT,
+    ids=[f"scenario {row[0]}" for row in CONTRACT],
+)
+async def test_every_seed_scenario_reaches_its_expected_status(
+    reader: async_sessionmaker[AsyncSession],
+    scenario: int,
+    case_id: int,
+    triage: dict[str, Any],
+    picks: dict[str, str],
+    status: str,
+    reasons: list[str],
+) -> None:
+    chooser = FakeChooser()
+    chooser.choices.update(picks)
+
+    final, _ = await run(case_id, FakeClassifier(jev_answers(**triage)), reader, chooser)
+
+    assert (final["result"]["status"], final["result"]["reasons"]) == (status, reasons)
