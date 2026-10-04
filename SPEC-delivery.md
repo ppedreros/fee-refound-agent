@@ -138,6 +138,12 @@ The `e2e` job is enabled in CI: it brings the stack up with compose, runs Playwr
 - **Validation.** Ids are positive 32-bit integers, `end` can't be before `start`, a query is 2 to 200 characters and at most 10 clauses come back. A missing conversation says "No conversation 5999." rather than a database error. `search_clauses` uses web-search syntax, so every word must match unless the query says "or".
 - **Checked (2026-10-04).** The in-process test lists the five tools and gets Ana's three Sep 14 rows in posting order with no full account number. Over stdio, an MCP client launched the server with the snippet's command, as Claude Code does, and got the same rows and the accounts as "••4210" and "••4211".
 
+**As built (T44).**
+- **`system.md`** is written by hand: one Mermaid flowchart of the AWS target (CloudFront + S3, the ALB, the ECS Fargate service, a one-off ECS task for bootstrap, RDS with both roles, Secrets Manager, CloudWatch, the NAT gateway to Jev and OpenAI), four lines on why it has that shape, and a table mapping each compose service to it.
+- **`agent-flow.md`** is generated: `uv run python -m scripts.gen_agent_diagram`. The edges come from the compiled graph (conditional ones dotted, with their condition), the prompt versions from the nodes, and the timeouts and retries from `backend/core/config/`. What each node is and does is written once in the script; a node without a description, a conditional edge without a label, or a label for an edge the graph doesn't have stops it. Below the diagram: a table of nodes (kind, what it does, prompt, tool calls, what happens when it fails), the prompts, the fallback chains and the handoffs to Luis. A node that also calls Jev says so ("rule + jev").
+- **Drift.** `tests/unit/scripts/test_agent_diagram.py` fails when the committed file differs from what the script writes now; `--check` does the same from the command line.
+- **Rendered (2026-10-04)** with mermaid-cli and the installed Chrome: both diagrams draw without errors.
+
 ## Acceptance criteria (phase A)
 
 1. A reviewer with only Docker installed can follow the README from a clean clone to Ana's approved refund without reading any other file.

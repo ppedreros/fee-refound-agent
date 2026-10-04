@@ -555,14 +555,14 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `backend/tools/mcp_server.py`, `tests/integration/tools/test_mcp_server.py`, `.mcp.json.example`, `.gitignore`, `pyproject.toml` + `uv.lock` (`mcp`)
 **Scope:** S
 
-### - [ ] T44: Diagrams: system (AWS target) and agent flow
+### - [x] T44: Diagrams: system (AWS target) and agent flow
 **Description:** `docs/diagrams/system.md`: one Mermaid diagram of the AWS production target (CloudFront + S3, ALB, ECS Fargate, RDS with two roles, Secrets Manager, CloudWatch, NAT to Jev and OpenAI), with a note mapping it to compose. `docs/diagrams/agent-flow.md`: the structure, node kinds, prompts (one line each, linked), tool calls, fallback chains and handoffs, generated from the graph's node list.
 **Acceptance criteria:**
-- [ ] Both diagrams render on GitHub and cover everything the brief lists (SPEC-delivery AC2).
-- [ ] The agent diagram matches the built graph. A test or script regenerates it and fails on drift.
+- [x] Both diagrams render on GitHub and cover everything the brief lists (SPEC-delivery AC2). (Rendered with mermaid-cli; GitHub's own preview comes with the next push.)
+- [x] The agent diagram matches the built graph. A test or script regenerates it and fails on drift.
 **Verification:** a Mermaid render check (GitHub preview or `mmdc`); the drift check
 **Dependencies:** Checkpoint 6
-**Files:** `docs/diagrams/system.md`, `docs/diagrams/agent-flow.md`, `scripts/gen_agent_diagram.py`
+**Files:** `docs/diagrams/system.md`, `docs/diagrams/agent-flow.md`, `scripts/gen_agent_diagram.py`, `tests/unit/scripts/test_agent_diagram.py`, `pyproject.toml` (mypy covers `scripts`)
 **Scope:** S
 
 ### - [ ] T46: README and demo script
