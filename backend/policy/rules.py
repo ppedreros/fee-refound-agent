@@ -6,7 +6,8 @@ from collections.abc import Sequence
 from decimal import Decimal
 from itertools import pairwise
 
-from backend.policy.models import Fact, RuleResult
+from backend.policy.facts import Fact
+from backend.policy.models import RuleResult
 from backend.policy.reasons import ReasonCode
 from backend.tools.models import OurRefund, SubAccount, Transaction
 
@@ -60,6 +61,7 @@ def verify_posting_order(
         if next_deposit is not None:
             facts["next_deposit_date"] = next_deposit.date
             facts["next_deposit_amount"] = next_deposit.amount
+            facts["next_deposit_kind"] = next_deposit.kind
         return RuleResult(
             rule="verify_posting_order",
             passed=False,
@@ -79,6 +81,9 @@ def verify_posting_order(
         Decimal("0"),
     )
     deposit_total = sum((t.amount for t in deposits), Decimal("0"))
+    causes = [
+        t for t in day if t.posting_ref < fee.posting_ref and t.amount < 0 and t.kind != "fee"
+    ]
     balance_if_deposit_first = opening + deposit_total + debits_before_fee
     passed = balance_if_deposit_first >= 0
     return RuleResult(
@@ -89,6 +94,12 @@ def verify_posting_order(
         facts={
             "deposit_date": deposits[0].date,
             "deposit_amount": deposit_total,
+            "deposit_kind": (
+                "payroll_deposit"
+                if any(t.kind == "payroll_deposit" for t in deposits)
+                else "deposit"
+            ),
+            **({"cause_kind": causes[-1].kind} if causes else {}),
             "deposit_posted_after_fee": any(t.posting_ref > fee.posting_ref for t in deposits),
             "balance_if_deposit_first": balance_if_deposit_first,
         },

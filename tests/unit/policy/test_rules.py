@@ -101,6 +101,8 @@ def test_anas_worked_example_passes_every_check() -> None:
     assert results[0].facts == {
         "deposit_date": FEE_DAY,
         "deposit_amount": Decimal("1400.00"),
+        "deposit_kind": "payroll_deposit",
+        "cause_kind": "card_payment",
         "deposit_posted_after_fee": True,
         "balance_if_deposit_first": Decimal("1360.00"),
     }

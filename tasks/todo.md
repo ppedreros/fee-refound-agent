@@ -165,11 +165,11 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/policy/rules.py`, `backend/policy/models.py`, `backend/policy/reasons.py` (`ReasonCode` only), `tests/unit/policy/test_rules.py`
 **Scope:** M
 
-### - [ ] T13: Reason catalogue and summaries
+### - [x] T13: Reason catalogue and summaries
 **Description:** The `ReasonCode` enum with its groups, EN and ES templates, and next steps, plus `render_reason` and `render_summary` (including the counterfactual sentence).
 **Acceptance criteria:**
-- [ ] Every code renders in EN and ES with sample facts. The forbidden-words and gendered-pronoun tests pass (SPEC-policy AC5).
-- [ ] `render_summary` for Ana gives "The paycheck arrived the same day and the bill posted before it." and "…would have stayed at $1,360."
+- [x] Every code renders in EN and ES with sample facts. The forbidden-words and gendered-pronoun tests pass (SPEC-policy AC5).
+- [x] `render_summary` for Ana gives "The paycheck arrived the same day and the bill posted before it." and "…would have stayed at $1,360."
 **Verification:** `uv run python -m pytest tests/unit/policy/test_reasons.py`
 **Dependencies:** T12
 **Files:** `backend/policy/reasons.py`, `tests/unit/policy/test_reasons.py`

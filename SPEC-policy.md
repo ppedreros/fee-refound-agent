@@ -101,6 +101,8 @@ Each code has an English and a Spanish template, and one next step. Luis's UI us
 
 `render_summary(status, recommendation, facts, lang) -> str | None` renders the one-sentence "why" shown on the decision card. For example, for `ready_to_refund`: "The paycheck arrived the same day and the bill posted before it." For the posting-order section it adds the counterfactual: "If the paycheck had posted first, the balance would have stayed at $1,360." The same template rules apply.
 
+**How it is built (T13).** The card sentence and the fee-day sentence are two functions: `render_summary(status, facts, lang, *, first_name, reason=None)` (`ready_to_refund`: the posting-order sentence; `recommend_no_refund`: the decisive reason's message; `needs_supervisor`: "The policy allows this $60 refund, but it is above your $50 limit."; any other status: none, because the card lists reasons) and `render_counterfactual(facts, lang)` for `evidence.fee_day.summary`. `verify_posting_order` adds `deposit_kind` and `cause_kind` to its facts, so the text says "paycheck" or "deposit", and "bill" (a card payment) or "payment". Policy declines share the next step "Send the reply, or refund anyway". Dates read "Sep 14" (EN) and "14 de septiembre" (ES); money reads "$1,360" and "$35.50". `Fact` lives in `backend/policy/facts.py`.
+
 **Template rules**
 
 - **Plain language.** No internal terms. A test fails if any template contains words such as "id", "Jev", "LLM", "model", "confidence", "null", "error", "code" or "transaction id".
