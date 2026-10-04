@@ -105,6 +105,15 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 | `not_about_fee` | This message isn't about a fee | Topic label | — | Check again |
 | `done` | Done | "Refunded $35 and replied · Luis · Oct 3, 10:42", or "Replied without a refund · …" | — | — |
 
+**As built (T24).**
+- **Buttons** come from one pure function (`features/case/cardButtons.ts`) over `status`, `actions`, `recommendation` and `can_run`. `approve` (or `edit` when there is no draft) is the primary action and is labelled by the recommendation: "Refund $35 and send reply", or "Send reply" for a decline. `reject` reads "Don't refund" against a refund and "Refund anyway" otherwise. `reply_only` reads "Send a reply only" for `needs_supervisor` and "Send reply" elsewhere, where it is the primary action. `edit` is never a button of its own. "Check this case" is the card's primary action for `not_checked`, and "Check again" is the card's only action for `not_about_fee`; for the other checked statuses "Check again" sits in the case header, top right, as in the layout.
+- **Fee picker.** With `can_pick_fee`, the radio rows and "Check again with this fee" come first (it is the reason's next step), and "Send reply" takes the secondary style. The button stays disabled until a fee is picked.
+- **Bodies.** `needs_supervisor` shows the summary ("The policy allows this $60 refund, but it is above your $50 limit.") before the fixed sentence. `checking` shows a thin Terracotta line and "We're reading the message and checking the rules. This takes a few seconds." Notes are quiet grey lines under the body.
+- **Checking, until the live steps (T36).** After `POST /run`, the case query asks again every second while the status is `checking`; a 409 `run_in_progress` is followed the same way, without an error. When the status leaves `checking`, the queue is refreshed too. The page keeps the previous result while a check runs, because the API serves the latest completed run.
+- **Header.** "Ana Torres · Overdraft fee", the latest member message quoted on one line with its date, and the accounts as "Primary Savings, Everyday Checking ••4210 · Vacation Savings ••4211". The "Show" reveal waits for its endpoint, and "Replay mode" for `/health` to report modes (T29).
+- **Evidence.** Sections open with CSS grid rows and are `inert` while closed. "How this was prepared" puts the three parallel reads on one line ("Looking at accounts and transactions") with the slowest time, shows costs with two significant digits ("$0.000032"), and adds the replay note only when Jev answered from recordings. Rule facts are not shown: the sections already present them in words.
+- Tests run with `TZ=UTC`, so dates read the same on every machine. Phone widths are checked at 520 px with headless Chrome for now; Chrome on Windows won't open a narrower window, and Playwright's device emulation comes in T42.
+
 **`needs_your_call` specifics**
 
 - **`fee_ambiguous`.** Shows the candidates as radio rows ("Sep 14 · −$35.00 · Courtesy Pay fee"). The action is "Check again with this fee", which runs `POST /run` with that `fee_txn_id`.

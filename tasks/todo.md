@@ -286,14 +286,14 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `frontend/src/api/` (`openapi.json`, `schema.d.ts`, `client.ts`, `hooks.ts`), `frontend/src/features/queue/Queue.tsx` (+ test), `frontend/src/lib/` (`useUrlState.ts`, `format.ts`), `frontend/src/test/` (`fixtures.ts`, `render.tsx`), `frontend/src/copy/en.ts`, `frontend/src/App.tsx` (+ test), `frontend/src/main.tsx`, `frontend/vite.config.ts`, `frontend/package.json`, `backend/api/openapi.py`, `backend/api/schemas.py` (closed sets), `tests/unit/api/test_openapi.py`
 **Scope:** M
 
-### - [ ] T24: UI: case pane (decision card, reply, evidence), check with polling
+### - [x] T24: UI: case pane (decision card, reply, evidence), check with polling
 **Description:** The case header, a decision card for every status in SPEC-ui (driven only by the API), the reply (read-only here; editing comes in T25), the evidence sections (posting-order table with marked rows and the summary, refunds, standing, policy quote, conversation, how it was prepared), and "Check this case". For now the check polls until it's done; SSE comes in T36.
 **Acceptance criteria:**
-- [ ] Table-driven test: each status fixture renders exactly the title, primary label and secondary actions from SPEC-ui (AC1). Buttons come only from `actions`, `can_run` and `can_pick_fee` (AC2).
-- [ ] Ana's posting-order table marks the fee and deposit rows and shows the counterfactual sentence (AC7).
+- [x] Table-driven test: each status fixture renders exactly the title, primary label and secondary actions from SPEC-ui (AC1). Buttons come only from `actions`, `can_run` and `can_pick_fee` (AC2).
+- [x] Ana's posting-order table marks the fee and deposit rows and shows the counterfactual sentence (AC7).
 **Verification:** `npm --prefix frontend test -- DecisionCard EvidenceDay` · manual: check Ana in compose
 **Dependencies:** T20, T23
-**Files:** `frontend/src/features/case/CasePane.tsx`, `DecisionCard.tsx` (+ test), `Evidence.tsx`, `EvidenceDay.tsx` (+ test), `frontend/src/copy/en.ts`
+**Files:** `frontend/src/features/case/CasePane.tsx` (+ test), `DecisionCard.tsx` (+ test), `cardButtons.ts`, `Evidence.tsx`, `EvidenceDay.tsx` (+ test), `Reply.tsx`, `frontend/src/components/ErrorBanner.tsx`, `frontend/src/copy/en.ts` (+ `copy.test.tsx`, AC6 across every status), `frontend/src/test/caseFixtures.ts`, `frontend/src/api/hooks.ts`, `frontend/src/lib/format.ts`, `frontend/src/index.css`, `frontend/src/App.tsx`
 **Scope:** M
 
 ### - [ ] T25: UI: decision actions

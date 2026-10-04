@@ -1,12 +1,16 @@
 // TanStack Query hooks over the client (SPEC-ui, "Data and state").
-import { QueryClient, useQuery } from "@tanstack/react-query";
+import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ApiError, api, type View } from "./client";
 
 export const queryKeys = {
   cases: (view: View) => ["cases", view] as const,
+  allCases: ["cases"] as const,
   case: (id: number) => ["case", id] as const,
 };
+
+/** While a case is being checked, ask again this often (live steps replace this later). */
+export const POLL_MS = 1000;
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
@@ -25,4 +29,28 @@ function isClientError(error: unknown): boolean {
 
 export function useCases(view: View) {
   return useQuery({ queryKey: queryKeys.cases(view), queryFn: () => api.listCases(view) });
+}
+
+export function useCase(id: number) {
+  return useQuery({
+    queryKey: queryKeys.case(id),
+    queryFn: () => api.getCase(id),
+    staleTime: 5000,
+    refetchInterval: (query) => (query.state.data?.status === "checking" ? POLL_MS : false),
+  });
+}
+
+/** "Check this case": start a check (optionally with the fee Luis picked), then follow it. A
+ * check that is already running is followed the same way. */
+export function useRunCase(id: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (feeTxnId?: number) => api.runCase(id, feeTxnId),
+    onSettled: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.case(id) }),
+        client.invalidateQueries({ queryKey: queryKeys.allCases }),
+      ]);
+    },
+  });
 }

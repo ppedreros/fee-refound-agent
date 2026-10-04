@@ -27,6 +27,15 @@
   --color-success: #1f7a4d;
   --color-error: #b42318;
 
+  /* Content appears with opacity and a 4 px rise; nothing moves with reduced motion. */
+  --animate-rise: rise 200ms ease-out;
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
 }
