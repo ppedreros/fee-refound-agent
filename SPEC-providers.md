@@ -108,6 +108,8 @@ These are the defaults from `docs/agent-design.md` §5. They live in `backend/co
 4. **Card numbers** (13–19 digits that pass a Luhn check) become `[CARD]`.
 5. **Any other run of 6 or more digits** becomes `[NUMBER]`.
 
+**Order as built (T14).** Emails are replaced before the known values, so a name inside an address (`ana.t@example.com`) doesn't split it into `[FIRST_NAME].t@…`; known values still come before every other pattern, so account numbers become `[ACCOUNT_n]`, not `[NUMBER]`. A second distinct value of the same kind is numbered (`[PHONE_2]`), so `unmask` can restore each one; accounts are always numbered.
+
 **What is not masked:** amounts like "$500", dates, and merchant names such as "CITY POWER & LIGHT". The fee choice and the manipulation check need them.
 
 **The mapping:**

@@ -175,11 +175,11 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/policy/reasons.py`, `tests/unit/policy/test_reasons.py`
 **Scope:** S
 
-### - [ ] T14: Sanitising and masking (TDD)
+### - [x] T14: Sanitising and masking (TDD)
 **Description:** `sanitize` (NFKC, control and invisible characters, 2,000-character cap), plus `MaskingDictionary` (plain values) with `mask` and `unmask`.
 **Acceptance criteria:**
-- [ ] The example mask from SPEC-providers AC6 produces the exact expected output. "$500", "Sep 14" and "CITY POWER & LIGHT" are untouched (AC7).
-- [ ] U+202E and U+200B are stripped, and the cap sets `truncated` (AC8). The mapping never prints its values.
+- [x] The example mask from SPEC-providers AC6 produces the exact expected output. "$500", "Sep 14" and "CITY POWER & LIGHT" are untouched (AC7).
+- [x] U+202E and U+200B are stripped, and the cap sets `truncated` (AC8). The mapping never prints its values.
 **Verification:** `uv run python -m pytest tests/unit/privacy`
 **Dependencies:** T1 (can run in parallel with T11–T13)
 **Files:** `backend/privacy/sanitize.py`, `backend/privacy/mask.py`, `tests/unit/privacy/test_sanitize.py`, `tests/unit/privacy/test_mask.py`
