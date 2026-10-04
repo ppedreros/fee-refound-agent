@@ -266,14 +266,14 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `backend/db/core_banking.py`, `tests/integration/db/test_core_banking.py`
 **Scope:** S
 
-### - [ ] T22: API: decision endpoint and the required API test
+### - [x] T22: API: decision endpoint and the required API test
 **Description:** `POST /cases/{id}/decision` with the `Idempotency-Key` header, the validation order from SPEC-api (limit before action), the effects in one transaction (decision, refund, reply message, closed conversation, case `done`, audit events, `eval_candidates`), and the `actions` rules per status.
 **Acceptance criteria:**
-- [ ] **The required API test:** run 5012 → `GET` → approve → the same request again gives the same 200 → exactly one refund transaction, balance +$35 (SPEC-api AC1).
-- [ ] A new key on the decided case gives 409. The same key with a different body gives 422. A stale run gives 409. A disallowed action gives 422 (AC2, AC3).
+- [x] **The required API test:** run 5012 → `GET` → approve → the same request again gives the same 200 → exactly one refund transaction, balance +$35 (SPEC-api AC1).
+- [x] A new key on the decided case gives 409. The same key with a different body gives 422. A stale run gives 409. A disallowed action gives 422 (AC2, AC3).
 **Verification:** `uv run python -m pytest tests/api/test_happy_path.py tests/api/test_decision_rules.py`
 **Dependencies:** T20, T21
-**Files:** `backend/api/routes_decision.py`, `backend/api/decision_service.py`, `backend/api/schemas.py`, `tests/api/test_happy_path.py`, `tests/api/test_decision_rules.py`
+**Files:** `backend/api/routes_decision.py`, `backend/api/decision_service.py`, `backend/api/schemas.py`, `backend/api/actions.py` (`actions_for`, shared with the view), `backend/api/resources.py` (policy numbers, clock), `backend/core/settings.py` (`STAFF_ID`), `docker-compose.yml`, `tests/api/test_happy_path.py`, `tests/api/test_decision_rules.py`
 **Scope:** M
 
 ### - [ ] T23: UI: queue pane

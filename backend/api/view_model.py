@@ -12,7 +12,7 @@ from typing import Any
 from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.actions import allowed_actions
+from backend.api.actions import actions_for
 from backend.api.errors import NOT_FOUND, ApiError
 from backend.api.queue import MEMBER_AUTHOR, OPEN_STATUSES
 from backend.api.schemas import (
@@ -54,7 +54,7 @@ from backend.db.models import (
     SubAccount,
 )
 from backend.policy.facts import Fact
-from backend.policy.loader import PolicyParams, current_policy
+from backend.policy.loader import PolicyParams
 from backend.policy.reasons import (
     GROUPS,
     Language,
@@ -77,10 +77,7 @@ _MONEY = re.compile(r"^-?\d+(\.\d+)?$")  # the run stores money as text; counts 
 type Json = dict[str, Any]
 
 
-async def load_case_view(
-    session: AsyncSession, case_id: int, params: PolicyParams | None = None
-) -> CaseView:
-    params = params or current_policy().params
+async def load_case_view(session: AsyncSession, case_id: int, params: PolicyParams) -> CaseView:
     conversation = await session.get(Conversation, case_id)
     if conversation is None:
         raise ApiError(404, *NOT_FOUND)
@@ -101,7 +98,6 @@ async def load_case_view(
     recommendation = _recommendation(result)
     draft = _draft(result, first_name)
     candidates = result.get("candidates", [])
-    over_limit = fee is not None and -Decimal(fee["amount"]) > params.staff_limit_usd
     return CaseView(
         id=case_id,
         conversation=await _conversation(session, conversation, full_name),
@@ -128,13 +124,7 @@ async def load_case_view(
         draft=draft,
         run=await _run(session, run) if run else None,
         decision=await _decision(session, case_id),
-        actions=allowed_actions(
-            status,
-            recommendation.action,
-            has_draft=draft is not None,
-            has_fee=fee is not None,
-            over_limit=over_limit,
-        ),
+        actions=actions_for(status, result, params.staff_limit_usd),
         can_run=conversation.status in OPEN_STATUSES and not running and status != "done",
         can_pick_fee=ReasonCode.FEE_AMBIGUOUS.value in result.get("reasons", [])
         and bool(candidates),

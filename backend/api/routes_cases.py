@@ -40,8 +40,9 @@ async def list_cases(
 
 @router.get("/cases/{case_id}")
 async def get_case(request: Request, case_id: Annotated[int, Path(ge=1)]) -> CaseView:
-    async with _resources(request).writer() as session:
-        return await load_case_view(session, case_id)
+    resources = _resources(request)
+    async with resources.writer() as session:
+        return await load_case_view(session, case_id, resources.policy_params)
 
 
 @router.post("/cases/{case_id}/run", status_code=status.HTTP_202_ACCEPTED)

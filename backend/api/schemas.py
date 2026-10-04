@@ -2,9 +2,10 @@
 
 import datetime as dt
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 
 class QueueItem(BaseModel):
@@ -202,3 +203,25 @@ class CaseView(BaseModel):
     actions: list[str]
     can_run: bool
     can_pick_fee: bool
+
+
+# --- POST /cases/{id}/decision ---
+
+
+class DecisionRequest(BaseModel):
+    """What Luis decided. The amount is never here: it is always the run's fee (D-api-3). Length
+    and content rules are checked by the handler, in the spec's order."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: UUID
+    action: Literal["approve", "edit", "reject", "reply_only"]
+    reply_text: str = Field(max_length=20_000)
+    reason: str | None = Field(default=None, max_length=5_000)
+
+
+class DecisionResult(BaseModel):
+    decision_id: UUID
+    refunded: bool
+    amount: Decimal | None  # what this decision refunded
+    case_status: str

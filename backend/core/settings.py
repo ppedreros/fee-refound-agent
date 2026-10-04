@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, SecretStr, ValidationError, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, SecretStr, ValidationError, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     owner_database_url: SecretStr | None = None  # bootstrap only; compose gives it to migrate
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     masking_salt: SecretStr  # HMAC key for member ids in logs
+    staff_id: str = Field(default="S07", pattern=r"^[A-Z][A-Z0-9]{1,15}$")  # who uses the UI
     host: str = "127.0.0.1"
     port: int = 8000
 

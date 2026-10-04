@@ -51,6 +51,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       MASKING_SALT: ${MASKING_SALT:?set MASKING_SALT in .env}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      STAFF_ID: ${STAFF_ID:-S07}
     ports:
       - "8000:8000"
     # Every probe writes an access log line: probe every 2 s while starting, then every 30 s.

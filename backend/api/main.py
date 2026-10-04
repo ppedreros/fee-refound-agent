@@ -13,6 +13,7 @@ from backend.api.errors import install_error_handlers
 from backend.api.middleware import RequestIdMiddleware
 from backend.api.resources import AppResources, default_resources
 from backend.api.routes_cases import router as cases_router
+from backend.api.routes_decision import router as decision_router
 from backend.api.routes_health import router as health_router
 from backend.core.logging import configure_logging
 from backend.core.settings import Settings, load_settings
@@ -51,6 +52,7 @@ def create_app(
     install_error_handlers(app)
     app.include_router(health_router)
     app.include_router(cases_router)
+    app.include_router(decision_router)
     return app
 
 

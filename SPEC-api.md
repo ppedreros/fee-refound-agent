@@ -197,6 +197,17 @@ Rules that apply whatever the status:
 - `approve` is offered only when there is a draft. `edit` is offered when there is a draft, or when Luis writes one himself.
 - Actions that would refund are never offered when the amount is above the limit.
 
+**As built (T22).**
+- **One case at a time.** The handler runs in one `app_writer` transaction that first locks the case row (`SELECT … FOR UPDATE`). Two requests for the same case, with the same key or not, are decided one after the other, so the second one finds the first decision (a stored response, `idempotency_mismatch` or `already_decided`). If the same key is used at the same moment on another case, the unique key makes one insert fail, and the handler decides again, which answers like any repeated key.
+- **The stored response** is rebuilt from the `decisions` row and its `refunds` row; there is no separate response table. "Same body" compares the run, the action, the reply and the reason, each trimmed.
+- **Messages.** A missing or malformed key is 422 `invalid_idempotency_key` ("We couldn't send this decision. Please try again."). A case that was never checked has no run to decide on, so it answers `stale_run`. A disallowed action is "That action isn't available for this case." `already_decided` names the staff member and the decision time (UTC, `HH:MM`).
+- **Reply and reason.** The reply is trimmed and keeps its line breaks; control characters other than newline, carriage return and tab are refused (`invalid_reply`). `approve` takes no reason; `reject` needs 10–500 characters; `edit` and `reply_only` take an optional one up to 500 (`invalid_reason`). Any other body field, such as an amount, is a 422 `invalid_request`.
+- **Refunded.** `refunded` and `amount` describe what this decision moved. If the core reports the fee as already refunded (`already_done`), the decision still closes the case, with `refunded: false`.
+- **Audit details** hold no personal data: `decision_made` `{action, refunded}`, `refund_posted` `{fee_txn_id, refund_txn_id, amount}`, `reply_sent` `{message_id, chars}`, each with the run and the request id.
+- **Eval candidate** (for `edit`, `reject`, `reply_only`): `masked_input` holds the case and run ids and the triage step's masked input; `expected` holds the run's status, Luis's action, his outcome as the recommendation (`refund`, `no_refund` or `none`), his edited reply as `reference_text` (for `edit`) and his reason, both masked with the member's names and account numbers.
+- **Identity and resources.** `STAFF_ID` is a setting (default `S07`, compose passes it to the backend). `AppResources` also holds the policy numbers and the clock, so the view, the decision and the tests share one source.
+- Until the events stream lands (T36), the API test waits for the background run instead of `done` on the stream.
+
 ## Auto-approve (flag off; tests only)
 
 When `AUTO_APPROVE_ENABLED=true` (never in the shipped config), the run endpoint's completion hook does the following for a run with `would_auto_approve`:

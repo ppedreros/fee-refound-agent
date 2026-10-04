@@ -10,7 +10,9 @@ from dataclasses import dataclass, field
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from typesafe_sdk import AsyncTypeSafeClient
 
+from backend.core.clock import Clock, SystemClock
 from backend.core.settings import Settings
+from backend.policy.loader import PolicyParams, current_policy
 from backend.providers.config import providers_config
 from backend.providers.jev import JevClassifier
 from backend.providers.types import (
@@ -29,6 +31,8 @@ class AppResources:
     classifier: Classifier
     provider_modes: dict[str, str]
     closers: list[Callable[[], Awaitable[None]]] = field(default_factory=list)
+    policy_params: PolicyParams = field(default_factory=lambda: current_policy().params)
+    clock: Clock = field(default_factory=SystemClock)
 
     def __post_init__(self) -> None:
         self.writer = async_sessionmaker(self.writer_engine, expire_on_commit=False)

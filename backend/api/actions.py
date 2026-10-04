@@ -3,7 +3,9 @@
 The API computes them so the UI never guesses, and the decision endpoint enforces the same list.
 """
 
-from typing import Literal
+from collections.abc import Mapping
+from decimal import Decimal
+from typing import Any, Literal
 
 type Action = Literal["approve", "edit", "reject", "reply_only"]
 
@@ -33,6 +35,28 @@ def allowed_actions(
     if over_limit:  # nothing that would move money above Luis's limit (D-api-1)
         actions = [a for a in actions if not would_refund(a, recommendation)]
     return actions
+
+
+def actions_for(status: str, result: Mapping[str, Any], staff_limit: Decimal) -> list[Action]:
+    """The actions for a case from its latest run's stored `result`."""
+    fee = result.get("fee")
+    return allowed_actions(
+        status,
+        recommendation_of(result),
+        has_draft=bool(result.get("draft")),
+        has_fee=fee is not None,
+        over_limit=fee is not None and fee_amount(fee) > staff_limit,
+    )
+
+
+def recommendation_of(result: Mapping[str, Any]) -> str:
+    action: str = (result.get("recommendation") or {}).get("action", "none")
+    return action
+
+
+def fee_amount(fee: Mapping[str, Any]) -> Decimal:
+    """What refunding the fee would move: the fee transaction's amount, as a positive number."""
+    return -Decimal(fee["amount"])
 
 
 def would_refund(action: Action, recommendation: str) -> bool:
