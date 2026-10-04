@@ -104,7 +104,7 @@ def build(
         live = build_providers(settings.model_copy(update={"provider_mode": "live"}), record=record)
         providers = _filled(replay, live) if record else live
     if classifier == "backup":
-        providers = replace(providers, classifier=_chain(providers).backup)
+        providers = replace(providers, classifier=chain_of(providers).backup)
     return providers
 
 
@@ -126,7 +126,7 @@ def store_without(recordings: Sequence[Recording], root: Path) -> ReplayStore:
 
 
 def _filled(replay: Providers, live: Providers) -> Providers:
-    replay_chain, live_chain = _chain(replay), _chain(live)
+    replay_chain, live_chain = chain_of(replay), chain_of(live)
     jev = FillClassifier(replay_chain.primary, live_chain.primary)
     return Providers(
         classifier=ClassifierChain(jev, FillClassifier(replay_chain.backup, live_chain.backup)),
@@ -137,7 +137,7 @@ def _filled(replay: Providers, live: Providers) -> Providers:
     )
 
 
-def _chain(providers: Providers) -> ClassifierChain:
+def chain_of(providers: Providers) -> ClassifierChain:
     if not isinstance(providers.classifier, ClassifierChain):
         raise TypeError("expected the Jev-then-Luna chain")
     return providers.classifier

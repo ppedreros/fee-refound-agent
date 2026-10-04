@@ -1,5 +1,5 @@
 {
-  "mode": "replay",
+  "mode": "live",
   "date": "2026-10-04",
   "policy_version": "0ad3a26dcd793261",
   "models": {
@@ -9,8 +9,8 @@
   },
   "classifier": "jev",
   "summary": {
-    "cases": 37,
-    "passed": 37,
+    "cases": 33,
+    "passed": 33,
     "pass_rate": 1.0,
     "by_kind": {
       "refund": {
@@ -22,63 +22,63 @@
         "cases": 4
       },
       "edge": {
-        "passed": 21,
-        "cases": 21
+        "passed": 17,
+        "cases": 17
       }
     },
-    "manual_review_rate": 0.4324,
+    "manual_review_rate": 0.3939,
     "clear_cases": 8,
     "latency_ms": {
-      "p50": 3402,
-      "p95": 5206,
-      "basis": "our code, plus each model call's recorded time"
+      "p50": 3467,
+      "p95": 5988,
+      "basis": "measured"
     },
-    "cost_per_case_usd": "0.0009390810810810810810810810811",
+    "cost_per_case_usd": "0.0009761515151515151515151515152",
     "per_step": {
       "triage": {
-        "calls": 35,
-        "avg_latency_ms": 217,
-        "avg_cost_usd": "0.00003734285714285714285714285714"
+        "calls": 33,
+        "avg_latency_ms": 249,
+        "avg_cost_usd": "0.00003575757575757575757575757576"
       },
       "fee_choice": {
         "calls": 2,
-        "avg_latency_ms": 180,
+        "avg_latency_ms": 288,
         "avg_cost_usd": "0.0000175"
       },
       "clause_choice": {
-        "calls": 27,
-        "avg_latency_ms": 246,
-        "avg_cost_usd": "0.00002492592592592592592592592593"
+        "calls": 25,
+        "avg_latency_ms": 310,
+        "avg_cost_usd": "0.00002492"
       },
       "draft": {
-        "calls": 26,
-        "avg_latency_ms": 3134,
-        "avg_cost_usd": "0.001258884615384615384615384615"
+        "calls": 23,
+        "avg_latency_ms": 3087,
+        "avg_cost_usd": "0.001320652173913043478260869565"
       }
     },
     "comparison": [
       {
         "classifier": "jev",
-        "cases": 34,
-        "right": 34,
-        "p50_latency_ms": 218,
-        "cost_per_case_usd": "0.00003573529411764705882352941176",
+        "cases": 33,
+        "right": 33,
+        "p50_latency_ms": 228,
+        "cost_per_case_usd": "0.00003575757575757575757575757576",
         "estimate": false
       },
       {
         "classifier": "luna",
-        "cases": 34,
-        "right": 33,
-        "p50_latency_ms": 1103,
-        "cost_per_case_usd": "0.00009270588235294117647058823529",
+        "cases": 33,
+        "right": 32,
+        "p50_latency_ms": 1462,
+        "cost_per_case_usd": "0.00009272727272727272727272727273",
         "estimate": false
       },
       {
         "classifier": "sol",
-        "cases": 34,
+        "cases": 33,
         "right": null,
         "p50_latency_ms": null,
-        "cost_per_case_usd": "0.001855411764705882352941176471",
+        "cost_per_case_usd": "0.001855272727272727272727272727",
         "estimate": true
       }
     ]
@@ -87,58 +87,40 @@
     {
       "id": "fallback-every-classifier-missing",
       "kind": "edge",
-      "skipped": null,
-      "passed": true,
-      "status": "needs_your_call",
-      "reasons": [
-        "classifier_down"
-      ],
-      "notes": [],
-      "recommendation": {
-        "action": "refund",
-        "amount": "35.00",
-        "fee_txn_id": 88002
-      },
-      "clause_id": "fee-refund-policy#4",
-      "draft_source": "model",
+      "skipped": "not applicable",
+      "passed": false,
+      "status": null,
+      "reasons": null,
+      "notes": null,
+      "recommendation": null,
+      "clause_id": null,
+      "draft_source": null,
       "failed": []
     },
     {
       "id": "fallback-jev-missing",
       "kind": "edge",
-      "skipped": null,
-      "passed": true,
-      "status": "ready_to_refund",
-      "reasons": [],
-      "notes": [
-        "classified_with_backup"
-      ],
-      "recommendation": {
-        "action": "refund",
-        "amount": "35.00",
-        "fee_txn_id": 88002
-      },
-      "clause_id": "fee-refund-policy#4",
-      "draft_source": "model",
+      "skipped": "not applicable",
+      "passed": false,
+      "status": null,
+      "reasons": null,
+      "notes": null,
+      "recommendation": null,
+      "clause_id": null,
+      "draft_source": null,
       "failed": []
     },
     {
       "id": "fallback-sol-missing",
       "kind": "edge",
-      "skipped": null,
-      "passed": true,
-      "status": "needs_your_call",
-      "reasons": [
-        "drafter_down"
-      ],
-      "notes": [],
-      "recommendation": {
-        "action": "refund",
-        "amount": "35.00",
-        "fee_txn_id": 88002
-      },
-      "clause_id": "fee-refund-policy#4",
-      "draft_source": "template",
+      "skipped": "not applicable",
+      "passed": false,
+      "status": null,
+      "reasons": null,
+      "notes": null,
+      "recommendation": null,
+      "clause_id": null,
+      "draft_source": null,
       "failed": []
     },
     {
@@ -719,20 +701,14 @@
     {
       "id": "seed-18-unrecorded-answers",
       "kind": "edge",
-      "skipped": null,
-      "passed": true,
-      "status": "needs_your_call",
-      "reasons": [
-        "classifier_down"
-      ],
-      "notes": [],
-      "recommendation": {
-        "action": "refund",
-        "amount": "35.00",
-        "fee_txn_id": 91802
-      },
-      "clause_id": "fee-refund-policy#4",
-      "draft_source": "model",
+      "skipped": "not applicable",
+      "passed": false,
+      "status": null,
+      "reasons": null,
+      "notes": null,
+      "recommendation": null,
+      "clause_id": null,
+      "draft_source": null,
       "failed": []
     },
     {

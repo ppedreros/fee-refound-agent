@@ -1,0 +1,56 @@
+{
+  "mode": "replay",
+  "date": "2026-10-04",
+  "sweep": "intent_min_confidence",
+  "current": "0.8",
+  "rows": [
+    {
+      "value": "0.60",
+      "cases": 37,
+      "passed": 36,
+      "manual_review_rate": 0.4054
+    },
+    {
+      "value": "0.65",
+      "cases": 37,
+      "passed": 36,
+      "manual_review_rate": 0.4054
+    },
+    {
+      "value": "0.70",
+      "cases": 37,
+      "passed": 37,
+      "manual_review_rate": 0.4324
+    },
+    {
+      "value": "0.75",
+      "cases": 37,
+      "passed": 37,
+      "manual_review_rate": 0.4324
+    },
+    {
+      "value": "0.80",
+      "cases": 37,
+      "passed": 37,
+      "manual_review_rate": 0.4324
+    },
+    {
+      "value": "0.85",
+      "cases": 37,
+      "passed": 37,
+      "manual_review_rate": 0.4324
+    },
+    {
+      "value": "0.90",
+      "cases": 37,
+      "passed": 37,
+      "manual_review_rate": 0.4324
+    },
+    {
+      "value": "0.95",
+      "cases": 37,
+      "passed": 37,
+      "manual_review_rate": 0.4324
+    }
+  ]
+}

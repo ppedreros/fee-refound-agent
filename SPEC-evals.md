@@ -112,6 +112,20 @@ The numbers above illustrate the format only; real values come from the reports.
 - **CI.** The `evals` job runs `--mode replay` with no keys against its own Postgres service, and fails below 100%.
 - **What the first runs found (2026-10-04).** Two ordinary paraphrases, one terse and one upset, went to Luis as possible manipulation, and the sanitiser kept the bidi isolates. Both were fixed before this task closed: `triage-v2` (SPEC-agent, "Prompts") and the sanitiser (SPEC-providers). Then: replay 37 of 37 with no keys, and the recording run 33 of 33 (its answers are partly live, so it is not the live pass rate; that comes in T39).
 
+**As built (T39).**
+- **Every model call is metered** (`evals/meter.py`): its role (triage, fee choice, clause choice, draft, from the prompt version) and its own metadata. In replay mode that is the recorded live call's latency and cost, so a replay report prices and times a run that made no calls.
+- **Latency.** p50 and p95 by nearest rank, over the counted cases. Live: each run's measured wall clock. Replay: our code's wall clock plus each call's recorded time, which is what the run took live without retries; the report says which basis it used. **Cost per case** is the average of each case's calls; **per step** averages each model role over its calls.
+- **Classifier comparison** (`evals/compare.py`). After a run with Jev, the backup is asked exactly what Jev was asked for each counted case (from the recordings in replay, live in live mode), and both answers go through the triage rules. The column is "right", not "accuracy": a verdict is right when it would route the case as the case expects (its triage codes are all there, a case that shouldn't need Luis gets no extra one, and the topic and language match where the case states them). A backup that doesn't answer counts as wrong. Sol's line uses Luna's token counts (the same tokenizer) at Sol's prices and says "not measured".
+- **Sweep.** `--sweep <threshold>=low:high:step` takes any name in `thresholds.yaml`, or the start of exactly one (`intent`, `manipulation`). It is replay only: the suite runs once per value on the recorded answers, and the table goes to `<date>-replay-sweep-<threshold>`.
+- **Results, 2026-10-04** (`jev-1.13.0`, `gpt-6-luna`, `gpt-6.1-sol`, policy `0ad3a26dcd79`):
+
+  | Track | Pass rate | Manual review | Latency p50 / p95 | Cost per case |
+  |---|---|---|---|---|
+  | Replay (37 cases) | 100% | 43% | 3.4 s / 5.2 s (recorded) | $0.00094 |
+  | Live (33 cases) | **100%** | 39% | 3.5 s / 6.0 s (measured) | $0.00098 |
+
+  Triage, live: Jev right on 33 of 33 at 228 ms and $0.000036; Luna 32 of 33 (it can't say "not sure", so scenario 4 isn't sent to Luis) at 1.5 s and $0.000093; Sol estimated at $0.0019. Jev saves 61% of the cost and 84% of the latency against Luna (measured), and about 98% of the cost against Sol (estimated). The draft is most of each case: 3.1 s and $0.0013 on average. Sweeps: the intent threshold keeps 100% from 0.70 up (at 0.65 and below, scenario 4's subject-only conversation, recorded at 0.68, stops going to Luis); the manipulation line keeps 100% from 0.10 to 0.40 (at 0.05, ordinary requests are flagged and the rate falls to 91.9%). The thresholds are unchanged.
+
 ## Acceptance criteria
 
 1. There are at least 10 cases, covering refund, no refund and edge cases. The planned suite has about 30.

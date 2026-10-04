@@ -483,18 +483,18 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `evals/run.py`, `case.py`, `scoring.py`, `database.py`, `providers.py`, `report.py`, `evals/cases/` (37 YAML), `evals/reports/`, `tests/unit/evals/test_case_schema.py` + `test_scoring.py` + `test_no_personal_data.py`, `tests/integration/evals/test_run.py`, `tests/integration/conftest.py` (the role sessions, shared), `pyproject.toml` (mypy covers `evals`), `.github/workflows/ci.yml`
 **Scope:** M
 
-### - [ ] T39: Eval reports: cost, latency, classifier comparison, sweep, live run
+### - [x] T39: Eval reports: cost, latency, classifier comparison, sweep, live run
 **Description:**
 - Per-step cost and latency, p50 and p95, and the manual-review rate.
 - `--classifier jev|backup` (measured), with Sol as a priced estimate.
 - `--sweep` over the recorded Jev probabilities.
 - One `--mode live` run (ask first), which produces the "real" pass rate.
 **Acceptance criteria:**
-- [ ] The report includes cost per case and per step, p50 and p95, the manual-review rate, and the comparison table, with Sol marked as an estimate (SPEC-evals AC5).
-- [ ] A live report exists, with its date and model versions, kept separate from replay.
+- [x] The report includes cost per case and per step, p50 and p95, the manual-review rate, and the comparison table, with Sol marked as an estimate (SPEC-evals AC5).
+- [x] A live report exists, with its date and model versions, kept separate from replay. (`evals/reports/2026-10-04-live.md`: 33 of 33.)
 **Verification:** `uv run python -m evals.run --mode replay --classifier backup`; `… --sweep intent=0.60:0.95:0.05`; the live report file
 **Dependencies:** T38
-**Files:** `evals/report.py`, `evals/run.py`, `evals/reports/` (generated)
+**Files:** `evals/meter.py`, `compare.py`, `report.py`, `run.py`, `providers.py`, `evals/reports/` (generated), `tests/unit/evals/test_report.py` + `test_compare.py`, `tests/integration/evals/test_run.py`
 **Scope:** S–M
 
 ### - [ ] T40: Feedback loop and shadow-mode agreement

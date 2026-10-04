@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from backend.policy.loader import DOCS_DIR, load_policy
 from backend.providers.factory import Providers
 from evals.case import EvalCase, Expected
+from evals.meter import Meter
 from evals.run import Suite, exit_code, run_suite
 from tests.integration.agents.fakes import FakeChooser, FakeClassifier, FakeDrafter, jev_answers
 
@@ -166,3 +167,19 @@ def _with(classifier: FakeClassifier) -> Providers:
         chooser=FakeChooser(),
         modes={"jev": "replay", "openai": "replay"},
     )
+
+
+async def test_the_meter_keeps_each_cases_model_calls_by_role(
+    with_clauses: Engine,
+    reader: async_sessionmaker[AsyncSession],
+    writer: async_sessionmaker[AsyncSession],
+) -> None:
+    meter = Meter()
+
+    (outcome,) = await run_suite(suite(with_clauses, reader, writer, meter=meter), [ANA])
+
+    assert [call.role for call in outcome.calls] == ["triage", "draft"]
+    triage = outcome.calls[0]
+    assert triage.asked is not None and triage.asked.prompt_version == "triage-v2"
+    assert triage.answer is not None and triage.meta.provider == "jev"
+    assert outcome.wall_ms is not None and outcome.wall_ms > 0
