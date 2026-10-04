@@ -525,9 +525,11 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Scope:** M
 
 ### Checkpoint 6: Hardened
-- [ ] Every module's acceptance criteria pass (SPEC-platform through SPEC-evals)
+- [x] Every module's acceptance criteria pass (SPEC-platform through SPEC-evals)
 - [ ] CI is green, with replay evals at 100%. A live pass rate exists.
-- [ ] `would_auto_approve` is stored, and the flag is off in the shipped config
+- [x] `would_auto_approve` is stored, and the flag is off in the shipped config
+
+**Checked 2026-10-04.** Backend 929 tests and frontend 96 pass; pre-commit is clean. The modules' criteria from Phase 6 are ticked in T37 to T41; SPEC-ui AC10 (Lighthouse) belongs to `delivery` (T42). Evals: replay 37 of 37 with no `.env` and no keys, as the CI job runs it; live 33 of 33 (`evals/reports/2026-10-04-live.md`). `agent_runs.would_auto_approve` is stored on every run, and `AUTO_APPROVE_ENABLED` is false in compose, in `.env.example` and by default. CI itself runs on the next push, which the user decides. One backend test failed once in four full runs and didn't come back in the next three; the gate now prints the name of any failing test, to catch it if it does.
 
 ---
 
