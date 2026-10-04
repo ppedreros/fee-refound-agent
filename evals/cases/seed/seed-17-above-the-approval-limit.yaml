@@ -1,0 +1,10 @@
+id: seed-17-above-the-approval-limit
+kind: refund
+source: seed
+description: 'Scenario 17: a $60 fee, above the $50 Luis can approve.'
+conversation_id: 5117
+expected:
+  status: needs_supervisor
+  reasons_include: [over_limit]
+  recommendation: {action: refund, amount: '60.00'}
+  draft: {required: false}

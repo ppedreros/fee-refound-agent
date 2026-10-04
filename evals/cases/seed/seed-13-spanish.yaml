@@ -1,0 +1,10 @@
+id: seed-13-spanish
+kind: refund
+source: seed
+description: 'Scenario 13: a same-day case written in Spanish; the reply is in Spanish.'
+conversation_id: 5113
+expected:
+  status: ready_to_refund
+  language: es
+  recommendation: {action: refund, amount: '35.00'}
+  draft: {required: true, contains_amount: '35.00', language: es}

@@ -1,0 +1,10 @@
+id: seed-11-already-refunded
+kind: no_refund
+source: seed
+description: 'Scenario 11: the core already refunded this fee.'
+conversation_id: 5111
+expected:
+  status: recommend_no_refund
+  reasons_include: [already_refunded]
+  recommendation: {action: no_refund}
+  draft: {required: true, language: en}

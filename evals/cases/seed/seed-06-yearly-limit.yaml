@@ -1,0 +1,10 @@
+id: seed-06-yearly-limit
+kind: no_refund
+source: seed
+description: 'Scenario 6: three fee refunds already in the 12 months before the fee.'
+conversation_id: 5106
+expected:
+  status: recommend_no_refund
+  reasons_include: [yearly_limit]
+  recommendation: {action: no_refund}
+  draft: {required: true, language: en}

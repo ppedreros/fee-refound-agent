@@ -1,0 +1,10 @@
+id: seed-09-picked-streaming-fee
+kind: refund
+source: seed
+description: Scenario 9 after Luis picks the fee that followed the streaming payment.
+conversation_id: 5109
+pinned_fee_txn_id: 90904
+expected:
+  status: ready_to_refund
+  recommendation: {action: refund, amount: '35.00', fee_txn_id: 90904}
+  draft: {required: true, contains_amount: '35.00', language: en}

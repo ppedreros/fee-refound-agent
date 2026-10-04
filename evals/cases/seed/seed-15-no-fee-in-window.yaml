@@ -1,0 +1,10 @@
+id: seed-15-no-fee-in-window
+kind: edge
+source: seed
+description: 'Scenario 15: asks for a refund, but the only fee is outside the 30-day window.'
+conversation_id: 5115
+expected:
+  status: needs_your_call
+  reasons_include: [fee_not_found]
+  recommendation: {action: none}
+  draft: {required: false}

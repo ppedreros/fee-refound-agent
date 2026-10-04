@@ -1,0 +1,11 @@
+id: seed-02-card-declined
+kind: edge
+source: seed
+description: 'Scenario 2: a declined card, not a fee.'
+conversation_id: 5011
+expected:
+  status: not_about_fee
+  reasons_include: [not_fee_request]
+  topic: card_issue
+  recommendation: {action: none}
+  draft: {required: false}

@@ -1,4 +1,4 @@
-# CI gates from SPEC-platform ("Quality gates"). The evals job comes in T38 and e2e in T42.
+# CI gates from SPEC-platform ("Quality gates"). The e2e job comes in T42.
 # Actions are pinned to commit SHAs (tag in the comment) so a moved tag can't change what runs.
 
 name: CI
@@ -72,6 +72,40 @@ jobs:
       - run: uv run python -m pytest --cov=backend --cov-report=term-missing
         env:
           TEST_DATABASE_URL: postgresql+psycopg://fees:ci-only@127.0.0.1:5432/fees
+
+  evals:
+    name: evals (replay, must be 100%)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The runner builds its own fees_eval database on this server, with the app's two roles.
+    # No model keys: replay mode answers from the committed recordings (D10).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: fees
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: fees
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fees -d fees"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run python -m evals.run --mode replay
+        env:
+          OWNER_DATABASE_URL: postgresql+psycopg://fees:ci-only@127.0.0.1:5432/fees
+          APP_DATABASE_URL: postgresql+psycopg://app_writer:ci-only@127.0.0.1:5432/fees
+          AGENT_DATABASE_URL: postgresql+psycopg://agent_reader:ci-only@127.0.0.1:5432/fees
+          MASKING_SALT: ci-only
 
   frontend:
     name: frontend (vitest + tsc)

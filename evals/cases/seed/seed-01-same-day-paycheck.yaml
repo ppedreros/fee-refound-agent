@@ -1,0 +1,13 @@
+id: seed-01-same-day-paycheck
+kind: refund
+source: seed
+description: 'Scenario 1, the brief: the paycheck arrived the same day as the $35 fee.'
+conversation_id: 5012
+expected:
+  status: ready_to_refund
+  topic: fee_refund_request
+  language: en
+  recommendation: {action: refund, amount: '35.00', fee_txn_id: 88002}
+  clause_id: fee-refund-policy#4
+  clear: true
+  draft: {required: true, contains_amount: '35.00', language: en, source: model}

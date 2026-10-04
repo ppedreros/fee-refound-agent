@@ -1,0 +1,9 @@
+id: seed-10-message-names-the-bill
+kind: refund
+source: seed
+description: 'Scenario 10: two fees on the same day; the message names the electric bill.'
+conversation_id: 5110
+expected:
+  status: ready_to_refund
+  recommendation: {action: refund, amount: '35.00', fee_txn_id: 91002}
+  draft: {required: true, contains_amount: '35.00', language: en}

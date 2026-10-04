@@ -1,0 +1,11 @@
+id: paraphrase-story
+kind: refund
+source: synthetic
+description: Scenario 1's data, asked another way.
+conversation_id: 5012
+message_override: I paid my electric bill, then got charged a fee, but my paycheck came in later that
+  same day. Can you reverse the fee?
+expected:
+  status: ready_to_refund
+  recommendation: {action: refund, amount: '35.00'}
+  draft: {required: true, contains_amount: '35.00', language: en}

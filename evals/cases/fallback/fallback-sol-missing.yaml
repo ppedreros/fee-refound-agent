@@ -1,0 +1,13 @@
+id: fallback-sol-missing
+kind: edge
+source: synthetic
+description: 'Sol doesn''t answer: the reply comes from the template.'
+conversation_id: 5012
+modes: [replay]
+record: false
+replay_without: [sol]
+expected:
+  status: needs_your_call
+  reasons_include: [drafter_down]
+  recommendation: {action: refund, amount: '35.00'}
+  draft: {required: true, contains_amount: '35.00', source: template}

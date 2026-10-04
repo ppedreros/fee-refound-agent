@@ -1,0 +1,11 @@
+id: routing-statement-copy
+kind: edge
+source: synthetic
+description: Asks for a statement, on scenario 3's data.
+conversation_id: 5010
+message_override: Can you send me a copy of my August statement? I can't find it in the app.
+expected:
+  status: not_about_fee
+  reasons_include: [not_fee_request]
+  topic: statement_question
+  draft: {required: false}

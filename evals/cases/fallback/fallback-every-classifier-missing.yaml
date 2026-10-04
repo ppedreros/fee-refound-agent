@@ -1,0 +1,12 @@
+id: fallback-every-classifier-missing
+kind: edge
+source: synthetic
+description: 'Neither classifier answers: Luis decides, with the evidence.'
+conversation_id: 5012
+modes: [replay]
+record: false
+replay_without: [jev, luna]
+expected:
+  status: needs_your_call
+  reasons_include: [classifier_down]
+  recommendation: {action: refund, amount: '35.00'}

@@ -1,0 +1,11 @@
+id: seed-05-fee-question
+kind: edge
+source: seed
+description: 'Scenario 5: asks why a $5 savings fee was charged, without asking for it back.'
+conversation_id: 5008
+expected:
+  status: needs_your_call
+  reasons_include: [fee_question]
+  topic: fee_question
+  recommendation: {action: none, amount: null}
+  draft: {required: false}

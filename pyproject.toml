@@ -47,7 +47,7 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "S", "C4", "RUF"]
 python_version = "3.14"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["backend", "tests"]
+files = ["backend", "evals", "tests"]
 # tests/ has no __init__.py files: name every module by its path from the repo root.
 explicit_package_bases = true
 mypy_path = "."

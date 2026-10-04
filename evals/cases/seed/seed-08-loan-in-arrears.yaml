@@ -1,0 +1,10 @@
+id: seed-08-loan-in-arrears
+kind: no_refund
+source: seed
+description: 'Scenario 8: a loan sub-account below zero, so the member is not in good standing.'
+conversation_id: 5108
+expected:
+  status: recommend_no_refund
+  reasons_include: [not_good_standing]
+  recommendation: {action: no_refund}
+  draft: {required: true, language: en}

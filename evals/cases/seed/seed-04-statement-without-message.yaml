@@ -1,0 +1,11 @@
+id: seed-04-statement-without-message
+kind: edge
+source: seed
+description: 'Scenario 4: a closed conversation with a subject and no message. Jev is not sure enough
+  (0.66), so Luis decides instead of a guess.'
+conversation_id: 5009
+expected:
+  status: needs_your_call
+  reasons_include: [intent_unclear]
+  recommendation: {action: none}
+  draft: {required: false}

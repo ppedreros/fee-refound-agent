@@ -1,0 +1,11 @@
+id: spanish-casual
+kind: refund
+source: synthetic
+description: Scenario 13's data, in another Spanish register.
+conversation_id: 5113
+message_override: Hola! Me cayó el sueldo el mismo día que me cobraron el cargo, ¿me lo devuelven?
+expected:
+  status: ready_to_refund
+  language: es
+  recommendation: {action: refund, amount: '35.00'}
+  draft: {required: true, contains_amount: '35.00', language: es}

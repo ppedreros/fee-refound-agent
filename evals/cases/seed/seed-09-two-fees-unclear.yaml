@@ -1,0 +1,10 @@
+id: seed-09-two-fees-unclear
+kind: edge
+source: seed
+description: 'Scenario 9: two fees on the same day, and the message doesn''t say which.'
+conversation_id: 5109
+expected:
+  status: needs_your_call
+  reasons_include: [fee_ambiguous]
+  recommendation: {action: none}
+  draft: {required: false}

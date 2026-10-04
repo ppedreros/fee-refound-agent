@@ -1,0 +1,14 @@
+id: fallback-jev-missing
+kind: edge
+source: synthetic
+description: 'Jev''s answers are missing: Luna classifies, and the case is still prepared.'
+conversation_id: 5012
+modes: [replay]
+record: false
+replay_without: [jev]
+expected:
+  status: ready_to_refund
+  notes_include: [classified_with_backup]
+  recommendation: {action: refund, amount: '35.00'}
+  clear: false
+  draft: {required: true, contains_amount: '35.00'}

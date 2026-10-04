@@ -1,0 +1,12 @@
+id: seed-18-unrecorded-answers
+kind: edge
+source: seed
+description: 'Scenario 18: like scenario 1, but its model answers are never recorded, so replay shows
+  the fallback with the evidence intact.'
+conversation_id: 5118
+modes: [replay]
+record: false
+expected:
+  status: needs_your_call
+  reasons_include: [classifier_down]
+  recommendation: {action: refund, amount: '35.00'}

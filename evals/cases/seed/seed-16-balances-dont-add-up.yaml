@@ -1,0 +1,8 @@
+id: seed-16-balances-dont-add-up
+kind: edge
+source: seed
+description: 'Scenario 16: the fee day''s balances don''t add up in the core''s data.'
+conversation_id: 5116
+expected:
+  status: needs_your_call
+  reasons_include: [data_mismatch]

@@ -1,5 +1,5 @@
-"""Shared fixtures for the agent's integration tests: the seed with policy clauses, and sessions
-as the two test roles (the graph gets the reader only; the runner records with the writer)."""
+"""Sessions as the two test roles, on the seed with policy clauses, for the agent's and the evals'
+integration tests (the graph gets the reader only; the runner records with the writer)."""
 
 from collections.abc import AsyncIterator
 

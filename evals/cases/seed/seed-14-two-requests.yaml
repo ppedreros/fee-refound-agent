@@ -1,0 +1,10 @@
+id: seed-14-two-requests
+kind: edge
+source: seed
+description: 'Scenario 14: a refund request plus a question about updating the address.'
+conversation_id: 5114
+expected:
+  status: needs_your_call
+  reasons_include: [multiple_requests]
+  recommendation: {action: refund, amount: '35.00'}
+  draft: {required: true}

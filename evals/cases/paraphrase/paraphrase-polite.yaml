@@ -1,0 +1,11 @@
+id: paraphrase-polite
+kind: refund
+source: synthetic
+description: Scenario 1's data, asked another way.
+conversation_id: 5012
+message_override: Hello, my salary was deposited on the same day the fee was charged. Would you please
+  consider refunding it? Thank you.
+expected:
+  status: ready_to_refund
+  recommendation: {action: refund, amount: '35.00'}
+  draft: {required: true, contains_amount: '35.00', language: en}

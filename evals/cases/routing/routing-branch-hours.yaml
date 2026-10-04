@@ -1,0 +1,11 @@
+id: routing-branch-hours
+kind: edge
+source: synthetic
+description: Asks something unrelated, on scenario 2's data.
+conversation_id: 5011
+message_override: What time does the main branch open on Saturdays?
+expected:
+  status: not_about_fee
+  reasons_include: [not_fee_request]
+  topic: other
+  draft: {required: false}

@@ -472,15 +472,15 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `backend/api/errors.py`, `ratelimit.py`, `auto_approve.py`, `routes_cases.py`, `routes_decision.py`, `middleware.py`, `main.py`, `schemas.py`, `backend/core/settings.py`, `docker-compose.yml`, `pyproject.toml` (`limits`), `frontend/src/features/case/CasePane.tsx` ("Show"), `frontend/src/api/`, `tests/api/test_errors.py`, `test_reveal.py`, `test_auto_approve.py`
 **Scope:** M
 
-### - [ ] T38: Eval runner, cases, scoring, replay track in CI
+### - [x] T38: Eval runner, cases, scoring, replay track in CI
 **Description:** The case schema (including `modes` and `record`) and scoring for every assertion type. About 30 YAML cases: 18 seed scenarios, 4 paraphrases, 2 Spanish, 6 injection, 2 extra routing, and fallback cases. The runner uses the `fees_eval` database, prints a labelled table and writes the reports. Record the message variants (ask first). Add the CI `evals` job, which fails below 100%.
 **Acceptance criteria:**
-- [ ] `--mode replay` with no keys runs the suite, prints the "MODE: REPLAY" table, writes JSON and Markdown, and exits 0 at 100% (SPEC-evals AC2).
-- [ ] Changing the limit to 3 → 2 in a test copy makes a case fail, with exit 1 (AC3). Every injection case passes (AC4).
-- [ ] The CI `evals` job is green.
+- [x] `--mode replay` with no keys runs the suite, prints the "MODE: REPLAY" table, writes JSON and Markdown, and exits 0 at 100% (SPEC-evals AC2).
+- [x] Changing the limit to 3 → 2 in a test copy makes a case fail, with exit 1 (AC3). Every injection case passes (AC4).
+- [ ] The CI `evals` job is green. (Checked locally with no `.env` and no keys, as CI runs it; CI itself runs on the next push.)
 **Verification:** `uv run python -m evals.run --mode replay`; `uv run python -m pytest tests/unit/evals`
 **Dependencies:** T37 (and the Checkpoint 5 recordings)
-**Files:** `evals/run.py`, `evals/scoring.py`, `evals/cases/` (YAML), `tests/unit/evals/test_case_schema.py` + `test_scoring.py`, `.github/workflows/ci.yml`
+**Files:** `evals/run.py`, `case.py`, `scoring.py`, `database.py`, `providers.py`, `report.py`, `evals/cases/` (37 YAML), `evals/reports/`, `tests/unit/evals/test_case_schema.py` + `test_scoring.py` + `test_no_personal_data.py`, `tests/integration/evals/test_run.py`, `tests/integration/conftest.py` (the role sessions, shared), `pyproject.toml` (mypy covers `evals`), `.github/workflows/ci.yml`
 **Scope:** M
 
 ### - [ ] T39: Eval reports: cost, latency, classifier comparison, sweep, live run
