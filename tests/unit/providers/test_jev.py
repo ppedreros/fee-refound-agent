@@ -6,6 +6,7 @@ classifier must send exactly that request and map exactly that response.
 
 import json
 from collections.abc import Callable
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ import httpx2
 import pytest
 from typesafe_sdk import AsyncTypeSafeClient
 
+from backend.providers.config import CallPolicy, ProviderConfig
 from backend.providers.jev import JevClassifier
 from backend.providers.types import (
     ChoiceAnswer,
@@ -93,9 +95,26 @@ QUESTIONS: list[Question] = [
 Handler = Callable[[httpx2.Request], httpx2.Response]
 
 
-def classifier_with(handler: Handler, api_key: str = "test-key") -> JevClassifier:
+# The recording was made with the alias; the shipped config pins jev-1.13.0 (D-providers-2).
+JEV = ProviderConfig(
+    model="jev-latest",
+    policy=CallPolicy(timeout_s=2.0, retries=2, backoff_base_s=0.5, backoff_cap_s=4.0),
+)
+NO_RETRIES = ProviderConfig(model="jev-latest", policy=JEV.policy.model_copy(update={"retries": 0}))
+
+
+def classifier_with(
+    handler: Handler,
+    api_key: str = "test-key",
+    config: ProviderConfig = JEV,
+    slept: list[float] | None = None,
+) -> JevClassifier:
+    async def no_wait(seconds: float) -> None:
+        if slept is not None:
+            slept.append(seconds)
+
     client = AsyncTypeSafeClient(api_key=api_key, transport=httpx2.MockTransport(handler))
-    return JevClassifier(client, model="jev-latest", timeout_s=2.0)
+    return JevClassifier(client, config=config, sleep=no_wait)
 
 
 def answering(body: dict[str, Any], status: int = 200) -> tuple[Handler, list[httpx2.Request]]:
@@ -200,13 +219,62 @@ async def test_http_errors_become_provider_unavailable_with_a_reason(
 
 
 async def test_the_sdk_does_not_retry_on_its_own() -> None:
-    # Retries belong to our policy (T15: deadline-aware, counted in meta.attempts).
+    # Retries belong to our policy (deadline-aware, counted in meta.attempts).
     handler, seen = answering({"detail": {"message": "overloaded"}}, status=529)
+
+    with pytest.raises(ProviderUnavailable):
+        await classifier_with(handler, config=NO_RETRIES).classify(STATE, QUESTIONS)
+
+    assert len(seen) == 1
+
+
+async def test_a_jev_timeout_is_retried_twice_then_reported_with_its_attempts() -> None:
+    seen: list[httpx2.Request] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.append(request)
+        raise httpx2.ReadTimeout("slow", request=request)
+
+    with pytest.raises(ProviderUnavailable) as error:
+        await classifier_with(handler).classify(STATE, QUESTIONS)
+
+    assert len(seen) == 3
+    assert (error.value.reason, error.value.attempts) == ("timeout", 3)
+
+
+async def test_a_400_is_not_retried() -> None:
+    handler, seen = answering(RECORDED["errors"]["400_invalid_question_type"], status=400)
 
     with pytest.raises(ProviderUnavailable):
         await classifier_with(handler).classify(STATE, QUESTIONS)
 
     assert len(seen) == 1
+
+
+async def test_a_429_with_retry_after_waits_that_long_then_succeeds() -> None:
+    responses = [
+        httpx2.Response(
+            429, json={"detail": {"message": "slow down"}}, headers={"Retry-After": "1"}
+        ),
+        httpx2.Response(200, json=JEV_RESPONSE),
+    ]
+    slept: list[float] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return responses.pop(0)
+
+    result = await classifier_with(handler, slept=slept).classify(STATE, QUESTIONS)
+
+    assert slept == [1.0]
+    assert result.meta.attempts == 2
+
+
+async def test_the_cost_comes_from_the_price_table() -> None:
+    handler, _ = answering(JEV_RESPONSE)
+
+    meta = (await classifier_with(handler).classify(STATE, QUESTIONS)).meta
+
+    assert meta.cost_usd == Decimal("0.000027")  # 644 input tokens at $0.042 per million
 
 
 async def test_a_timeout_becomes_provider_unavailable() -> None:

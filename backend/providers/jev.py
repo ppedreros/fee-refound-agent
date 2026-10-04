@@ -1,9 +1,10 @@
 """Jev (TypeSafe System One) classifier, through `typesafe-sdk` (request shape: docs/notes/jev.md).
 
-All questions go in one request. The SDK's own retries are switched off on every call: retries,
-backoff and the run deadline belong to our policy (T15), so every attempt is counted.
+All questions go in one request. The SDK's own retries are switched off: our call policy owns the
+timeout, the retries, Retry-After and the run deadline, so every attempt is counted.
 """
 
+import asyncio
 import time
 from collections.abc import Mapping, Sequence
 
@@ -24,6 +25,9 @@ from typesafe_sdk import (
     TypeSafeRateLimitError,
 )
 
+from backend.providers.config import ProviderConfig
+from backend.providers.cost import Usage, compute_cost
+from backend.providers.retry import Clock, Sleep, call_with_retries
 from backend.providers.types import (
     CallMeta,
     ChoiceAnswer,
@@ -40,28 +44,52 @@ NO_SDK_RETRIES = RetryPolicy(max_retries=0)
 
 
 class JevClassifier:
-    def __init__(self, client: AsyncTypeSafeClient, *, model: str, timeout_s: float) -> None:
+    def __init__(
+        self,
+        client: AsyncTypeSafeClient,
+        *,
+        config: ProviderConfig,
+        clock: Clock = time.monotonic,
+        sleep: Sleep = asyncio.sleep,
+    ) -> None:
         self._client = client
-        self._model = model
-        self._timeout_s = timeout_s
+        self._config = config
+        self._clock = clock
+        self._sleep = sleep
 
     async def classify(
-        self, state: Mapping[str, str], questions: Sequence[Question]
+        self,
+        state: Mapping[str, str],
+        questions: Sequence[Question],
+        *,
+        deadline: float | None = None,
     ) -> Classification:
-        started = time.perf_counter()
-        try:
-            response = await self._client.system_one(
-                state=dict(state),
-                questions={question.key: _to_jev(question) for question in questions},
-                model=self._model,
-                retry=NO_SDK_RETRIES,
-                timeout=self._timeout_s,
-            )
-        except TypeSafeError as error:
-            # `from None`: the SDK error can carry the request body, and with it the message.
-            raise ProviderUnavailable(_reason(error)) from None
-        latency_ms = round((time.perf_counter() - started) * 1000)
+        jev_questions = {question.key: _to_jev(question) for question in questions}
 
+        async def attempt(timeout_s: float) -> SystemOneResponse:
+            try:
+                return await self._client.system_one(
+                    state=dict(state),
+                    questions=jev_questions,
+                    model=self._config.model,
+                    retry=NO_SDK_RETRIES,
+                    timeout=timeout_s,
+                )
+            except TypeSafeError as error:
+                # `from None`: the SDK error can carry the request body, and with it the message.
+                raise _unavailable(error) from None
+
+        started = self._clock()
+        result = await call_with_retries(
+            attempt, self._config.policy, deadline=deadline, clock=self._clock, sleep=self._sleep
+        )
+        response = result.value
+        latency_ms = round((self._clock() - started) * 1000)
+
+        tokens_in, tokens_out = response.usage.input_tokens, response.usage.output_tokens
+        usage = Usage(tokens_in=tokens_in or 0, tokens_out=tokens_out or 0)
+        # Without the token counts the cost is unknown, not zero.
+        cost = compute_cost(response.model, usage) if None not in (tokens_in, tokens_out) else None
         return Classification(
             answers={question.key: _answer(question, response) for question in questions},
             meta=CallMeta(
@@ -69,9 +97,10 @@ class JevClassifier:
                 model=response.model,
                 mode="live",
                 latency_ms=latency_ms,
-                tokens_in=response.usage.input_tokens,
-                tokens_out=response.usage.output_tokens,
-                attempts=1,
+                tokens_in=usage.tokens_in,
+                tokens_out=usage.tokens_out,
+                cost_usd=cost,
+                attempts=result.attempts,
             ),
         )
 
@@ -101,6 +130,13 @@ def _answer(question: Question, response: SystemOneResponse) -> ChoiceAnswer | N
         probabilities=dict(choice.probabilities),
         confidence=choice.confidence,
     )
+
+
+def _unavailable(error: TypeSafeError) -> ProviderUnavailable:
+    retry_after_s = None
+    if isinstance(error, TypeSafeRateLimitError) and error.retry_after_ms is not None:
+        retry_after_s = error.retry_after_ms / 1000
+    return ProviderUnavailable(_reason(error), retry_after_s=retry_after_s)
 
 
 def _reason(error: TypeSafeError) -> UnavailableReason:

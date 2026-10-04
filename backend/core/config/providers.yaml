@@ -1,0 +1,24 @@
+# Model calls (docs/agent-design.md §5; SPEC-providers). Changing a value is an "ask first" change.
+# Retries use exponential backoff with full jitter; a Retry-After header is honoured up to the cap.
+# Every call also respects the run's deadline: no attempt starts after it.
+
+backoff:
+  base_s: 0.5
+  cap_s: 4.0
+
+# Pinned to a version, not the "jev-latest" alias: the D3 thresholds are tuned to this model
+# (D-providers-2; TypeSafe's Models page recommends pinning).
+jev:
+  model: jev-1.13.0
+  timeout_s: 2
+  retries: 2
+
+luna:
+  model: gpt-6-luna
+  timeout_s: 8
+  retries: 2
+
+sol:
+  model: gpt-6.1-sol
+  timeout_s: 20
+  retries: 2

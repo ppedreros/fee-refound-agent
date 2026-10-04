@@ -70,14 +70,21 @@ type UnavailableReason = Literal[
 
 
 class ProviderUnavailable(Exception):
-    """A provider call failed. `reason` is a code for logs and fallbacks, never shown to Luis."""
+    """A provider call failed. `reason` is a code for logs and fallbacks, never shown to Luis.
+    `attempts` counts every attempt the call policy made (it is set when the policy gives up)."""
 
-    def __init__(self, reason: UnavailableReason) -> None:
+    def __init__(self, reason: UnavailableReason, *, retry_after_s: float | None = None) -> None:
         super().__init__(reason)
         self.reason: UnavailableReason = reason
+        self.retry_after_s = retry_after_s
+        self.attempts = 1
 
 
 class Classifier(Protocol):
     async def classify(
-        self, state: Mapping[str, str], questions: Sequence[Question]
+        self,
+        state: Mapping[str, str],
+        questions: Sequence[Question],
+        *,
+        deadline: float | None = None,  # monotonic seconds: the run's remaining time
     ) -> Classification: ...

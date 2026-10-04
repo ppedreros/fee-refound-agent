@@ -185,15 +185,15 @@ A test fixture creates the `fees_test` database.
 **Files:** `backend/privacy/sanitize.py`, `backend/privacy/mask.py`, `tests/unit/privacy/test_sanitize.py`, `tests/unit/privacy/test_mask.py`
 **Scope:** S
 
-### - [ ] T15: Provider plumbing: retries, timeouts, deadline, cost, Jev classifier
+### - [x] T15: Provider plumbing: retries, timeouts, deadline, cost, Jev classifier
 **Description:** A retry policy (tenacity with jitter and `Retry-After`, no retry on 4xx or schema errors) with deadline support. Also `providers.yaml`, `pricing.yaml` and `compute_cost`. `JevClassifier` from T6 is hardened on top of these.
 **Acceptance criteria:**
-- [ ] With MockTransport: a timeout is retried twice, a 400 is not retried, and a 429 with `Retry-After: 1` is honoured within the cap (SPEC-providers AC1 for Jev, AC2).
-- [ ] With a fake clock, no attempt starts after the deadline (AC3).
-- [ ] `compute_cost` matches the price table; an unknown model gives `None` (AC10).
+- [x] With MockTransport: a timeout is retried twice, a 400 is not retried, and a 429 with `Retry-After: 1` is honoured within the cap (SPEC-providers AC1 for Jev, AC2).
+- [x] With a fake clock, no attempt starts after the deadline (AC3).
+- [x] `compute_cost` matches the price table; an unknown model gives `None` (AC10).
 **Verification:** `uv run python -m pytest tests/unit/providers`
 **Dependencies:** T6
-**Files:** `backend/providers/retry.py`, `backend/providers/cost.py`, `backend/core/config/providers.yaml` + `pricing.yaml`, `backend/providers/jev.py`, `tests/unit/providers/test_retry.py` + `test_cost.py`
+**Files:** `backend/providers/retry.py`, `backend/providers/cost.py`, `backend/providers/config.py`, `backend/core/config/providers.yaml` + `pricing.yaml`, `backend/providers/jev.py` + `types.py`, `tests/unit/providers/test_retry.py` + `test_cost.py` + `test_jev.py`
 **Scope:** M
 
 ### - [ ] T16: Triage thresholds and decision precedence (TDD)
