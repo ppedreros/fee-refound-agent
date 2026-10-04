@@ -153,6 +153,8 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 | Conversation · N messages | The full thread, with the member on the left and staff on the right |
 | How this was prepared · {duration} · {cost} | Each step with a plain label and its time. "Checked with our backup system" when Luna answered. "Model answers are recorded (Replay mode)" when in replay. The time it was checked. |
 
+**As built (T26).** Each step shows its own time in milliseconds below a second ("261 ms"), so the real Jev latency is visible next to the fast rule steps; the section header keeps the run's total ("0.5 s").
+
 **Member header.**
 - Full name, with each account shown as "Everyday Checking ••4210 · Show".
 - "Show" calls the reveal endpoint, which is audited.

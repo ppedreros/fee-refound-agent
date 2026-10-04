@@ -307,19 +307,21 @@ The `triage-v1` prompt file and the EN/ES "refunded" templates are added. The te
 **Files:** `frontend/src/features/case/DecisionActions.tsx` (+ test), `ReplyEditor.tsx` (replaces `Reply.tsx`), `useDecision.ts` (+ test), `limits.ts`, `CasePane.tsx`, `DecisionCard.tsx`, `frontend/src/copy/en.ts`, `frontend/src/index.css`, `frontend/src/App.tsx`
 **Scope:** M
 
-### - [ ] T26: Ana in the browser, with a live Jev check
+### - [x] T26: Ana in the browser, with a live Jev check
 **Description:** An integration pass. Run compose with `PROVIDER_MODE=live` and only `JEV_API_KEY` set (drafts use the template), and fix whatever comes up between the layers. This is the first live triage through the whole product.
 **Acceptance criteria:**
-- [ ] In the browser: open Ana → "Check this case" → "Ready to refund" with the evidence → one click → "Done". Her transactions show the $35 refund, and the conversation is closed.
-- [ ] The run's steps show the real Jev latency and cost. The logs hold no message text.
+- [x] In the browser: open Ana → "Check this case" → "Ready to refund" with the evidence → one click → "Done". Her transactions show the $35 refund, and the conversation is closed.
+- [x] The run's steps show the real Jev latency and cost. The logs hold no message text.
+
+**Walkthrough (2026-10-04).** Compose with `PROVIDER_MODE=auto` and only `JEV_API_KEY` set, which gives live Jev and replayed OpenAI (`live` would label OpenAI live without a key; drafts use the template either way). Driven by Playwright from a scratch script against the installed Chrome: Ana's check finished in the browser in about 1.5 s (run 0.5 s; Jev `jev-1.13.0` 261–306 ms, $0.000032); approved with the keyboard, focus landed on "Done", and the next Tab stop was "Next case"; no console errors or warnings. The database showed the refund transaction (`Deposit Fee Refund Courtesy Pay Fee`, $35, balance $1,360) and the conversation closed; the backend logs held no message text, names or account numbers. One fix: step times now read in milliseconds below a second.
 **Verification:** a manual walkthrough with screenshots; `uv run python -m pytest`; `npm --prefix frontend test`
 **Dependencies:** T25
-**Files:** fixes only (expected ≤ 5)
+**Files:** fixes only (expected ≤ 5): `frontend/src/lib/format.ts` (+ `format.test.ts`), `frontend/src/features/case/Evidence.tsx`
 **Scope:** S–M
 
 ### Checkpoint 3: Ana end to end (review with the user)
-- [ ] All tests pass, and pre-commit is clean
-- [ ] Ana's full loop works in the browser with live Jev
+- [x] All tests pass, and pre-commit is clean
+- [x] Ana's full loop works in the browser with live Jev
 - [ ] The user reviews the slice: UI, copy, evidence. Feedback is folded into the specs before Phase 4.
 
 ---

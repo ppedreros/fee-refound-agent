@@ -39,6 +39,11 @@ export function formatDuration(ms: number): string {
   return `${(ms / 1000).toFixed(1)} s`;
 }
 
+/** One step's time: "306 ms" below a second, so the fast steps still show theirs; "1.2 s" above. */
+export function formatLatency(ms: number): string {
+  return ms < 1000 ? `${String(ms)} ms` : formatDuration(ms);
+}
+
 /** A calendar date from the API ("2026-09-14"), read as that day wherever Luis is. */
 function calendarDay(iso: string): Date {
   const [year = 0, month = 1, day = 1] = iso.split("-").map(Number);

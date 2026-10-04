@@ -9,6 +9,7 @@ import {
   formatDay,
   formatDayWithYear,
   formatDuration,
+  formatLatency,
   formatMoney,
   formatShortDate,
 } from "../../lib/format";
@@ -110,7 +111,7 @@ export function Evidence({ view }: { view: CaseView }) {
                 <span className="flex-1">
                   {step.failed ? text.titled(step.label, text.stepFailed) : step.label}
                 </span>
-                <span className="tabular-nums text-grey-600">{formatDuration(step.latencyMs)}</span>
+                <span className="tabular-nums text-grey-600">{formatLatency(step.latencyMs)}</span>
               </li>
             ))}
           </ol>
