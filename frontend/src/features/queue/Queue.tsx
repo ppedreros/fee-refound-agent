@@ -2,6 +2,8 @@ import type { KeyboardEvent } from "react";
 
 import { messageOf, type CaseStatus, type QueueItem, type View } from "../../api/client";
 import { useCases } from "../../api/hooks";
+import { ErrorBanner } from "../../components/ErrorBanner";
+import { Bone, Skeleton } from "../../components/Skeleton";
 import { copy } from "../../copy/en";
 import { formatMoney, formatReceived } from "../../lib/format";
 
@@ -30,7 +32,7 @@ export function Queue({ view, selectedId, onViewChange, onSelect }: QueueProps) 
             onClick={() => {
               onViewChange(tab);
             }}
-            className={`border-b-2 pb-2 font-medium transition-colors duration-150 ${
+            className={`border-b-2 pb-2 font-medium transition-colors duration-150 motion-reduce:transition-none ${
               tab === view ? "border-navy text-navy" : "border-transparent text-grey-600"
             }`}
           >
@@ -42,15 +44,8 @@ export function Queue({ view, selectedId, onViewChange, onSelect }: QueueProps) 
         {cases.isPending ? (
           <QueueSkeleton />
         ) : cases.isError ? (
-          <div role="alert" className="m-4 rounded-md border border-grey-200 bg-white p-3">
-            <p>{messageOf(cases.error)}</p>
-            <button
-              type="button"
-              onClick={() => void cases.refetch()}
-              className="mt-2 font-medium underline underline-offset-2"
-            >
-              {copy.errors.tryAgain}
-            </button>
+          <div className="m-4">
+            <ErrorBanner message={messageOf(cases.error)} onRetry={() => void cases.refetch()} />
           </div>
         ) : cases.data.items.length === 0 ? (
           <p className="p-6 text-grey-600">{copy.queue.empty}</p>
@@ -92,7 +87,7 @@ function QueueRow({
         onClick={() => {
           onSelect(item.id);
         }}
-        className={`relative block w-full px-4 py-3 text-left transition-colors duration-150 ${
+        className={`relative block w-full px-4 py-3 text-left transition-colors duration-150 motion-reduce:transition-none ${
           selected
             ? "bg-white before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-terracotta"
             : "hover:bg-grey-50"
@@ -134,14 +129,14 @@ export function StatusDot({ status }: { status: CaseStatus }) {
 
 function QueueSkeleton() {
   return (
-    <ul aria-hidden="true">
+    <Skeleton>
       {[0, 1, 2].map((row) => (
-        <li key={row} className="space-y-2 border-b border-grey-200 px-4 py-3">
-          <div className="h-3 w-24 rounded bg-grey-200" />
-          <div className="h-3 w-40 rounded bg-grey-200" />
-        </li>
+        <div key={row} className="space-y-2 border-b border-grey-200 px-4 py-3">
+          <Bone className="h-3 w-24" />
+          <Bone className="h-3 w-40" />
+        </div>
       ))}
-    </ul>
+    </Skeleton>
   );
 }
 

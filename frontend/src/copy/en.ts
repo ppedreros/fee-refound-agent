@@ -5,6 +5,7 @@ const plural = (count: number, one: string, many: string) =>
   `${String(count)} ${count === 1 ? one : many}`;
 
 export const copy = {
+  loading: "Loading…",
   app: {
     title: "Fee refunds",
     replay: "Replay mode",

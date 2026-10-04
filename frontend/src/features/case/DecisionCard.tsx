@@ -27,7 +27,7 @@ export interface CardProps {
 }
 
 const PRIMARY =
-  "rounded-md bg-navy px-4 py-2 font-medium text-white transition-opacity duration-150 disabled:opacity-60";
+  "rounded-md bg-navy px-4 py-2 font-medium text-white transition-opacity duration-150 motion-reduce:transition-none disabled:opacity-60";
 const SECONDARY =
   "rounded-md px-3 py-2 font-medium text-navy underline-offset-4 hover:underline disabled:opacity-60";
 

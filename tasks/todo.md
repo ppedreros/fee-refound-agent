@@ -507,7 +507,7 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 **Files:** `evals/import_feedback.py`, `evals/shadow_report.py`, `evals/database.py` (`app_database`), `tests/integration/evals/test_import_feedback.py` (the shadow report's tests too)
 **Scope:** S
 
-### - [ ] T41: UI polish: motion, accessibility, keyboard, responsive, states, copy lint
+### - [x] T41: UI polish: motion, accessibility, keyboard, responsive, states, copy lint
 **Description:**
 - Motion: 150–200 ms, honouring `prefers-reduced-motion`.
 - Accessibility: landmarks, `aria-live`, focus rings.
@@ -516,12 +516,12 @@ Each task below adds its seed scenarios, so that the graph scenario tests, the A
 - Skeletons, error banners and the network-down copy.
 - The copy-lint test across every status fixture.
 **Acceptance criteria:**
-- [ ] No status fixture renders a `snake_case` token, `undefined`, `null`, `NaN` or `[ACCOUNT` (SPEC-ui AC6).
-- [ ] Keyboard only: open Ana, approve, then "Next case" (AC9).
-- [ ] With reduced motion, there are no transitions.
+- [x] No status fixture renders a `snake_case` token, `undefined`, `null`, `NaN` or `[ACCOUNT` (SPEC-ui AC6).
+- [x] Keyboard only: open Ana, approve, then "Next case" (AC9).
+- [x] With reduced motion, there are no transitions.
 **Verification:** `npm --prefix frontend test`; manual keyboard and narrow-width check in compose
 **Dependencies:** Checkpoint 5 (can run in parallel with T37–T40)
-**Files:** `frontend/src/copy/copy.test.tsx`, `frontend/src/index.css`, `frontend/src/features/queue/Queue.tsx`, `frontend/src/components/ErrorBanner.tsx`, `frontend/src/components/Skeleton.tsx`
+**Files:** `frontend/src/index.css`, `frontend/src/theme.test.ts` (motion), `frontend/src/App.test.tsx` (keyboard only), `frontend/src/components/Skeleton.tsx`, `frontend/src/features/queue/Queue.tsx`, `frontend/src/features/case/` (`CasePane`, `DecisionActions`, `DecisionCard`, `FeePicker`), `frontend/src/copy/en.ts`
 **Scope:** M
 
 ### Checkpoint 6: Hardened

@@ -236,6 +236,13 @@ The card follows the API's `status`, `summary`, `reasons`, `notes`, `recommendat
 - Every control is reachable by keyboard and has a visible focus ring (Terracotta, 2 px, offset).
 - Collapsible sections are buttons with `aria-expanded`.
 
+**As built (T41).** Most of this section was built with the pieces it covers (T23 to T37); T41 closed the gaps.
+- **Motion.** Every class that moves says what happens with reduced motion (`motion-safe:` or `motion-reduce:`), and a test scans the components for any that doesn't; the buttons' 150 ms fade and the queue's colour change were the ones missing it. `index.css` adds a backstop: with `prefers-reduced-motion: reduce`, every animation and transition lasts 0.01 ms.
+- **Loading.** One `Skeleton` (`components/Skeleton.tsx`) for the queue and the case pane: grey blocks shaped like what is coming that breathe gently (`motion-safe:animate-pulse`), inside a `role="status"` that screen readers hear as one "Loading…".
+- **Errors.** The queue's error now uses the same `ErrorBanner` as the case pane: the API's message (or the network-down sentence), and "Try again".
+- **Keyboard (AC9).** An App-level test reaches Ana's row with Tab, moves with ↓ and ↑, opens it with Enter, approves with Enter, finds the focus on the "Done" title, and opens the next case with "Next case", all without a click.
+- **Checked in compose (2026-10-04)** with headless Chrome: two panes at 1,280 px; at 520 px the queue alone, and an opened case alone with "Back to queue".
+
 ## Acceptance criteria
 
 1. For each status, the decision card shows exactly the title, primary label and secondary actions in the table above, driven only by the API fixture (table-driven Vitest).

@@ -10,6 +10,7 @@ import {
 } from "../../api/client";
 import { useCase, useCases, useRunCase } from "../../api/hooks";
 import { ErrorBanner } from "../../components/ErrorBanner";
+import { Bone, Skeleton } from "../../components/Skeleton";
 import { copy } from "../../copy/en";
 import { formatShortDate } from "../../lib/format";
 import { LiveSteps } from "./LiveSteps";
@@ -303,11 +304,13 @@ function Accounts({
 
 function CaseSkeleton() {
   return (
-    <div aria-hidden="true" className="mx-auto w-full max-w-3xl space-y-6 p-6">
-      <div className="h-7 w-72 rounded bg-grey-100" />
-      <div className="h-4 w-96 rounded bg-grey-100" />
-      <div className="h-40 rounded-lg bg-grey-100" />
-      <div className="h-24 rounded bg-grey-100" />
-    </div>
+    <Skeleton className="mx-auto w-full max-w-3xl p-6">
+      <div className="space-y-6">
+        <Bone className="h-7 w-72 max-w-full" />
+        <Bone className="h-4 w-96 max-w-full" />
+        <Bone className="h-40 rounded-lg" />
+        <Bone className="h-24" />
+      </div>
+    </Skeleton>
   );
 }

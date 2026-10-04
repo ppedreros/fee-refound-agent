@@ -44,7 +44,7 @@ export function FeePicker({
         onClick={() => {
           if (picked !== null) onRun(picked);
         }}
-        className="rounded-md bg-navy px-4 py-2 font-medium text-white transition-opacity duration-150 disabled:opacity-60"
+        className="rounded-md bg-navy px-4 py-2 font-medium text-white transition-opacity duration-150 motion-reduce:transition-none disabled:opacity-60"
       >
         {copy.actions.checkWithFee}
       </button>

@@ -51,7 +51,7 @@ export function ConfirmDecision({
           type="button"
           disabled={!canSubmit || busy}
           onClick={onSubmit}
-          className="rounded-md bg-navy px-4 py-2 font-medium text-white transition-opacity duration-150 disabled:opacity-60"
+          className="rounded-md bg-navy px-4 py-2 font-medium text-white transition-opacity duration-150 motion-reduce:transition-none disabled:opacity-60"
         >
           {label}
         </button>

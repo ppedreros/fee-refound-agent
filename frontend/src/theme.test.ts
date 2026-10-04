@@ -48,3 +48,27 @@ describe("Blossom theme", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("Motion", () => {
+  it("stops every animation and transition when Luis asks for reduced motion", () => {
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+    expect(css).toMatch(/transition-duration: 0\.01ms !important/);
+    expect(css).toMatch(/animation-duration: 0\.01ms !important/);
+  });
+
+  it("says on every class that moves what happens with reduced motion", () => {
+    const moves = /\b(transition|animate-[a-z]+)\b/;
+    const saysSo = /motion-(safe|reduce):/;
+    const offenders = sourceFiles()
+      .filter((path) => path.endsWith(".tsx"))
+      .flatMap((path) =>
+        readFileSync(join(srcDir, path), "utf8")
+          .split("\n")
+          .filter((line) => line.includes("className") || line.includes('"'))
+          .filter((line) => moves.test(line) && !saysSo.test(line))
+          .map((line) => `${path}: ${line.trim()}`),
+      );
+
+    expect(offenders).toEqual([]);
+  });
+});
