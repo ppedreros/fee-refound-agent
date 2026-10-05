@@ -23,9 +23,11 @@ employee (Luis) can approve, edit or reject them in seconds from one page.
 <!-- Fill in as they exist. Keep them exact and copy-pasteable. -->
 - Run everything: `docker compose up`
 - Backend tests: `uv run python -m pytest`
-- Frontend tests: `...`
+- Frontend tests: `npm --prefix frontend test`; end-to-end: `npm --prefix frontend run e2e`
+  (against the stack in replay: `PROVIDER_MODE=replay docker compose up -d --build`)
 - Lint/format/typecheck: `uv run python -m pre_commit run --all-files`
-- Evals: `...`
+- Evals: `uv run python -m evals.run --mode replay` (live: `--mode live`, spends tokens)
+- Every command, with what it needs: SPEC.md, "Commands" (also in the README)
 
 ## Boundaries (never break these)
 - Agents only READ data, through a read-only DB user. They never write.
