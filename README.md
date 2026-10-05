@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/ppedreros/fee-refound-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ppedreros/fee-refound-agent/actions/workflows/ci.yml)
 
+Video Demo: https://drive.google.com/file/d/12Vq8Z1WNIxmRNGUqsuDQFpK2Qhdv4Rcy/view?usp=sharing
+
 An agentic flow that prepares overdraft-fee refund requests for Luis, a credit union employee:
 it reads the member's message and accounts, checks the refund policy, recommends what to do and
 drafts the reply. Luis sees everything on one page and approves, edits or rejects in seconds;
